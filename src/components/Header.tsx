@@ -19,6 +19,7 @@ import {
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { scrollToElement } from "../utils/scrollUtils";
+import { useAuth } from "../context/AuthContext";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -27,6 +28,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === "/";
+  const { isAuthenticated, logout } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -35,7 +37,6 @@ const Header = () => {
   const navItems = [
     { name: "Home", path: "/" },
     { name: "Facilities", path: "/facilities" },
-    { name: "How It Works", path: "/how-it-works" },
     { name: "About Us", path: "/about" },
     { name: "Contact", path: "/contact" },
   ];
@@ -155,18 +156,27 @@ const Header = () => {
               </Button>
             ))}
           </Box>
-
+          {/* Conditional rendering for the authentication */}
           <Box sx={{ display: "flex" }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              sx={{ mr: 1, display: { xs: "none", sm: "block" } }}
-            >
-              Log In
-            </Button>
-            <Button variant="contained" color="primary">
-              Sign Up
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                variant="outlined"
+                color="primary"
+                sx={{ mr: 1, display: { xs: "none", sm: "block" } }}
+                onClick={() => navigate("/login")}
+              >
+                SignIn
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ mr: 1, display: { xs: "none", sm: "block" } }}
+                onClick={() => navigate("/login")}
+              >
+                SignIn
+              </Button>
+            )}
           </Box>
         </Toolbar>
       </Container>

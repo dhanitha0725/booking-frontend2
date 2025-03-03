@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,7 +15,6 @@ import {
   Alert,
 } from "@mui/material";
 import FacebookIcon from "@mui/icons-material/Facebook";
-import GitHubIcon from "@mui/icons-material/GitHub";
 import GoogleIcon from "@mui/icons-material/Google";
 import bgImage from "../assets/images/bg-sign-up.jpeg";
 import { useAuth } from "../context/AuthContext";
@@ -30,6 +29,7 @@ type SignInFormData = z.infer<typeof signInSchema>;
 
 function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState("");
@@ -44,11 +44,12 @@ function SignIn() {
   });
 
   // Handle form submission
-  const onSubmit = async (data: SignInFormData) => {
+  const handleFormSubmit = async (data: SignInFormData) => {
     setLoginError("");
     const success = await login(data.email, data.password);
     if (success) {
-      navigate("/admin");
+      const from = location.state?.from || "/";
+      navigate(from, { replace: true });
     } else {
       setLoginError("Invalid email or password");
     }
@@ -78,11 +79,6 @@ function SignIn() {
             </Grid>
             <Grid item>
               <Link href="#">
-                <GitHubIcon />
-              </Link>
-            </Grid>
-            <Grid item>
-              <Link href="#">
                 <GoogleIcon />
               </Link>
             </Grid>
@@ -93,7 +89,7 @@ function SignIn() {
             {loginError}
           </Alert>
         )}
-        <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+        <Box component="form" onSubmit={handleSubmit(handleFormSubmit)}>
           <TextField
             {...register("email")}
             label="Email"

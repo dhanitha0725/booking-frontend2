@@ -88,16 +88,16 @@ const Footer = () => {
               Contact Us
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              123 Booking Street, Suite 101
+              123 Some Road
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              New York, NY 10001
+              Polgolla, Kandy
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Email: info@facilitybook.com
+              Email: polgolla@gmail.com
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Phone: +1 (555) 123-4567
+              Phone: +94 (703) 876-457
             </Typography>
           </Grid>
         </Grid>
