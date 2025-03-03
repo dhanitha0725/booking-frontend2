@@ -38,7 +38,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <Box sx={{ py: 8, bgcolor: "background.default" }}>
+    <Box id="how-it-works" sx={{ py: 8, bgcolor: "background.default" }}>
       <Container maxWidth="lg">
         <Typography
           component="h2"
