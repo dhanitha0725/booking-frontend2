@@ -1,11 +1,9 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   Card,
-  Switch,
   Grid,
   Link,
   Box,
@@ -14,7 +12,6 @@ import {
   Button,
 } from "@mui/material";
 import FacebookIcon from "@mui/icons-material/Facebook";
-import GitHubIcon from "@mui/icons-material/GitHub";
 import GoogleIcon from "@mui/icons-material/Google";
 import bgImage from "../assets/images/bg-sign-up.jpeg";
 
@@ -37,14 +34,12 @@ const signUpSchema = z
 
 function SignUp() {
   const navigate = useNavigate();
-  const [rememberMe, setRememberMe] = useState(false);
 
   // React Hook Form setup
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
   } = useForm({
     resolver: zodResolver(signUpSchema),
   });
@@ -75,11 +70,6 @@ function SignUp() {
             <Grid item>
               <Link href="#">
                 <FacebookIcon />
-              </Link>
-            </Grid>
-            <Grid item>
-              <Link href="#">
-                <GitHubIcon />
               </Link>
             </Grid>
             <Grid item>
@@ -133,18 +123,7 @@ function SignUp() {
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword?.message}
           />
-          <Box display="flex" alignItems="center" mt={1}>
-            <Switch
-              checked={rememberMe}
-              onChange={() => {
-                setRememberMe(!rememberMe);
-                setValue("terms", !rememberMe);
-              }}
-            />
-            <Typography variant="body2">
-              I agree to the Terms and Conditions
-            </Typography>
-          </Box>
+
           {errors.terms && (
             <Typography variant="caption" color="error">
               {errors.terms.message}

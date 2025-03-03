@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   Card,
-  Switch,
   Grid,
   Link,
   Box,
@@ -31,7 +30,6 @@ function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  const [rememberMe, setRememberMe] = useState(false);
   const [loginError, setLoginError] = useState("");
 
   // React Hook Form setup
@@ -108,13 +106,7 @@ function SignIn() {
             error={!!errors.password}
             helperText={errors.password?.message}
           />
-          <Box display="flex" alignItems="center" mt={1}>
-            <Switch
-              checked={rememberMe}
-              onChange={() => setRememberMe(!rememberMe)}
-            />
-            <Typography variant="body2">Remember me</Typography>
-          </Box>
+
           <Button
             variant="contained"
             color="primary"
