@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +22,14 @@ function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loginError, setLoginError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Check for registration success message
+  useEffect(() => {
+    if (location.state?.registrationSuccess) {
+      setSuccessMessage(location.state.message || "Registration successful!");
+    }
+  }, [location.state]);
 
   // React Hook Form setup
   const {
@@ -74,6 +82,11 @@ function SignIn() {
             </Grid>
           </Grid>
         </Box>
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {successMessage}
+          </Alert>
+        )}
         {loginError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {loginError}

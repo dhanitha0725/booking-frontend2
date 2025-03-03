@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -13,22 +13,18 @@ import {
   ListItem,
   ListItemText,
   Container,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
-import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
-import { scrollToElement } from "../utils/scrollUtils";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const location = useLocation();
+  //const theme = useTheme();
+  //const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   const navigate = useNavigate();
-  const isHomePage = location.pathname === "/";
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -40,23 +36,6 @@ const Header = () => {
     { name: "About Us", path: "/about" },
     { name: "Contact", path: "/contact" },
   ];
-
-  // Handle hash in URL for direct navigation
-  useEffect(() => {
-    if (location.hash) {
-      const id = location.hash.replace("#", "");
-      setTimeout(() => scrollToElement(id), 100);
-    }
-  }, [location.hash]);
-
-  const handleHowItWorksClick = () => {
-    if (isHomePage) {
-      scrollToElement("how-it-works");
-    } else {
-      navigate("/#how-it-works"); // Update URL
-      setTimeout(() => scrollToElement("how-it-works"), 100); // Delay scroll for smooth navigation
-    }
-  };
 
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
@@ -146,11 +125,6 @@ const Header = () => {
                 component={RouterLink}
                 to={item.path}
                 sx={{ color: "text.primary", mx: 1 }}
-                onClick={
-                  item.name === "How It Works"
-                    ? handleHowItWorksClick
-                    : undefined
-                }
               >
                 {item.name}
               </Button>
@@ -165,7 +139,7 @@ const Header = () => {
                 sx={{ mr: 1, display: { xs: "none", sm: "block" } }}
                 onClick={() => navigate("/login")}
               >
-                SignIn
+                LogOut
               </Button>
             ) : (
               <Button

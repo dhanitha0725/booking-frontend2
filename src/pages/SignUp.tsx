@@ -9,8 +9,6 @@ import {
   Typography,
   TextField,
   Button,
-  FormControlLabel,
-  Checkbox,
 } from "@mui/material";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import GoogleIcon from "@mui/icons-material/Google";
@@ -46,7 +44,14 @@ function SignUp() {
         phoneNumber: data.phoneNumber,
       });
 
-      navigate("/login");
+      // Navigate to login with success message
+      navigate("/login", {
+        state: {
+          registrationSuccess: true,
+          message:
+            "Registration successful! You can now login with your credentials.",
+        },
+      });
     } catch (error) {
       console.error("Sign up error:", error);
     }
@@ -133,16 +138,6 @@ function SignUp() {
             error={!!errors.confirmPassword}
             helperText={errors.confirmPassword?.message}
           />
-
-          <FormControlLabel
-            control={<Checkbox {...register("terms")} />}
-            label="I agree to the terms and conditions"
-          />
-          {errors.terms && (
-            <Typography variant="caption" color="error" display="block">
-              {errors.terms.message}
-            </Typography>
-          )}
 
           <Button
             variant="contained"
