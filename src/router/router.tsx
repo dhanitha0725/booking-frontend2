@@ -1,8 +1,7 @@
 import React from "react";
-import { Routes, Route, Navigate, replace } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import AdminLayout from "../layouts/AdminLayout";
 import AdminDashboard from "../pages/AdminDashboard";
-import Login from "../pages/SignIn";
 import SignUp from "../pages/SignUp";
 import Home from "../pages/Home";
 import MainLayout from "../layouts/MainLayout";

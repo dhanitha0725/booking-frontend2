@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { authService } from "../services/api";
 
 interface User {
   userId: number;
@@ -35,28 +36,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch("http://localhost:5162/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!response.ok) {
-        throw new Error("Invalid credentials");
-      }
-
-      const data = await response.json();
-      const loggedInUser = {
-        userId: data.userId,
-        email: data.email,
-        role: data.role,
+      const response = await authService.login(email, password);
+      const user = {
+        userId: response.userId,
+        email: response.email,
+        role: response.role,
       };
-
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("user", JSON.stringify(loggedInUser));
+      setUser(user);
       setIsAuthenticated(true);
-      setUser(loggedInUser);
       return true;
     } catch (error) {
       console.error("Login error:", error);
@@ -65,8 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
+    authService.logout();
     setIsAuthenticated(false);
     setUser(null);
   };
