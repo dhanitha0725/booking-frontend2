@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Card,
   Grid,
@@ -10,27 +9,15 @@ import {
   Typography,
   TextField,
   Button,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import GoogleIcon from "@mui/icons-material/Google";
 import bgImage from "../assets/images/bg-sign-up.jpeg";
-
-// Validation schema using Zod
-const signUpSchema = z
-  .object({
-    firstName: z.string().min(2, "First name must be at least 2 characters"),
-    lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    email: z.string().email("Invalid email format"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-    terms: z.boolean().refine((value) => value === true, {
-      message: "You must accept the terms and conditions",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+import api from "../services/api";
+import { SignUpFormData } from "../types/auth";
+import { signUpSchema } from "../validations/signUpValidation";
 
 function SignUp() {
   const navigate = useNavigate();
@@ -40,14 +27,29 @@ function SignUp() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
+  } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      terms: false,
+    },
   });
 
   // Handle form submission
-  const onSubmit = (data: unknown) => {
-    console.log("User registered:", data);
-    navigate("/login");
+  const onSubmit = async (data: SignUpFormData) => {
+    try {
+      await api.post("/Auth/register", {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        phoneNumber: data.phoneNumber,
+      });
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Sign up error:", error);
+    }
   };
 
   return (
@@ -106,6 +108,14 @@ function SignUp() {
             helperText={errors.email?.message}
           />
           <TextField
+            {...register("phoneNumber")}
+            label="Phone Number"
+            fullWidth
+            margin="normal"
+            error={!!errors.phoneNumber}
+            helperText={errors.phoneNumber?.message}
+          />
+          <TextField
             {...register("password")}
             label="Password"
             type="password"
@@ -124,11 +134,16 @@ function SignUp() {
             helperText={errors.confirmPassword?.message}
           />
 
+          <FormControlLabel
+            control={<Checkbox {...register("terms")} />}
+            label="I agree to the terms and conditions"
+          />
           {errors.terms && (
-            <Typography variant="caption" color="error">
+            <Typography variant="caption" color="error" display="block">
               {errors.terms.message}
             </Typography>
           )}
+
           <Button
             variant="contained"
             color="primary"

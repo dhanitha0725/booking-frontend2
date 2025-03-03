@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Card,
   Grid,
@@ -16,20 +15,12 @@ import {
 import FacebookIcon from "@mui/icons-material/Facebook";
 import GoogleIcon from "@mui/icons-material/Google";
 import bgImage from "../assets/images/bg-sign-up.jpeg";
-import { useAuth } from "../context/AuthContext";
-
-// Validation schema using Zod
-const signInSchema = z.object({
-  email: z.string().email("Invalid email format"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type SignInFormData = z.infer<typeof signInSchema>;
+import { signInSchema, SignInFormData } from "../validations/signInValidation";
+import { authService } from "../services/api";
 
 function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
   const [loginError, setLoginError] = useState("");
 
   // React Hook Form setup
@@ -44,11 +35,12 @@ function SignIn() {
   // Handle form submission
   const handleFormSubmit = async (data: SignInFormData) => {
     setLoginError("");
-    const success = await login(data.email, data.password);
-    if (success) {
+    try {
+      await authService.login(data.email, data.password);
       const from = location.state?.from || "/";
       navigate(from, { replace: true });
-    } else {
+    } catch (error) {
+      console.error("Login error:", error);
       setLoginError("Invalid email or password");
     }
   };
