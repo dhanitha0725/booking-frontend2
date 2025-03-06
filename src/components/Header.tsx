@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   AppBar,
@@ -20,14 +18,16 @@ import { useAuth } from "../context/AuthContext";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  //const theme = useTheme();
-  //const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
   };
 
   const navItems = [
@@ -137,9 +137,9 @@ const Header = () => {
                 variant="outlined"
                 color="primary"
                 sx={{ mr: 1, display: { xs: "none", sm: "block" } }}
-                onClick={() => navigate("/login")}
+                onClick={handleLogout}
               >
-                LogOut
+                Logout
               </Button>
             ) : (
               <Button

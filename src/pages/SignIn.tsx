@@ -110,6 +110,7 @@ function SignIn() {
             margin="normal"
             error={!!errors.password}
             helperText={errors.password?.message}
+            autoComplete="current-password"
           />
 
           <Button

@@ -11,7 +11,7 @@ import { useAuth } from "../context/AuthContext";
 import SignIn from "../pages/SignIn";
 
 const Router: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   return (
     <Routes>
@@ -39,10 +39,15 @@ const Router: React.FC = () => {
       {/* protected routes */}
 
       {/* admin routes */}
+      {/* only authenticated users can access these routes */}
       <Route
-        path="/admin"
+        path="/admin/*"
         element={
-          isAuthenticated ? <AdminLayout /> : <Navigate to="/login" replace />
+          isAuthenticated && user?.role === "admin" ? (
+            <AdminLayout />
+          ) : (
+            <Navigate to="/login" state={{ from: "/admin" }} replace />
+          )
         }
       >
         {/* redirect to /admin to /admin/facilities */}

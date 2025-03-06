@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authService } from "../services/api";
+import { decodeToken } from "../utils/token";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   userId: number;
@@ -16,34 +18,74 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem("authToken");
-    const userData = localStorage.getItem("user");
 
     if (token) {
-      setIsAuthenticated(true);
-      setUser(userData ? JSON.parse(userData) : null);
+      try {
+        const decoded = decodeToken(token);
+        const user = {
+          userId: decoded.userId,
+          email: decoded.email,
+          role: decoded.role,
+        };
+        setIsAuthenticated(true);
+        setUser(user);
+
+        //redirect based on the role
+        const path = window.location.pathname;
+        if (path === "/" || path === "/login") {
+          const defaultRoute = getDefaultRoute(user.role);
+          navigate(defaultRoute);
+        }
+      } catch (error) {
+        console.error("Token decode error:", error);
+        logout();
+      }
     }
-  }, []);
+  }, [navigate]);
+
+  const getDefaultRoute = (role: string | undefined): string => {
+    if (!role) return "/";
+
+    switch (role.toLowerCase()) {
+      case "admin":
+        return "/admin/dashboard";
+      case "employee":
+        return "/employee/dashboard";
+      case "accountant":
+        return "/accountant/dashboard";
+      case "hostel":
+        return "/hostel/dashboard";
+      case "customer":
+        return "/customer/dashboard";
+      default:
+        return "/";
+    }
+  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const response = await authService.login(email, password);
+      const decoded = decodeToken(response.token); //decode token
       const user = {
-        userId: response.userId,
-        email: response.email,
-        role: response.role,
+        userId: decoded.userId,
+        email: decoded.email,
+        role: decoded.role,
       };
+      localStorage.setItem("authToken", response.token);
+      localStorage.setItem("user", JSON.stringify(user));
       setUser(user);
       setIsAuthenticated(true);
+      navigate(getDefaultRoute(user.role)); //redirect based on the role after login
       return true;
     } catch (error) {
       console.error("Login error:", error);
@@ -55,6 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     authService.logout();
     setIsAuthenticated(false);
     setUser(null);
+    navigate("/login");
   };
 
   // makes auth data and functions available to all child components
