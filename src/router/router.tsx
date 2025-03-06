@@ -9,6 +9,7 @@ import UserManagement from "../features/admin/components/UserManagement";
 import FacilityManagement from "../features/admin/components/FacilityManagement";
 import { useAuth } from "../context/AuthContext";
 import SignIn from "../pages/SignIn";
+import FacilitiesPage from "../pages/FacilitiesPage";
 
 const Router: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -30,6 +31,22 @@ const Router: React.FC = () => {
         element={
           <MainLayout>
             <Home />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/facilities"
+        element={
+          <MainLayout>
+            <FacilitiesPage />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/facilities/:facilityId"
+        element={
+          <MainLayout>
+            <FacilitiesPage />
           </MainLayout>
         }
       />
