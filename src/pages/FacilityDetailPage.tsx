@@ -1,60 +1,16 @@
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import {
-  Box,
-  Container,
-  Typography,
-  Grid,
-  Paper,
-  Button,
-  Chip,
-  Divider,
-  Rating,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tabs,
-  Tab,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  IconButton,
-  Stack,
-  useTheme,
-  useMediaQuery,
-  Breadcrumbs,
-} from "@mui/material";
-import {
-  LocationOn,
-  AccessTime,
-  People,
-  Check,
-  Event,
-  ArrowBack,
-  Close,
-  NavigateNext,
-  CalendarMonth,
-  Star,
-} from "@mui/icons-material";
-import { Link } from "react-router-dom";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { Box, Container, Typography } from "@mui/material";
+import FacilityBreadcrumbs from "../features/facilityDetail/components/FacilityBreadcrumbs";
+import BackButton from "../features/facilityDetail/components/BackButton";
+import FacilityHeader from "../features/facilityDetail/components/FacilityHeader";
+import ImageGallery from "../features/facilityDetail/components/ImageGallery";
+import FacilityTabs from "../features/facilityDetail/components/FacilityTabs";
+import BookingDialog from "../features/facilityDetail/components/BookingDialog";
+import { Facility } from "../types/facilityDetails";
 
-// Mock data for a single facility
-const facilityData = {
+// Mock data (same as provided)
+const facilityData: Facility = {
   id: 1,
   name: "Grand Ballroom",
   type: "hall",
@@ -129,22 +85,15 @@ const facilityData = {
   ],
 };
 
-const FacilityDetailPage = () => {
-  const { id } = useParams();
+const FacilityDetailPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
-  const [facility, setFacility] = useState<typeof facilityData | null>(null);
+  const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(0);
-  const [activeImage, setActiveImage] = useState(0);
   const [customerType, setCustomerType] = useState("public");
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [bookingDate, setBookingDate] = useState(null);
 
-  // Check if the URL has a book=true parameter
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get("book") === "true") {
@@ -152,25 +101,12 @@ const FacilityDetailPage = () => {
     }
   }, [location]);
 
-  // Fetch facility data (simulated)
   useEffect(() => {
-    // In a real app, you would fetch the facility data based on the ID
-    // For now, we'll just use our mock data
     setFacility(facilityData);
     setLoading(false);
   }, [id]);
 
-  const handleTabChange = (event: any, newValue: SetStateAction<number>) => {
-    setActiveTab(newValue);
-  };
-
-  const handleImageClick = (index: SetStateAction<number>) => {
-    setActiveImage(index);
-  };
-
-  const handleCustomerTypeChange = (event: {
-    target: { value: SetStateAction<string> };
-  }) => {
+  const handleCustomerTypeChange = (event: { target: { value: string } }) => {
     setCustomerType(event.target.value);
   };
 
@@ -180,16 +116,6 @@ const FacilityDetailPage = () => {
 
   const handleBookingClose = () => {
     setBookingOpen(false);
-  };
-
-  const handleBookingSubmit = () => {
-    // In a real app, you would submit the booking data to your backend
-    if (facility) {
-      alert(
-        `Booking submitted for ${facility.name} on ${bookingDate?.toDateString()} as ${customerType} customer`
-      );
-      setBookingOpen(false);
-    }
   };
 
   if (loading) {
@@ -204,9 +130,7 @@ const FacilityDetailPage = () => {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Typography>Facility not found</Typography>
-        <Button component={Link} to="/facilities" startIcon={<ArrowBack />}>
-          Back to Facilities
-        </Button>
+        <BackButton />
       </Container>
     );
   }
@@ -214,574 +138,25 @@ const FacilityDetailPage = () => {
   return (
     <Box sx={{ py: 4 }}>
       <Container maxWidth="lg">
-        {/* Breadcrumbs */}
-        <Breadcrumbs
-          separator={<NavigateNext fontSize="small" />}
-          aria-label="breadcrumb"
-          sx={{ mb: 2 }}
-        >
-          <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-            Home
-          </Link>
-          <Link
-            to="/facilities"
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            Facilities
-          </Link>
-          <Typography color="text.primary">{facility.name}</Typography>
-        </Breadcrumbs>
-
-        {/* Back Button */}
-        <Button
-          component={Link}
-          to="/facilities"
-          startIcon={<ArrowBack />}
-          sx={{ mb: 2 }}
-        >
-          Back to Facilities
-        </Button>
-
-        {/* Facility Header */}
-        <Box sx={{ mb: 4 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography
-                variant="h3"
-                component="h1"
-                gutterBottom
-                sx={{ fontWeight: "bold" }}
-              >
-                {facility.name}
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  mb: 1,
-                  flexWrap: "wrap",
-                  gap: 2,
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <LocationOn
-                    sx={{ color: "text.secondary", fontSize: 20, mr: 0.5 }}
-                  />
-                  <Typography variant="body1" color="text.secondary">
-                    {facility.location}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Rating
-                    value={facility.rating}
-                    precision={0.1}
-                    size="small"
-                    readOnly
-                  />
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ ml: 0.5 }}
-                  >
-                    ({facility.rating}) {facility.reviews} reviews
-                  </Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                <Chip
-                  label={`Capacity: ${facility.capacity}`}
-                  size="small"
-                  icon={<People fontSize="small" />}
-                />
-                <Chip label={facility.size} size="small" />
-                <Chip
-                  label={facility.hours}
-                  size="small"
-                  icon={<AccessTime fontSize="small" />}
-                />
-                {facility.featured && (
-                  <Chip
-                    label="Featured"
-                    color="primary"
-                    size="small"
-                    icon={<Star fontSize="small" />}
-                  />
-                )}
-              </Box>
-            </Box>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={handleBookingOpen}
-              startIcon={<Event />}
-              sx={{ px: 3 }}
-            >
-              Book Now
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Image Gallery */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={8}>
-            <Paper
-              elevation={2}
-              sx={{
-                height: 400,
-                backgroundImage: `url(${facility.images[activeImage]})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                borderRadius: 2,
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Grid container spacing={1}>
-              {facility.images.map((image, index) => (
-                <Grid item xs={6} key={index}>
-                  <Paper
-                    elevation={1}
-                    sx={{
-                      height: 120,
-                      backgroundImage: `url(${image})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      borderRadius: 1,
-                      cursor: "pointer",
-                      border:
-                        index === activeImage
-                          ? `2px solid ${theme.palette.primary.main}`
-                          : "none",
-                      "&:hover": {
-                        opacity: 0.9,
-                      },
-                    }}
-                    onClick={() => handleImageClick(index)}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-          </Grid>
-        </Grid>
-
-        {/* Tabs for Details */}
-        <Box sx={{ width: "100%", mb: 4 }}>
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons="auto"
-              allowScrollButtonsMobile
-            >
-              <Tab label="Description" />
-              <Tab label="Pricing" />
-              <Tab label="Amenities" />
-              <Tab label="Availability" />
-              <Tab label="Policies" />
-            </Tabs>
-          </Box>
-
-          {/* Description Tab */}
-          <TabPanel value={activeTab} index={0}>
-            <Typography variant="body1" paragraph>
-              {facility.description}
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              About this space
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={4}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <People
-                    sx={{ color: "text.secondary", fontSize: 20, mr: 1 }}
-                  />
-                  <Typography variant="body1">
-                    <strong>Capacity:</strong> {facility.capacity} people
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <AccessTime
-                    sx={{ color: "text.secondary", fontSize: 20, mr: 1 }}
-                  />
-                  <Typography variant="body1">
-                    <strong>Hours:</strong> {facility.hours}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                  <LocationOn
-                    sx={{ color: "text.secondary", fontSize: 20, mr: 1 }}
-                  />
-                  <Typography variant="body1">
-                    <strong>Size:</strong> {facility.size}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </TabPanel>
-
-          {/* Pricing Tab */}
-          <TabPanel value={activeTab} index={1}>
-            <Box sx={{ mb: 3 }}>
-              <FormControl fullWidth sx={{ maxWidth: 300, mb: 2 }}>
-                <InputLabel id="customer-type-label">Customer Type</InputLabel>
-                <Select
-                  labelId="customer-type-label"
-                  value={customerType}
-                  label="Customer Type"
-                  onChange={handleCustomerTypeChange}
-                >
-                  <MenuItem value="public">Public</MenuItem>
-                  <MenuItem value="private">Private</MenuItem>
-                  <MenuItem value="corporate">Corporate</MenuItem>
-                </Select>
-              </FormControl>
-
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                {customerType === "public" &&
-                  "Standard rates for public events and general bookings."}
-                {customerType === "private" &&
-                  "Discounted rates for private individuals and small gatherings."}
-                {customerType === "corporate" &&
-                  "Premium rates for corporate events with additional services."}
-              </Typography>
-            </Box>
-
-            <TableContainer component={Paper} elevation={2}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "primary.light" }}>
-                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                      Rate Type
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ fontWeight: "bold", color: "white" }}
-                    >
-                      Price
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>Weekday (Mon-Thu)</TableCell>
-                    <TableCell align="right">
-                      {facility.pricing[customerType].weekday}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Weekend (Fri-Sun)</TableCell>
-                    <TableCell align="right">
-                      {facility.pricing[customerType].weekend}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Hourly Rate</TableCell>
-                    <TableCell align="right">
-                      {facility.pricing[customerType].hourly}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Setup Fee</TableCell>
-                    <TableCell align="right">
-                      {facility.pricing[customerType].setup}
-                    </TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Cleaning Fee</TableCell>
-                    <TableCell align="right">
-                      {facility.pricing[customerType].cleaning}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <Box sx={{ mt: 3, textAlign: "center" }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                onClick={handleBookingOpen}
-                startIcon={<Event />}
-              >
-                Book Now
-              </Button>
-            </Box>
-          </TabPanel>
-
-          {/* Amenities Tab */}
-          <TabPanel value={activeTab} index={2}>
-            <Grid container spacing={2}>
-              {facility.amenities.map((amenity, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
-                  <ListItem>
-                    <ListItemIcon>
-                      <Check color="primary" />
-                    </ListItemIcon>
-                    <ListItemText primary={amenity} />
-                  </ListItem>
-                </Grid>
-              ))}
-            </Grid>
-          </TabPanel>
-
-          {/* Availability Tab */}
-          <TabPanel value={activeTab} index={3}>
-            <TableContainer component={Paper} elevation={2}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "primary.light" }}>
-                    <TableCell sx={{ fontWeight: "bold", color: "white" }}>
-                      Day
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ fontWeight: "bold", color: "white" }}
-                    >
-                      Hours
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {Object.entries(facility.availability).map(([day, hours]) => (
-                    <TableRow key={day}>
-                      <TableCell sx={{ textTransform: "capitalize" }}>
-                        {day}
-                      </TableCell>
-                      <TableCell align="right">{hours}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <Box sx={{ mt: 3, textAlign: "center" }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                onClick={handleBookingOpen}
-                startIcon={<CalendarMonth />}
-              >
-                Check Specific Date
-              </Button>
-            </Box>
-          </TabPanel>
-
-          {/* Policies Tab */}
-          <TabPanel value={activeTab} index={4}>
-            <List>
-              {facility.policies.map((policy, index) => (
-                <ListItem key={index}>
-                  <ListItemIcon>
-                    <Check color="primary" />
-                  </ListItemIcon>
-                  <ListItemText primary={policy} />
-                </ListItem>
-              ))}
-            </List>
-          </TabPanel>
-        </Box>
-
-        {/* Booking Dialog */}
-        <Dialog
+        <FacilityBreadcrumbs facilityName={facility.name} />
+        <BackButton />
+        <FacilityHeader facility={facility} onBookNow={handleBookingOpen} />
+        <ImageGallery images={facility.images} />
+        <FacilityTabs
+          facility={facility}
+          customerType={customerType}
+          onCustomerTypeChange={handleCustomerTypeChange}
+          onBookNow={handleBookingOpen}
+        />
+        <BookingDialog
           open={bookingOpen}
           onClose={handleBookingClose}
-          fullWidth
-          maxWidth="sm"
-        >
-          <DialogTitle>
-            Book {facility.name}
-            <IconButton
-              aria-label="close"
-              onClick={handleBookingClose}
-              sx={{
-                position: "absolute",
-                right: 8,
-                top: 8,
-              }}
-            >
-              <Close />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            <Stack spacing={3}>
-              <FormControl fullWidth>
-                <InputLabel id="booking-customer-type-label">
-                  Customer Type
-                </InputLabel>
-                <Select
-                  labelId="booking-customer-type-label"
-                  value={customerType}
-                  label="Customer Type"
-                  onChange={handleCustomerTypeChange}
-                >
-                  <MenuItem value="public">Public</MenuItem>
-                  <MenuItem value="private">Private</MenuItem>
-                  <MenuItem value="corporate">Corporate</MenuItem>
-                </Select>
-              </FormControl>
-
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="Booking Date"
-                  value={bookingDate}
-                  onChange={(newValue) => setBookingDate(newValue)}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
-                />
-              </LocalizationProvider>
-
-              <TextField
-                label="Number of Guests"
-                type="number"
-                fullWidth
-                InputProps={{
-                  inputProps: {
-                    min: 1,
-                    max: Number.parseInt(facility.capacity.split("-")[1]),
-                  },
-                }}
-              />
-
-              <TextField label="Event Type" fullWidth select>
-                <MenuItem value="wedding">Wedding</MenuItem>
-                <MenuItem value="corporate">Corporate Event</MenuItem>
-                <MenuItem value="birthday">Birthday Party</MenuItem>
-                <MenuItem value="conference">Conference</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </TextField>
-
-              <TextField
-                label="Special Requests"
-                multiline
-                rows={4}
-                fullWidth
-              />
-
-              <Box
-                sx={{ p: 2, bgcolor: "background.default", borderRadius: 1 }}
-              >
-                <Typography variant="subtitle1" gutterBottom>
-                  Pricing Summary ({customerType})
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2">Base Rate:</Typography>
-                  <Typography variant="body2" fontWeight="bold">
-                    {facility.pricing[customerType].weekday}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2">Setup Fee:</Typography>
-                  <Typography variant="body2">
-                    {facility.pricing[customerType].setup}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2">Cleaning Fee:</Typography>
-                  <Typography variant="body2">
-                    {facility.pricing[customerType].cleaning}
-                  </Typography>
-                </Box>
-                <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                  <Typography variant="subtitle2">Total:</Typography>
-                  <Typography
-                    variant="subtitle2"
-                    fontWeight="bold"
-                    color="primary"
-                  >
-                    {`$${
-                      Number.parseInt(
-                        facility.pricing[customerType].weekday.replace(
-                          /\D/g,
-                          ""
-                        )
-                      ) +
-                      Number.parseInt(
-                        facility.pricing[customerType].setup.replace(/\D/g, "")
-                      ) +
-                      Number.parseInt(
-                        facility.pricing[customerType].cleaning.replace(
-                          /\D/g,
-                          ""
-                        )
-                      )
-                    }`}
-                  </Typography>
-                </Box>
-              </Box>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleBookingClose}>Cancel</Button>
-            <Button
-              onClick={handleBookingSubmit}
-              variant="contained"
-              color="primary"
-              disabled={!bookingDate}
-            >
-              Book Now
-            </Button>
-          </DialogActions>
-        </Dialog>
+          facility={facility}
+          initialCustomerType={customerType}
+        />
       </Container>
     </Box>
   );
 };
-
-// TabPanel component for the tabs
-function TabPanel(props: {
-  [x: string]: any;
-  children: any;
-  value: any;
-  index: any;
-}) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`facility-tabpanel-${index}`}
-      aria-labelledby={`facility-tab-${index}`}
-      {...other}
-      style={{ padding: "24px 0" }}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  );
-}
 
 export default FacilityDetailPage;
