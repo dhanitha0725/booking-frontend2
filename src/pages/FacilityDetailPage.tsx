@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Box, Container, Typography } from "@mui/material";
-import FacilityBreadcrumbs from "../features/facilityDetail/components/FacilityBreadcrumbs";
-import BackButton from "../features/facilityDetail/components/BackButton";
-import FacilityHeader from "../features/facilityDetail/components/FacilityHeader";
-import ImageGallery from "../features/facilityDetail/components/ImageGallery";
-import FacilityTabs from "../features/facilityDetail/components/FacilityTabs";
-import BookingDialog from "../features/facilityDetail/components/BookingDialog";
+import FacilityBreadcrumbs from "../features/client/facilityDetail/components/FacilityBreadcrumbs";
+import BackButton from "../features/client/facilityDetail/components/BackButton";
+import FacilityHeader from "../features/client/facilityDetail/components/FacilityHeader";
+import ImageGallery from "../features/client/facilityDetail/components/ImageGallery";
+import FacilityTabs from "../features/client/facilityDetail/components/FacilityTabs";
+import BookingDialog from "../features/client/facilityDetail/components/BookingDialog";
 import { Facility } from "../types/facilityDetails";
 
 // Mock data (same as provided)

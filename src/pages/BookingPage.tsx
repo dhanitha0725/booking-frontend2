@@ -19,10 +19,6 @@ import {
   FormHelperText,
   Alert,
   Divider,
-  FilledTextFieldProps,
-  OutlinedTextFieldProps,
-  StandardTextFieldProps,
-  TextFieldVariants,
 } from "@mui/material";
 import {
   NavigateNext,
@@ -41,12 +37,11 @@ import {
 import { format, addHours, isAfter } from "date-fns";
 
 // Import components
-import BookingSummary from "../features/booking/components//BookingSummary";
-import DocumentUpload from "../features/booking/components//DocumentUpload";
+import BookingSummary from "../features/client/booking/components//BookingSummary";
+import DocumentUpload from "../features/client/booking/components//DocumentUpload";
 
 // Mock data for a facility
 import { facilityData } from "../data/mockData";
-import { JSX } from "react/jsx-runtime";
 
 const BookingPage = () => {
   const { id } = useParams();

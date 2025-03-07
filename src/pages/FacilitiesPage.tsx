@@ -17,7 +17,7 @@ import {
   Button,
 } from "@mui/material";
 import { Search, Sort, Star } from "@mui/icons-material";
-import FacilityCard from "../features/facilities/components/FacilityCard";
+import FacilityCard from "../features/client/facilities/components/FacilityCard";
 
 // Mock data for facilities
 const facilitiesData = [

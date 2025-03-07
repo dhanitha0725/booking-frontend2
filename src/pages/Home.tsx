@@ -1,8 +1,8 @@
-import HeroBanner from "../features/home/components/HeroBanner";
-import FeaturedFacilities from "../features/home/components/FeaturedFacilities";
-import HowItWorks from "../features/home/components/HowItWorks";
-import Testimonials from "../features/home/components/Testimonials";
-import CallToAction from "../features/home/components/CallToAction";
+import HeroBanner from "../features/client/home/components/HeroBanner";
+import FeaturedFacilities from "../features/client/home/components/FeaturedFacilities";
+import HowItWorks from "../features/client/home/components/HowItWorks";
+import Testimonials from "../features/client/home/components/Testimonials";
+import CallToAction from "../features/client/home/components/CallToAction";
 
 const Home = () => {
   return (
