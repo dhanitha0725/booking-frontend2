@@ -10,7 +10,6 @@ import Home from "../pages/Home";
 import MainLayout from "../layouts/MainLayout";
 import UserManagement from "../features/admin/components/UserManagement";
 import FacilityManagement from "../features/admin/components/FacilityManagement";
-
 import SignIn from "../pages/SignIn";
 import FacilitiesPage from "../pages/FacilitiesPage";
 
@@ -18,7 +17,7 @@ const Router: React.FC = () => {
   return (
     <Routes>
       {/* public routes */}
-      <Route element={<MainLayout children={undefined} />}>
+      <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/facilities" element={<FacilitiesPage />} />
@@ -28,12 +27,8 @@ const Router: React.FC = () => {
       </Route>
 
       {/* Protected Client Routes */}
-      <Route
-        element={
-          <ProtectedRoute allowedRoles={["customer"]} children={undefined} />
-        }
-      >
-        <Route element={<MainLayout children={undefined} />}>
+      <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
+        <Route element={<MainLayout />}>
           {/* Add client-specific protected routes here */}
         </Route>
       </Route>
@@ -42,10 +37,7 @@ const Router: React.FC = () => {
       {/* only authenticated users can access these routes */}
       <Route
         element={
-          <ProtectedRoute
-            allowedRoles={["admin", "employee", "accountant"]}
-            children={undefined}
-          />
+          <ProtectedRoute allowedRoles={["admin", "employee", "accountant"]} />
         }
       >
         <Route path="/admin" element={<AdminLayout />}>

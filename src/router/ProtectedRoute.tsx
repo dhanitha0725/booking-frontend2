@@ -1,16 +1,12 @@
 // ProtectedRoute.tsx
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
   allowedRoles: string[];
 }
 
-export const ProtectedRoute = ({
-  children,
-  allowedRoles,
-}: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, hasRole } = useAuth();
   const location = useLocation();
 
@@ -22,5 +18,5 @@ export const ProtectedRoute = ({
     return <Navigate to="/" replace />;
   }
 
-  return children;
+  return <Outlet />;
 };
