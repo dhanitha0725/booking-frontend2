@@ -14,11 +14,8 @@ import { NavigateNext, ArrowBack } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import dayjs, { Dayjs } from "dayjs";
 import { Facility } from "../types/facility";
-import { CustomerType } from "../features/client/booking/component/customerTypes";
 import FacilityDetails from "../features/client/booking/component/FacilityDetails";
 import BookingDatePicker from "../features/client/booking/component/BookingDatePicker";
-import { CustomerTypeSelector } from "../features/client/booking/component/customerTypes";
-import SelectionTable from "../features/client/booking/component/SelectionTable";
 import { getFacilityById } from "../data/facilitiesData";
 
 interface DateRangeType {
@@ -31,7 +28,9 @@ const BookingPage = () => {
   const navigate = useNavigate();
   const [facility, setFacility] = useState<Facility | null>(null);
   const [loading, setLoading] = useState(true);
-  const [customerType, setCustomerType] = useState<CustomerType>("walk-in");
+  const [customerType, setCustomerType] = useState<
+    "corporate" | "public" | "private"
+  >("public");
   const [dateRange, setDateRange] = useState<DateRangeType>({
     startDate: dayjs(),
     endDate: dayjs().add(1, "day"),
@@ -60,17 +59,12 @@ const BookingPage = () => {
     setDateRange(newDateRange);
   };
 
-  const handleCustomerTypeChange = (type: CustomerType) => {
+  const handleCustomerTypeChange = (
+    type: "corporate" | "public" | "private"
+  ) => {
     setCustomerType(type);
     setSelectedItems([]);
   };
-
-  const calculateDuration = (): number => {
-    if (!dateRange.startDate || !dateRange.endDate) return 0;
-    return dateRange.endDate.diff(dateRange.startDate, "day") + 1;
-  };
-
-  const duration = calculateDuration();
 
   if (loading) {
     return (
@@ -99,17 +93,6 @@ const BookingPage = () => {
     );
   }
 
-  // Transform facility data for SelectionTable
-  const selectionItems =
-    facility.packages?.map((pkg) => ({
-      facilityName: pkg.name,
-      defaultDuration: 24, // Assuming daily packages
-      pricing: {
-        ...pkg.pricing,
-        perDay: pkg.pricing[customerType as keyof typeof pkg.pricing] || 0, // Add perDay pricing based on customer type
-      },
-    })) || [];
-
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Breadcrumbs
@@ -137,47 +120,15 @@ const BookingPage = () => {
 
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Select Dates
+          Select Booking Details
         </Typography>
         <BookingDatePicker
           dateRange={dateRange}
           onDateChange={handleDateChange}
-        />
-      </Paper>
-
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Select Customer Type
-        </Typography>
-        <CustomerTypeSelector
           customerType={customerType}
           onCustomerTypeChange={handleCustomerTypeChange}
         />
       </Paper>
-
-      {facility.packages && facility.packages.length > 0 && (
-        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Available Packages
-          </Typography>
-          <SelectionTable
-            items={selectionItems}
-            duration={duration}
-            customerType={customerType}
-            dateRange={[
-              dateRange.startDate?.toDate() || new Date(),
-              dateRange.endDate?.toDate() || new Date(),
-            ]}
-            onSelectionChange={(itemId, selected) => {
-              setSelectedItems((prev) =>
-                selected
-                  ? [...prev, String(itemId)]
-                  : prev.filter((id) => id !== String(itemId))
-              );
-            }}
-          />
-        </Paper>
-      )}
 
       <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
         <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
@@ -185,14 +136,10 @@ const BookingPage = () => {
             variant="contained"
             color="primary"
             size="large"
-            disabled={
-              !dateRange.startDate ||
-              !dateRange.endDate ||
-              selectedItems.length === 0
-            }
+            disabled={!dateRange.startDate || !dateRange.endDate}
             onClick={() =>
               navigate("/payment", {
-                state: { facility, selectedItems, dateRange },
+                state: { facility, selectedItems, dateRange, customerType },
               })
             }
           >
