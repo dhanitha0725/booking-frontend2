@@ -1,262 +1,329 @@
-import { Box, Typography, Paper, Divider, Chip, Grid } from "@mui/material";
+import { useState } from "react";
+import { SelectChangeEvent } from "@mui/material/Select";
 import {
-  LocationOn,
-  CalendarMonth,
-  AccessTime,
-  People,
-  Receipt,
-} from "@mui/icons-material";
+  Box,
+  Typography,
+  Divider,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  Button,
+  Collapse,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Alert,
+  Stack,
+} from "@mui/material";
+import { ExpandMore, ExpandLess, Upload } from "@mui/icons-material";
 import { format } from "date-fns";
+import { CustomerType } from "../../../../../types/customerTypes";
 
-interface BookingData {
-  facility: {
-    name: string;
-    location: string;
-    pricing: {
-      [key: string]: {
-        hourly: string;
-        setup: string;
-        cleaning: string;
-      };
-    };
+interface Package {
+  id: string;
+  name: string;
+  pricing: {
+    [key: string]: number;
   };
-  date: Date;
-  startTime: string;
-  endTime: string;
-  customerType: string;
-  eventType: string;
-  guestCount: number;
-  specialRequests?: string;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  pricing: {
+    [key: string]: number;
+  };
+}
+interface Facility {
+  name: string;
+  hasPackages: boolean;
+  packages: Package[];
+  hasRooms: boolean;
+  rooms: Room[];
 }
 
 const BookingSummary = ({
-  bookingData,
-  showPrice = true,
+  facility,
+  customerType,
+  dateRange,
+  selectedPackages,
+  selectedRooms,
+  duration,
 }: {
-  bookingData: BookingData;
-  showPrice?: boolean;
+  facility: Facility;
+  customerType: CustomerType;
+  dateRange: { startDate: Date; endDate: Date };
+  selectedPackages: string[];
+  selectedRooms: string[];
+  duration: number;
 }) => {
-  const {
-    facility,
-    date,
-    startTime,
-    endTime,
-    customerType,
-    eventType,
-    guestCount,
-    specialRequests,
-  } = bookingData;
+  const [expanded, setExpanded] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("online");
+  const [documentUploaded, setDocumentUploaded] = useState(false);
 
-  //calculate duration in hours assuming startTime and endTime are in HH:mm format
-  const calculateDuration = () => {
-    const [startHour, startMin] = startTime
-      .split(":")
-      .map((num: string) => parseInt(num));
-    const [endHour, endMin] = endTime
-      .split(":")
-      .map((num: string) => parseInt(num));
-
-    const startMinutes = startHour * 60 + startMin;
-    const endMinutes = endHour * 60 + endMin;
-
-    const durationMinutes = endMinutes - startMinutes;
-    const hours = Math.floor(durationMinutes / 60);
-    const minutes = durationMinutes % 60;
-
-    return `${hours}h${minutes > 0 ? ` ${minutes}m` : ""}`;
+  const toggleExpand = () => {
+    setExpanded(!expanded);
   };
 
-  // Calculate total price based on customer type and duration
-  const calculatePrice = () => {
-    // Base price from the pricing object
-    const basePrice = parseInt(
-      facility.pricing[customerType].hourly.replace(/\D/g, "")
-    );
-
-    // Calculate duration in hours
-    const [startHour, startMin] = startTime
-      .split(":")
-      .map((num: string) => parseInt(num));
-    const [endHour, endMin] = endTime
-      .split(":")
-      .map((num: string) => parseInt(num));
-
-    const startMinutes = startHour * 60 + startMin;
-    const endMinutes = endHour * 60 + endMin;
-
-    const durationHours = (endMinutes - startMinutes) / 60;
-
-    // Calculate the rental cost
-    const rentalCost = basePrice * durationHours;
-
-    // Additional fees
-    const setupFee = parseInt(
-      facility.pricing[customerType].setup.replace(/\D/g, "")
-    );
-    const cleaningFee = parseInt(
-      facility.pricing[customerType].cleaning.replace(/\D/g, "")
-    );
-
-    return {
-      rentalCost,
-      setupFee,
-      cleaningFee,
-      total: rentalCost + setupFee + cleaningFee,
-    };
+  const handlePaymentMethodChange = (event: SelectChangeEvent<string>) => {
+    setPaymentMethod(event.target.value);
   };
 
-  const prices = calculatePrice();
+  // Calculate selected packages total
+  const areDatesSelected = dateRange.startDate && dateRange.endDate;
+
+  // Check if any items are selected
+  const hasSelections = selectedPackages.length > 0 || selectedRooms.length > 0;
+
+  // Validate selected IDs against available options
+  const isValidSelection = () => {
+    const validPackageIds = facility.hasPackages
+      ? facility.packages.map((pkg) => pkg.id)
+      : [];
+    const validRoomIds = facility.hasRooms
+      ? facility.rooms.map((room) => room.id)
+      : [];
+
+    return (
+      selectedPackages.every((id) => validPackageIds.includes(id)) &&
+      selectedRooms.every((id) => validRoomIds.includes(id))
+    );
+  };
+  // Calculate selected packages total
+  const calculatePackagesTotal = () => {
+    if (!facility.hasPackages || selectedPackages.length === 0) return 0;
+
+    return facility.packages
+      .filter((pkg) => selectedPackages.includes(pkg.id))
+      .reduce((total, pkg) => {
+        const price = pkg.pricing[customerType] || 0;
+        return total + price * duration;
+      }, 0);
+  };
+
+  // Calculate selected rooms total
+  const calculateRoomsTotal = () => {
+    if (!facility.hasRooms || selectedRooms.length === 0) return 0;
+
+    return facility.rooms
+      .filter((room) => selectedRooms.includes(room.id))
+      .reduce((total, room) => {
+        const price = room.pricing[customerType] || 0;
+        return total + price * duration;
+      }, 0);
+  };
+
+  // Calculate grand total, only if selections are valid
+  const calculateTotal = () => {
+    return isValidSelection()
+      ? calculatePackagesTotal() + calculateRoomsTotal()
+      : 0;
+  };
+  const isValid = areDatesSelected && hasSelections && isValidSelection();
 
   return (
-    <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Booking Summary
-      </Typography>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle1" fontWeight="bold">
-          {facility.name}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
-          <LocationOn fontSize="small" color="action" sx={{ mr: 1 }} />
-          <Typography variant="body2" color="text.secondary">
-            {facility.location}
-          </Typography>
-        </Box>
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
-
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid item xs={6}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <CalendarMonth fontSize="small" color="action" sx={{ mr: 1 }} />
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Date
-              </Typography>
-              <Typography variant="body1">
-                {format(date, "EEEE, MMMM d, yyyy")}
-              </Typography>
-            </Box>
-          </Box>
-        </Grid>
-
-        <Grid item xs={6}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <AccessTime fontSize="small" color="action" sx={{ mr: 1 }} />
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Time
-              </Typography>
-              <Typography variant="body1">
-                {startTime} - {endTime} ({calculateDuration()})
-              </Typography>
-            </Box>
-          </Box>
-        </Grid>
-
-        <Grid item xs={6}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <People fontSize="small" color="action" sx={{ mr: 1 }} />
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Guests
-              </Typography>
-              <Typography variant="body1">{guestCount} people</Typography>
-            </Box>
-          </Box>
-        </Grid>
-
-        <Grid item xs={6}>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              Event Type
-            </Typography>
-            <Chip
-              label={eventType}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{ mt: 0.5 }}
-            />
-          </Box>
-        </Grid>
-      </Grid>
-
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          Customer Type
-        </Typography>
-        <Typography variant="body1" sx={{ textTransform: "capitalize" }}>
-          {customerType}
-        </Typography>
-      </Box>
-
-      {specialRequests && (
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Special Requests
-          </Typography>
-          <Typography variant="body2">{specialRequests}</Typography>
-        </Box>
+    <Box>
+      {!isValid && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {(!areDatesSelected && "Please select start and end dates.") ||
+            (!hasSelections && "Please select at least one package or room.") ||
+            (!isValidSelection() &&
+              "Invalid package or room selection. Please review your choices.")}
+        </Alert>
       )}
 
-      {showPrice && (
+      {isValid && (
         <>
-          <Divider sx={{ my: 2 }} />
+          <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Booking Details
+            </Typography>
+            <List dense>
+              <ListItem>
+                <ListItemText primary="Facility" secondary={facility.name} />
+              </ListItem>
+              <ListItem>
+                <ListItemText
+                  primary="Customer Type"
+                  secondary={
+                    customerType.charAt(0).toUpperCase() + customerType.slice(1)
+                  }
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText
+                  primary="Dates"
+                  secondary={`${format(
+                    dateRange.startDate,
+                    "MMM dd, yyyy"
+                  )} - ${format(dateRange.endDate, "MMM dd, yyyy")}`}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemText
+                  primary="Duration"
+                  secondary={`${duration} day${duration !== 1 ? "s" : ""}`}
+                />
+              </ListItem>
+            </List>
+          </Paper>
 
-          <Box>
-            <Typography
-              variant="subtitle1"
-              sx={{ display: "flex", alignItems: "center", mb: 1 }}
-            >
-              <Receipt fontSize="small" sx={{ mr: 1 }} />
-              Price Details
+          <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+            <Typography variant="subtitle1" gutterBottom>
+              Selected Items
             </Typography>
 
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-            >
-              <Typography variant="body2">
-                Rental ({facility.pricing[customerType].hourly} ×{" "}
-                {calculateDuration()})
-              </Typography>
-              <Typography variant="body2">
-                ${prices.rentalCost.toFixed(2)}
-              </Typography>
-            </Box>
+            {facility.hasPackages && selectedPackages.length > 0 && (
+              <>
+                <Typography variant="subtitle2" gutterBottom>
+                  Packages:
+                </Typography>
+                <List dense>
+                  {facility.packages
+                    .filter((pkg) => selectedPackages.includes(pkg.id))
+                    .map((pkg) => (
+                      <ListItem key={pkg.id}>
+                        <ListItemText
+                          primary={pkg.name}
+                          secondary={`$${
+                            pkg.pricing[customerType] || 0
+                          } × ${duration} day${duration !== 1 ? "s" : ""}`}
+                        />
+                        <Typography variant="body2" fontWeight="bold">
+                          ${(pkg.pricing[customerType] || 0) * duration}
+                        </Typography>
+                      </ListItem>
+                    ))}
+                </List>
+              </>
+            )}
 
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-            >
-              <Typography variant="body2">Setup Fee</Typography>
-              <Typography variant="body2">
-                ${prices.setupFee.toFixed(2)}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-            >
-              <Typography variant="body2">Cleaning Fee</Typography>
-              <Typography variant="body2">
-                ${prices.cleaningFee.toFixed(2)}
-              </Typography>
-            </Box>
+            {facility.hasRooms && selectedRooms.length > 0 && (
+              <>
+                <Typography variant="subtitle2" gutterBottom>
+                  Rooms:
+                </Typography>
+                <List dense>
+                  {facility.rooms
+                    .filter((room) => selectedRooms.includes(room.id))
+                    .map((room) => (
+                      <ListItem key={room.id}>
+                        <ListItemText
+                          primary={room.name}
+                          secondary={`$${
+                            room.pricing[customerType] || 0
+                          } × ${duration} day${duration !== 1 ? "s" : ""}`}
+                        />
+                        <Typography variant="body2" fontWeight="bold">
+                          ${(room.pricing[customerType] || 0) * duration}
+                        </Typography>
+                      </ListItem>
+                    ))}
+                </List>
+              </>
+            )}
 
             <Divider sx={{ my: 1 }} />
 
-            <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", py: 1 }}
+            >
               <Typography variant="subtitle1">Total</Typography>
-              <Typography variant="subtitle1" fontWeight="bold" color="primary">
-                ${prices.total.toFixed(2)}
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                color="primary.main"
+              >
+                ${calculateTotal()}
               </Typography>
             </Box>
-          </Box>
+          </Paper>
+
+          <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="subtitle1">Additional Options</Typography>
+              <Button
+                size="small"
+                onClick={toggleExpand}
+                endIcon={expanded ? <ExpandLess /> : <ExpandMore />}
+              >
+                {expanded ? "Hide" : "Show"}
+              </Button>
+            </Box>
+
+            <Collapse in={expanded}>
+              <Box sx={{ mt: 2 }}>
+                <FormControl fullWidth sx={{ mb: 2 }}>
+                  <InputLabel id="payment-method-label">
+                    Payment Method
+                  </InputLabel>
+                  <Select
+                    labelId="payment-method-label"
+                    value={paymentMethod}
+                    label="Payment Method"
+                    onChange={handlePaymentMethodChange}
+                  >
+                    <MenuItem value="online">Online Payment</MenuItem>
+                    <MenuItem value="bank">Bank Transfer</MenuItem>
+                    <MenuItem value="inperson">Pay in Person</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {(customerType === "corporate" ||
+                  customerType === "private") && (
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Required Documents
+                    </Typography>
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      {customerType === "corporate"
+                        ? "Corporate bookings require a company authorization letter."
+                        : "Private bookings require ID verification."}
+                    </Alert>
+
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        startIcon={<Upload />}
+                        onChange={() => setDocumentUploaded(true)}
+                      >
+                        <span style={{ display: "none" }}>Upload Document</span>
+                        <input type="file" hidden id="upload-document-label" />
+                      </Button>
+
+                      {documentUploaded && (
+                        <Typography variant="body2" color="success.main">
+                          Document uploaded successfully
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Box>
+                )}
+
+                <TextField
+                  label="Special Requests"
+                  multiline
+                  rows={3}
+                  fullWidth
+                  placeholder="Any special requirements or requests for your booking..."
+                  sx={{ mb: 2 }}
+                />
+              </Box>
+            </Collapse>
+          </Paper>
         </>
       )}
-    </Paper>
+    </Box>
   );
 };
 

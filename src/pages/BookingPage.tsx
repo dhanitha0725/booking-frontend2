@@ -14,8 +14,8 @@ import { NavigateNext, ArrowBack } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import dayjs, { Dayjs } from "dayjs";
 import { Facility } from "../types/facility";
-import FacilityDetails from "../features/client/booking/component/FacilityDetails";
-import BookingDatePicker from "../features/client/booking/component/BookingDatePicker";
+import FacilityDetails from "../features/client/booking/components/FacilityDetails";
+import BookingDatePicker from "../features/client/booking/components/BookingDatePicker";
 import { getFacilityById } from "../data/facilitiesData";
 
 interface DateRangeType {

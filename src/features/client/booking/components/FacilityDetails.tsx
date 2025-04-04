@@ -1,6 +1,21 @@
 import { useState } from "react";
-import { Box, Typography, Grid, Paper, Chip, IconButton } from "@mui/material";
-import { LocationOn, ChevronLeft, ChevronRight } from "@mui/icons-material";
+import {
+  Box,
+  Typography,
+  Grid,
+  Paper,
+  IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
+import {
+  LocationOn,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+} from "@mui/icons-material";
 import { Facility } from "../../../../types/facilityDetails";
 
 const FacilityDetails = ({ facility }: { facility: Facility }) => {
@@ -25,9 +40,9 @@ const FacilityDetails = ({ facility }: { facility: Facility }) => {
       </Typography>
 
       <Grid container spacing={3}>
-        {/* Image Carousel */}
-        <Grid item xs={12} md={6}>
-          <Box sx={{ position: "relative", height: 300 }}>
+        {/* Image Carousel - Full Width */}
+        <Grid item xs={12}>
+          <Box sx={{ position: "relative", height: 400 }}>
             <Paper
               elevation={2}
               sx={{
@@ -100,11 +115,9 @@ const FacilityDetails = ({ facility }: { facility: Facility }) => {
           </Box>
         </Grid>
 
-        {/* Facility Info */}
-        <Grid item xs={12} md={6}>
-          <Box
-            sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-          >
+        {/* Facility Info - Full Width Below Carousel */}
+        <Grid item xs={12}>
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
             <Box sx={{ mb: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                 <LocationOn
@@ -115,27 +128,24 @@ const FacilityDetails = ({ facility }: { facility: Facility }) => {
                 </Typography>
               </Box>
 
-              {/* Pricing information */}
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body1" color="text.secondary">
-                  Pricing:
-                </Typography>
-                <Typography variant="body2">
-                  Private: ₹{facility.pricing.private}
-                </Typography>
-                <Typography variant="body2">
-                  Public: ₹{facility.pricing.public}
-                </Typography>
-                <Typography variant="body2">
-                  Corporate: ₹{facility.pricing.corporate}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                {facility.amenities.map((tag: string, index: number) => (
-                  <Chip key={index} label={tag} size="small" />
+              {/* Amenities List */}
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ mt: 1, mb: 0.5 }}
+              >
+                Amenities:
+              </Typography>
+              <List dense disablePadding sx={{ mb: 2 }}>
+                {facility.amenities.map((amenity: string, index: number) => (
+                  <ListItem key={index} disableGutters sx={{ py: 0.5 }}>
+                    <ListItemIcon sx={{ minWidth: 30 }}>
+                      <Check fontSize="small" color="primary" />
+                    </ListItemIcon>
+                    <ListItemText primary={amenity} />
+                  </ListItem>
                 ))}
-              </Box>
+              </List>
             </Box>
 
             <Typography variant="body1" paragraph>

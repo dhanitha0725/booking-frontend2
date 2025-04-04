@@ -1,0 +1,1 @@
+export type CustomerType = 'corporate' | 'private' | 'student';
