@@ -106,7 +106,7 @@ const FacilityTypesCarousel = () => {
               "&::-webkit-scrollbar": {
                 display: "none",
               },
-              "-ms-overflow-style": "none",
+              msOverflowStyle: "none",
               scrollBehavior: "smooth",
             }}
           >

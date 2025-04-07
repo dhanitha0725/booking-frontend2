@@ -6,7 +6,7 @@ import {
   type MRT_ColumnDef,
 } from "material-react-table";
 import api from "../../../services/api";
-import { Facility } from "../../../types/facility";
+import { Facility } from "../../../types/selectedFacility";
 
 const FacilityManagement: React.FC = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);

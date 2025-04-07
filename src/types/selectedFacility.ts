@@ -1,8 +1,8 @@
-export interface Facility {
+export interface SelectedFacility {
   id: number;
   name: string;
+  location: string;
   description: string;
   images: string[];
-  location: string;
   amenities: string[];
 }

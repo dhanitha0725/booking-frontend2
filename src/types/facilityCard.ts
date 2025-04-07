@@ -1,5 +1,5 @@
 export interface Facility {
-  facilityID: number;
+  facilityId: number;
   facilityName: string;
   location: string;
   imageUrl?: string;

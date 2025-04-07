@@ -7,12 +7,9 @@ import {
   Box,
   Button,
 } from "@mui/material";
-import { LocationOn } from "@mui/icons-material";
+import { LocationOn, ImageNotSupported } from "@mui/icons-material";
 import { Facility } from "../../../../types/facilityCard";
-
-// handle null images
-const DEFAULT_IMAGE =
-  "https://via.placeholder.com/400x200?text=No+Image+Available";
+import { useState } from "react";
 
 // handle price values
 const formatPrice = (price: number): string => {
@@ -22,12 +19,35 @@ const formatPrice = (price: number): string => {
   return `Rs.${price.toLocaleString()}`;
 };
 
+// Fallback component for when images fail to load
+const ImageFallback = () => (
+  <Box
+    sx={{
+      height: "200px",
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(0,0,0,0.04)",
+      flexDirection: "column",
+      gap: 1,
+    }}
+  >
+    <ImageNotSupported sx={{ fontSize: 40, color: "text.disabled" }} />
+    <Typography variant="caption" color="text.disabled">
+      No Image Available
+    </Typography>
+  </Box>
+);
+
 interface FacilityCardProps {
   facility: Facility;
-  onViewDetails: () => void;
+  onViewDetails: (facilityId: number) => void;
 }
 
 const FacilityCard = ({ facility, onViewDetails }: FacilityCardProps) => {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <Card
       sx={{
@@ -42,13 +62,18 @@ const FacilityCard = ({ facility, onViewDetails }: FacilityCardProps) => {
         },
       }}
     >
-      <CardMedia
-        component="img"
-        height="200"
-        image={facility.imageUrl || DEFAULT_IMAGE}
-        alt={facility.facilityName}
-        sx={{ objectFit: "cover" }}
-      />
+      {facility.imageUrl && !imageError ? (
+        <CardMedia
+          component="img"
+          height="200"
+          image={facility.imageUrl}
+          alt={facility.facilityName}
+          sx={{ objectFit: "cover" }}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <ImageFallback />
+      )}
       <CardContent sx={{ flexGrow: 1 }}>
         <Typography
           gutterBottom
@@ -71,7 +96,16 @@ const FacilityCard = ({ facility, onViewDetails }: FacilityCardProps) => {
         </Typography>
       </CardContent>
       <CardActions>
-        <Button size="small" color="primary" onClick={onViewDetails}>
+        <Button
+          size="small"
+          color="primary"
+          onClick={
+            () =>
+              onViewDetails(
+                facility.facilityId
+              ) /* Updated to use facilityID instead of facilityId */
+          }
+        >
           View Details
         </Button>
       </CardActions>

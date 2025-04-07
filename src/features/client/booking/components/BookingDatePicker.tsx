@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Box,
   Grid,
-  Typography,
   Alert,
   FormControl,
   InputLabel,
@@ -56,12 +55,6 @@ const BookingDatePicker = ({
     onDateChange({ ...dateRange, endDate: date });
   };
 
-  // calculate duration
-  const duration =
-    dateRange.startDate && dateRange.endDate
-      ? dateRange.endDate.diff(dateRange.startDate, "day") + 1
-      : 0;
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
@@ -112,15 +105,6 @@ const BookingDatePicker = ({
           <Alert severity="error" sx={{ mt: 2 }}>
             {error}
           </Alert>
-        )}
-
-        {duration > 0 && (
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            Duration:{" "}
-            <strong>
-              {duration} day{duration !== 1 ? "s" : ""}
-            </strong>
-          </Typography>
         )}
       </Box>
     </LocalizationProvider>

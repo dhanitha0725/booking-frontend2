@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   Container,
   Box,
@@ -13,20 +13,31 @@ import {
 import { NavigateNext, ArrowBack } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import dayjs, { Dayjs } from "dayjs";
-import { Facility } from "../types/facility";
+import { SelectedFacility } from "../types/selectedFacility";
 import FacilityDetails from "../features/client/booking/components/FacilityDetails";
 import BookingDatePicker from "../features/client/booking/components/BookingDatePicker";
-import { getFacilityById } from "../data/facilitiesData";
+import axios from "axios";
 
 interface DateRangeType {
   startDate: Dayjs | null;
   endDate: Dayjs | null;
 }
 
+// map backend response to Facility type
+const mapResponseToFacility = (response: any): SelectedFacility => ({
+  id: response.value.facilityId,
+  name: response.value.facilityName,
+  location: response.value.location,
+  description: response.value.description || "No description available",
+  images: response.value.imageUrls || [],
+  amenities: Object.entries(response.value.attributes || {}).map(
+    ([key, val]) => `${key}: ${val}`
+  ),
+});
+
 const BookingPage = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [facility, setFacility] = useState<Facility | null>(null);
+  const [facility, setFacility] = useState<SelectedFacility | null>(null);
   const [loading, setLoading] = useState(true);
   const [customerType, setCustomerType] = useState<
     "corporate" | "public" | "private"
@@ -35,15 +46,19 @@ const BookingPage = () => {
     startDate: dayjs(),
     endDate: dayjs().add(1, "day"),
   });
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const facilityId = parseInt(id || "", 10);
         if (!isNaN(facilityId)) {
-          const data = getFacilityById(facilityId);
-          setFacility(data || null);
+          const response = await axios.get(
+            `http://localhost:5162/api/Reservation/${facilityId}`
+          );
+
+          if (response.data.isSuccess) {
+            setFacility(mapResponseToFacility(response.data));
+          }
         }
       } catch (error) {
         console.error("Error fetching facility:", error);
@@ -63,7 +78,6 @@ const BookingPage = () => {
     type: "corporate" | "public" | "private"
   ) => {
     setCustomerType(type);
-    setSelectedItems([]);
   };
 
   if (loading) {
@@ -128,24 +142,6 @@ const BookingPage = () => {
           customerType={customerType}
           onCustomerTypeChange={handleCustomerTypeChange}
         />
-      </Paper>
-
-      <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
-        <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            disabled={!dateRange.startDate || !dateRange.endDate}
-            onClick={() =>
-              navigate("/payment", {
-                state: { facility, selectedItems, dateRange, customerType },
-              })
-            }
-          >
-            Proceed to Payment
-          </Button>
-        </Box>
       </Paper>
     </Container>
   );
