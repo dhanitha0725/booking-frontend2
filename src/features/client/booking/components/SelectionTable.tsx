@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Table,
   TableBody,
@@ -9,70 +8,90 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { SelectionItem } from "../../../../types/SelectionItem";
+import { PackagesDto, RoomDto } from "../../../../types/selectedFacility";
 
 interface SelectionTableProps {
-  items: SelectionItem[];
-  duration: number;
-  customerType: string;
-  dateRange: [Date, Date]; // Define the type for dateRange later
-  onSelectionChange: (itemId: string | number, selected: boolean) => void; // itemId will be facilityName for now
+  packages: PackagesDto[];
+  rooms: RoomDto[];
 }
 
-const SelectionTable: React.FC<SelectionTableProps> = ({
-  items,
-  duration,
-  customerType,
-  onSelectionChange, // For future use
-}) => {
-  if (items.length === 0) {
-    return (
-      <Typography variant="body1" color="text.secondary">
-        No items available.
-      </Typography>
-    );
-  }
+const SelectionTable = ({ packages, rooms }: SelectionTableProps) => {
+  const hasPackages = packages.length > 0;
+  const hasRooms = rooms.length > 0;
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Facility Name</TableCell>
-            <TableCell>Default Duration (hours)</TableCell>
-            <TableCell>Price</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow key={item.facilityName}>
-              <TableCell>{item.facilityName}</TableCell>
-              <TableCell>{item.defaultDuration}</TableCell>
-              <TableCell>
-                {/* Calculate price here */}
-                {calculatePrice(item, duration, customerType)}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <TableContainer component={Paper} sx={{ mt: 3 }}>
+      {hasPackages && (
+        <>
+          <Typography variant="h6" sx={{ p: 2 }}>
+            Available Packages
+          </Typography>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Package</TableCell>
+                <TableCell>Duration</TableCell>
+                <TableCell>Public Price</TableCell>
+                <TableCell>Corporate Price</TableCell>
+                <TableCell>Private Price</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {packages.map((pkg) => (
+                <TableRow key={pkg.packageId}>
+                  <TableCell>{pkg.packageName}</TableCell>
+                  <TableCell>{pkg.duration}</TableCell>
+                  {["public", "corporate", "private"].map((sector) => (
+                    <TableCell key={sector}>
+                      {pkg.pricing.find((price) => price.sector === sector)
+                        ?.price || "N/A"}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
+      )}
+
+      {hasRooms && (
+        <>
+          <Typography variant="h6" sx={{ p: 2 }}>
+            Available Rooms
+          </Typography>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Room Type</TableCell>
+                <TableCell>Public Price</TableCell>
+                <TableCell>Corporate Price</TableCell>
+                <TableCell>Private Price</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {rooms.map((room) => (
+                <TableRow key={room.roomId}>
+                  <TableCell>{room.roomType}</TableCell>
+                  {["public", "corporate", "private"].map((sector) => (
+                    <TableCell key={sector}>
+                      {room.pricing.find((price) => price.sector === sector)
+                        ?.price || "N/A"}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
+      )}
+
+      {!hasPackages && !hasRooms && (
+        <Typography variant="h6" sx={{ p: 2 }}>
+          No packages or rooms available.
+        </Typography>
+      )}
     </TableContainer>
   );
 };
-
-function calculatePrice(
-  item: SelectionItem,
-  duration: number,
-  customerType: string
-): number | string {
-  const pricing = item.pricing[customerType];
-  if (pricing.perDay && duration % 24 === 0) {
-    return pricing.perDay * (duration / 24);
-  } else if (pricing.perHour) {
-    return pricing.perHour * duration;
-  } else {
-    return "Pricing not available for this duration";
-  }
-}
 
 export default SelectionTable;

@@ -13,9 +13,17 @@ import {
 import { NavigateNext, ArrowBack } from "@mui/icons-material";
 import { Link } from "react-router-dom";
 import dayjs, { Dayjs } from "dayjs";
-import { SelectedFacility } from "../types/selectedFacility";
+import {
+  PackagesDto,
+  pricingDto,
+  RoomDto,
+  RoomPricingDto,
+  SelectedFacility,
+  ApiResponse,
+} from "../types/selectedFacility";
 import FacilityDetails from "../features/client/booking/components/FacilityDetails";
 import BookingDatePicker from "../features/client/booking/components/BookingDatePicker";
+import SelectionTable from "../features/client/booking/components/SelectionTable";
 import axios from "axios";
 
 interface DateRangeType {
@@ -24,7 +32,7 @@ interface DateRangeType {
 }
 
 // map backend response to Facility type
-const mapResponseToFacility = (response: any): SelectedFacility => ({
+const mapResponseToFacility = (response: ApiResponse): SelectedFacility => ({
   id: response.value.facilityId,
   name: response.value.facilityName,
   location: response.value.location,
@@ -33,7 +41,34 @@ const mapResponseToFacility = (response: any): SelectedFacility => ({
   amenities: Object.entries(response.value.attributes || {}).map(
     ([key, val]) => `${key}: ${val}`
   ),
+  packages:
+    response.value.packages?.map((pkg: PackagesDto) => ({
+      packageId: pkg.packageId,
+      packageName: pkg.packageName,
+      duration: pkg.duration
+        ? convertTimeSpanToString(pkg.duration)
+        : undefined,
+      pricing: pkg.pricing.map((price: pricingDto) => ({
+        sector: price.sector,
+        price: price.price,
+      })),
+    })) || [],
+  rooms:
+    response.value.rooms?.map((room: RoomDto) => ({
+      roomId: room.roomId,
+      roomType: room.roomType,
+      pricing: room.pricing.map((price: RoomPricingDto) => ({
+        sector: price.sector,
+        price: price.price,
+      })),
+    })) || [],
 });
+
+// helper function to convert time span to string
+const convertTimeSpanToString = (timeSpan: string) => {
+  const [hours, minutes] = timeSpan.split(":");
+  return `${hours} hours ${minutes} minutes`;
+};
 
 const BookingPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -132,6 +167,7 @@ const BookingPage = () => {
         <FacilityDetails facility={facility} />
       </Box>
 
+      {/* display booking date picker and customer type selection */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           Select Booking Details
@@ -142,6 +178,10 @@ const BookingPage = () => {
           customerType={customerType}
           onCustomerTypeChange={handleCustomerTypeChange}
         />
+      </Paper>
+      {/* display packages and rooms*/}
+      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <SelectionTable packages={facility.packages} rooms={facility.rooms} />
       </Paper>
     </Container>
   );
