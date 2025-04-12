@@ -24,6 +24,7 @@ interface BookingDatePickerProps {
   onDateChange: (range: DateRangeType) => void;
   customerType: CustomerType;
   onCustomerTypeChange: (type: CustomerType) => void;
+  required: boolean;
 }
 
 const BookingDatePicker = ({
@@ -31,33 +32,44 @@ const BookingDatePicker = ({
   onDateChange,
   customerType,
   onCustomerTypeChange,
+  required,
 }: BookingDatePickerProps) => {
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   // handle dates changes
   const handleStartDateChange = (date: dayjs.Dayjs | null) => {
-    if (dateRange.endDate && date && date.isAfter(dateRange.endDate)) {
-      setError("Start date cannot be after end date");
-      return;
+    if (date && dateRange.endDate && date.isAfter(dateRange.endDate)) {
+      setError("Start date cannot be after end date.");
+    } else {
+      setError(null);
     }
-
-    setError("");
     onDateChange({ ...dateRange, startDate: date });
   };
 
   const handleEndDateChange = (date: dayjs.Dayjs | null) => {
-    if (dateRange.startDate && date && date.isBefore(dateRange.startDate)) {
-      setError("End date cannot be before start date");
-      return;
+    if (date && dateRange.startDate && !date.isAfter(dateRange.startDate)) {
+      setError("End date must be after the start date.");
+    } else {
+      setError(null);
     }
-
-    setError("");
     onDateChange({ ...dateRange, endDate: date });
   };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
+        {required && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Please select booking dates
+          </Alert>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         <Grid container spacing={3} alignItems="center">
           <Grid item xs={12} sm={4}>
             <DatePicker
@@ -100,12 +112,6 @@ const BookingDatePicker = ({
             </FormControl>
           </Grid>
         </Grid>
-
-        {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error}
-          </Alert>
-        )}
       </Box>
     </LocalizationProvider>
   );

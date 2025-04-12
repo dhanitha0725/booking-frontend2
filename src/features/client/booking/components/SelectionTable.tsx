@@ -7,15 +7,27 @@ import {
   TableRow,
   Paper,
   Typography,
+  Alert,
 } from "@mui/material";
 import { PackagesDto, RoomDto } from "../../../../types/selectedFacility";
 
 interface SelectionTableProps {
   packages: PackagesDto[];
   rooms: RoomDto[];
+  onSelectionChange: (
+    type: "package" | "room",
+    id: number,
+    quantity: number
+  ) => void;
+  requiresDates: boolean;
 }
 
-const SelectionTable = ({ packages, rooms }: SelectionTableProps) => {
+const SelectionTable = ({
+  packages,
+  rooms,
+  onSelectionChange,
+  requiresDates,
+}: SelectionTableProps) => {
   const hasPackages = packages.length > 0;
   const hasRooms = rooms.length > 0;
 
@@ -34,6 +46,7 @@ const SelectionTable = ({ packages, rooms }: SelectionTableProps) => {
                 <TableCell>Public Price</TableCell>
                 <TableCell>Corporate Price</TableCell>
                 <TableCell>Private Price</TableCell>
+                <TableCell>Quantity</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -47,6 +60,20 @@ const SelectionTable = ({ packages, rooms }: SelectionTableProps) => {
                         ?.price || "N/A"}
                     </TableCell>
                   ))}
+                  <TableCell>
+                    <input
+                      type="number"
+                      min="0"
+                      aria-label="Package quantity"
+                      onChange={(e) =>
+                        onSelectionChange(
+                          "package",
+                          pkg.packageId,
+                          +e.target.value
+                        )
+                      }
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -66,6 +93,7 @@ const SelectionTable = ({ packages, rooms }: SelectionTableProps) => {
                 <TableCell>Public Price</TableCell>
                 <TableCell>Corporate Price</TableCell>
                 <TableCell>Private Price</TableCell>
+                <TableCell>Quantity</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -78,6 +106,16 @@ const SelectionTable = ({ packages, rooms }: SelectionTableProps) => {
                         ?.price || "N/A"}
                     </TableCell>
                   ))}
+                  <TableCell>
+                    <input
+                      type="number"
+                      min="0"
+                      aria-label="Room quantity"
+                      onChange={(e) =>
+                        onSelectionChange("room", room.roomId, +e.target.value)
+                      }
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -86,9 +124,15 @@ const SelectionTable = ({ packages, rooms }: SelectionTableProps) => {
       )}
 
       {!hasPackages && !hasRooms && (
-        <Typography variant="h6" sx={{ p: 2 }}>
-          No packages or rooms available.
+        <Typography variant="h6" sx={{ p: 2, color: "red" }}>
+          Currently this facility can not be booked. Please check back later.
         </Typography>
+      )}
+
+      {requiresDates && (
+        <Alert severity="info" sx={{ m: 2 }}>
+          Date selection is required for rooms and daily packages
+        </Alert>
       )}
     </TableContainer>
   );

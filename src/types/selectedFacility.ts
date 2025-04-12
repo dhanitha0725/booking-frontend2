@@ -14,6 +14,7 @@ export interface PackagesDto {
   packageName: string;
   duration?: string // convert time span to string. (.net uses time span)
   pricing: pricingDto[];
+  requiresDates?: boolean;
 }
 
 export interface pricingDto {
@@ -45,3 +46,11 @@ export interface ApiResponse {
   };
   isSuccess: boolean;
 }
+
+export interface BookingItemDto {
+  itemId: number;
+  type: "package" | "room";
+  quantity: number;
+}
+
+

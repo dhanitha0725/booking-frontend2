@@ -14,7 +14,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add the auth token to requests
+// add the auth token to requests
 api.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -26,17 +26,17 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle auth errors
+// handle auth errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle 401 Unauthorized errors
+    // handle unauthorized errors (401)
     if (error.response?.status === 401 && !originalRequest._retry) {
 
       removeToken();
-      window.location.href = '/login'; // Redirect to login
+      window.location.href = '/login'; 
       return Promise.reject(error);
     }
 
@@ -56,7 +56,6 @@ export const authService = {
 
   logout: () => {
     removeToken();
-    // Additional logout logic if needed
   },
 
   isAuthenticated: () => !!getToken(),
