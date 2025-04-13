@@ -7,11 +7,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Button,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import axios from "axios";
 
 export type CustomerType = "corporate" | "public" | "private";
 interface DateRangeType {
@@ -53,6 +55,37 @@ const BookingDatePicker = ({
       setError(null);
     }
     onDateChange({ ...dateRange, endDate: date });
+  };
+
+  const handleCheckAvailability = async () => {
+    if (!dateRange.startDate || !dateRange.endDate) {
+      setError("Please select both start and end dates.");
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5162/api/Reservation/checkAvailability",
+        {
+          facilityId: 1, // Replace with actual facility ID
+          startDate: dateRange.startDate.toISOString(),
+          endDate: dateRange.endDate.toISOString(),
+        }
+      );
+
+      if (response.data.isAvailable) {
+        setError(null);
+        alert("Facility is available for the selected dates.");
+      } else {
+        setError(null);
+        alert("Facility is not available for the selected dates.");
+      }
+    } catch (error) {
+      console.error("Error checking availability:", error);
+      setError(
+        "An error occurred while checking availability. Please try again later."
+      );
+    }
   };
 
   return (
@@ -110,6 +143,16 @@ const BookingDatePicker = ({
                 <MenuItem value="private">Private</MenuItem>
               </Select>
             </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={handleCheckAvailability}
+            >
+              Check Availability
+            </Button>
           </Grid>
         </Grid>
       </Box>

@@ -53,4 +53,12 @@ export interface BookingItemDto {
   quantity: number;
 }
 
+export interface AvailabilityResponseDto {
+  details: Array<{
+    itemName: string;
+    isAvailable: boolean;
+    message: string;
+  }>;
+}
+
 

@@ -72,8 +72,16 @@ const mapResponseToFacility = (response: ApiResponse): SelectedFacility => ({
 
 // helper function to convert time span to string
 const convertTimeSpanToString = (timeSpan: string) => {
-  const [hours, minutes] = timeSpan.split(":");
-  return `${hours} hours ${minutes} minutes`;
+  const [hours, minutes] = timeSpan.split(":").map(Number);
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return `${days} day${days > 1 ? "s" : ""}${remainingHours > 0 ? ` ${remainingHours} hour${remainingHours > 1 ? "s" : ""}` : ""}`;
+  }
+  const hourString = hours > 0 ? `${hours} hour${hours > 1 ? "s" : ""}` : "";
+  const minuteString =
+    minutes > 0 ? `${minutes} minute${minutes > 1 ? "s" : ""}` : "";
+  return [hourString, minuteString].filter(Boolean).join(" ");
 };
 
 // helper function to convert hours to numbers
@@ -95,6 +103,7 @@ const BookingPage = () => {
   });
   const [total, setTotal] = useState<number>(0);
   const [selectedItems, setSelectedItems] = useState<BookingItemDto[]>([]);
+
   const requiresDates = selectedItems.some(
     (item) =>
       item.type === "room" ||
@@ -196,10 +205,6 @@ const BookingPage = () => {
     setCustomerType(type);
   };
 
-  const handleCheckClick = () => {
-    calculateTotal();
-  };
-
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, textAlign: "center" }}>
@@ -264,15 +269,8 @@ const BookingPage = () => {
           onCustomerTypeChange={handleCustomerTypeChange}
           required={requiresDates}
         />
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ mt: 2 }}
-          onClick={handleCheckClick}
-        >
-          Check
-        </Button>
       </Paper>
+
       {/* display packages and rooms*/}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <SelectionTable

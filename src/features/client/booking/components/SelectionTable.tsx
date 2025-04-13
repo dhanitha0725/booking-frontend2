@@ -56,6 +56,7 @@ const SelectionTable = ({
                   <TableCell>{pkg.duration}</TableCell>
                   {["public", "corporate", "private"].map((sector) => (
                     <TableCell key={sector}>
+                      Rs.{" "}
                       {pkg.pricing.find((price) => price.sector === sector)
                         ?.price || "N/A"}
                     </TableCell>
@@ -102,6 +103,7 @@ const SelectionTable = ({
                   <TableCell>{room.roomType}</TableCell>
                   {["public", "corporate", "private"].map((sector) => (
                     <TableCell key={sector}>
+                      Rs.{" "}
                       {room.pricing.find((price) => price.sector === sector)
                         ?.price || "N/A"}
                     </TableCell>
