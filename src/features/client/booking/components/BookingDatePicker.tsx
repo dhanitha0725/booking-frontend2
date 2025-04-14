@@ -14,6 +14,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import axios from "axios";
+import { BookingItemDto } from "../../../../types/selectedFacility";
 
 export type CustomerType = "corporate" | "public" | "private";
 interface DateRangeType {
@@ -27,6 +28,9 @@ interface BookingDatePickerProps {
   customerType: CustomerType;
   onCustomerTypeChange: (type: CustomerType) => void;
   required: boolean;
+  facilityId: number | undefined;
+  selectedItems: BookingItemDto[];
+  onAvailabilityChange: (availability: boolean) => void; // New prop
 }
 
 const BookingDatePicker = ({
@@ -35,8 +39,12 @@ const BookingDatePicker = ({
   customerType,
   onCustomerTypeChange,
   required,
+  facilityId,
+  selectedItems,
+  onAvailabilityChange, // New prop
 }: BookingDatePickerProps) => {
   const [error, setError] = useState<string | null>(null);
+  const [, setIsAvailable] = useState<boolean | null>(null);
 
   // handle dates changes
   const handleStartDateChange = (date: dayjs.Dayjs | null) => {
@@ -67,24 +75,26 @@ const BookingDatePicker = ({
       const response = await axios.post(
         "http://localhost:5162/api/Reservation/checkAvailability",
         {
-          facilityId: 1, // Replace with actual facility ID
+          facilityId, // Use facilityId prop
           startDate: dateRange.startDate.toISOString(),
           endDate: dateRange.endDate.toISOString(),
+          items: selectedItems, // Use selectedItems prop
         }
       );
 
+      setIsAvailable(response.data.isAvailable);
+      onAvailabilityChange(response.data.isAvailable); // Notify parent
       if (response.data.isAvailable) {
         setError(null);
         alert("Facility is available for the selected dates.");
-      } else {
-        setError(null);
-        alert("Facility is not available for the selected dates.");
       }
     } catch (error) {
       console.error("Error checking availability:", error);
       setError(
         "An error occurred while checking availability. Please try again later."
       );
+      setIsAvailable(false);
+      onAvailabilityChange(false); // Notify parent
     }
   };
 

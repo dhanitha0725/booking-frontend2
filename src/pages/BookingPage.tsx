@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   Container,
@@ -103,12 +103,47 @@ const BookingPage = () => {
   });
   const [total, setTotal] = useState<number>(0);
   const [selectedItems, setSelectedItems] = useState<BookingItemDto[]>([]);
+  const [isAvailable, setIsAvailable] = useState(false);
 
   const requiresDates = selectedItems.some(
     (item) =>
       item.type === "room" ||
       facility?.packages.find((p) => p.packageId === item.itemId)?.requiresDates
   );
+
+  // check if the selected dates are valid
+  const validateDates = () => {
+    if (!requiresDates) return true;
+    return (
+      dateRange.startDate &&
+      dateRange.endDate &&
+      dateRange.endDate.isAfter(dateRange.startDate)
+    );
+  };
+
+  const hasSelectedPackage = () => {
+    return selectedItems.some((item) => item.type === "package");
+  };
+
+  const isReserveDisabled = () => {
+    return !isAvailable || !hasSelectedPackage() || !validateDates();
+  };
+
+  // handle reservation and store reservation data temporarily
+  const handleReservation = () => {
+    const reservationData = {
+      facilityId: facility!.id,
+      selectedItems,
+      total,
+      customerType,
+      dates: {
+        start: dateRange.startDate?.toISOString(),
+        end: dateRange.endDate?.toISOString(),
+      },
+    };
+
+    localStorage.setItem("currentReservation", JSON.stringify(reservationData));
+  };
 
   // handle selection changes for packages and rooms
   const handleSelectionChange = (
@@ -121,55 +156,6 @@ const BookingPage = () => {
       ...(quantity > 0 ? [{ type, itemId: id, quantity }] : []),
     ]);
   };
-
-  const calculateTotal = useCallback(async () => {
-    if (requiresDates && (!dateRange.startDate || !dateRange.endDate)) {
-      console.error("Start date and end date are required.");
-      return;
-    }
-
-    if (
-      dateRange.startDate &&
-      dateRange.endDate &&
-      !dateRange.endDate.isAfter(dateRange.startDate)
-    ) {
-      console.error(
-        "Invalid date range: End date must be after the start date."
-      );
-      return;
-    }
-
-    try {
-      const payload = {
-        calculateTotalDto: {
-          facilityId: facility?.id,
-          customerType,
-          startDate: dateRange.startDate?.toISOString(),
-          endDate: dateRange.endDate?.toISOString(),
-          selectedItems,
-        },
-      };
-
-      console.log("Payload:", payload);
-
-      const response = await axios.post(
-        "http://localhost:5162/api/Reservation/calculateTotal",
-        payload
-      );
-
-      setTotal(response.data.value.total);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Error response:", error.response?.data);
-      }
-      console.error("Error calculating total:", error);
-    }
-  }, [facility, customerType, dateRange, selectedItems, requiresDates]);
-
-  // calculate total when selected items or date range changes
-  useEffect(() => {
-    calculateTotal();
-  }, [calculateTotal]);
 
   // fetch facility data from the API
   useEffect(() => {
@@ -203,6 +189,10 @@ const BookingPage = () => {
     type: "corporate" | "public" | "private"
   ) => {
     setCustomerType(type);
+  };
+
+  const handleAvailabilityChange = (availability: boolean) => {
+    setIsAvailable(availability);
   };
 
   if (loading) {
@@ -268,6 +258,9 @@ const BookingPage = () => {
           customerType={customerType}
           onCustomerTypeChange={handleCustomerTypeChange}
           required={requiresDates}
+          facilityId={facility?.id}
+          selectedItems={selectedItems}
+          onAvailabilityChange={handleAvailabilityChange} // Pass handler
         />
       </Paper>
 
@@ -278,12 +271,33 @@ const BookingPage = () => {
           rooms={facility?.rooms || []}
           onSelectionChange={handleSelectionChange}
           requiresDates={requiresDates}
+          selectedItems={selectedItems}
         />
       </Paper>
 
       {/* display total price */}
       <Paper elevation={2} sx={{ p: 3 }}>
-        <TotalSummary total={total} />
+        <TotalSummary
+          total={total}
+          setTotal={setTotal}
+          facilityId={facility?.id}
+          customerType={customerType}
+          dateRange={dateRange}
+          selectedItems={selectedItems}
+          requiresDates={requiresDates}
+        />
+
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleReservation}
+          disabled={isReserveDisabled()}
+          component={Link}
+          to="/reservation"
+          sx={{ mt: 1 }}
+        >
+          Reserve Now
+        </Button>
       </Paper>
     </Container>
   );
