@@ -1,24 +1,19 @@
-import { Box, Typography, List, ListItem, ListItemText } from "@mui/material";
+import { Box, List, ListItem, ListItemText } from "@mui/material";
 import { TempReservation } from "../../../../types/reservationData";
+import dayjs from "dayjs";
 
 const ReservationSummary = ({
   reservation,
 }: {
   reservation: TempReservation;
 }) => {
-  console.log("TempReservation:", reservation);
-
   return (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Reservation Details
-      </Typography>
-
+    <Box sx={{ mb: 1 }}>
       <List dense>
         <ListItem>
           <ListItemText
             primary="Dates"
-            secondary={`${new Date(reservation.startDate).toLocaleDateString()} - ${new Date(reservation.endDate).toLocaleDateString()}`}
+            secondary={`${dayjs(reservation.startDate).format("DD/MM/YYYY")} - ${dayjs(reservation.endDate).format("DD/MM/YYYY")}`}
           />
         </ListItem>
         <ListItem>

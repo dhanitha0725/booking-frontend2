@@ -56,7 +56,6 @@ const UserForm = ({
     {customerType !== "private" && (
       <Grid item xs={12}>
         <TextField
-          required
           label="Organization Name"
           fullWidth
           value={formData?.organization || ""}

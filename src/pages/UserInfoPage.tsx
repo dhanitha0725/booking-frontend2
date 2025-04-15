@@ -10,12 +10,16 @@ import {
   Button,
   CircularProgress,
   Box,
+  Divider,
 } from "@mui/material";
 import UserForm from "../features/client/ReservationUserInfo/components/UserForm";
 import DocumentUpload from "../features/client/ReservationUserInfo/components/DocumentUpload";
 import ReservationSummary from "../features/client/ReservationUserInfo/components/ReservationSummary";
 import axios from "axios";
 import { TempReservation, UserInfo } from "../types/reservationData";
+import dayjs from "dayjs";
+import { userFormValidationSchema } from "../validations/userFormValidation";
+import { z } from "zod";
 
 const steps = ["Booking Details", "User Information", "Confirmation"];
 
@@ -38,7 +42,12 @@ const UserInfoPage = () => {
   useEffect(() => {
     const temp = localStorage.getItem("currentReservation");
     if (!temp) navigate("/facilities");
-    else setTempReservation(JSON.parse(temp));
+    else {
+      const parsedReservation = JSON.parse(temp);
+      parsedReservation.startDate = dayjs(parsedReservation.dates.start);
+      parsedReservation.endDate = dayjs(parsedReservation.dates.end);
+      setTempReservation(JSON.parse(temp));
+    }
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,17 +58,8 @@ const UserInfoPage = () => {
     try {
       if (!tempReservation) throw new Error("Reservation data missing");
 
-      // Validate required fields
-      if (!formData.firstName || !formData.lastName || !formData.email) {
-        throw new Error("Please fill in all required fields");
-      }
-
-      if (
-        tempReservation.customerType === "corporate" &&
-        !formData.organization
-      ) {
-        throw new Error("Organization name is required for corporate bookings");
-      }
+      // Validate form data using Zod schema
+      userFormValidationSchema.parse(formData);
 
       if (
         tempReservation.customerType !== "private" &&
@@ -68,7 +68,7 @@ const UserInfoPage = () => {
         throw new Error("Please upload at least one document");
       }
 
-      // Create reservation
+      // create reservation
       const reservationPayload = {
         facilityId: tempReservation.facilityId,
         startDate: new Date(tempReservation.startDate).toISOString(),
@@ -121,7 +121,9 @@ const UserInfoPage = () => {
         state: { reservationId: createRes.data.reservationId },
       });
     } catch (err) {
-      if (axios.isAxiosError(err)) {
+      if (err instanceof z.ZodError) {
+        setError(err.errors.map((e) => e.message).join(", "));
+      } else if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || err.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -150,6 +152,7 @@ const UserInfoPage = () => {
           Reservation Details
         </Typography>
         <ReservationSummary reservation={tempReservation} />
+        <Divider sx={{ my: 3 }} />
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
           <Typography variant="h6" gutterBottom>
@@ -161,6 +164,7 @@ const UserInfoPage = () => {
             formData={formData}
             onFormChange={setFormData}
           />
+          <Divider sx={{ my: 3 }} />
 
           {tempReservation.customerType !== "private" && (
             <DocumentUpload

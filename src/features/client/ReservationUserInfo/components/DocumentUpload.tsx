@@ -39,7 +39,7 @@ const DocumentUpload = ({
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
-        Required Documents
+        Upload Required Documents
       </Typography>
 
       <Box
@@ -82,6 +82,14 @@ const DocumentUpload = ({
           Drag and drop files here or click to upload
         </Typography>
       </Box>
+
+      <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+        Note: If you are a public or corporate sector customer, you must upload
+        a letterhead or related documents to prove your organization identity.
+        After reviewing your documents, we will send an email to proceed with
+        the payment. Please note that the reviewing process may take a few
+        hours.
+      </Typography>
 
       {documents.length > 0 && (
         <List dense>
