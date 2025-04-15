@@ -293,7 +293,7 @@ const BookingPage = () => {
           onClick={handleReservation}
           disabled={isReserveDisabled()}
           component={Link}
-          to="/reservation"
+          to="/userinfo"
           sx={{ mt: 1 }}
         >
           Reserve Now

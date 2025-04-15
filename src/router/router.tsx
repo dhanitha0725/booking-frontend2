@@ -13,6 +13,7 @@ import FacilityManagement from "../features/admin/components/FacilityManagement"
 import SignIn from "../pages/SignIn";
 import FacilitiesPage from "../pages/FacilitiesPage";
 import BookingPage from "../pages/BookingPage";
+import UserInfoPage from "../pages/UserInfoPage";
 
 const Router: React.FC = () => {
   return (
@@ -26,6 +27,7 @@ const Router: React.FC = () => {
         <Route path="/booking/:id" element={<BookingPage />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/userinfo" element={<UserInfoPage />} />
       </Route>
 
       {/* Protected Client Routes */}
