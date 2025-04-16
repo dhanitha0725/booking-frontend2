@@ -13,7 +13,11 @@ const ReservationSummary = ({
         <ListItem>
           <ListItemText
             primary="Dates"
-            secondary={`${dayjs(reservation.startDate).format("DD/MM/YYYY")} - ${dayjs(reservation.endDate).format("DD/MM/YYYY")}`}
+            secondary={
+              reservation.startDate && reservation.endDate
+                ? `${dayjs(new Date(reservation.startDate)).format("DD/MM/YYYY")} - ${dayjs(new Date(reservation.endDate)).format("DD/MM/YYYY")}`
+                : "Invalid date range"
+            }
           />
         </ListItem>
         <ListItem>

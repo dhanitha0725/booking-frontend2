@@ -49,8 +49,10 @@ const UserForm = ({
       <TextField
         label="Phone Number"
         fullWidth
-        value={formData?.phone || ""}
-        onChange={(e) => onFormChange({ ...formData, phone: e.target.value })}
+        value={formData?.phoneNumber || ""}
+        onChange={(e) =>
+          onFormChange({ ...formData, phoneNumber: e.target.value })
+        }
       />
     </Grid>
     {customerType !== "private" && (
@@ -58,9 +60,9 @@ const UserForm = ({
         <TextField
           label="Organization Name"
           fullWidth
-          value={formData?.organization || ""}
+          value={formData?.organizationName || ""}
           onChange={(e) =>
-            onFormChange({ ...formData, organization: e.target.value })
+            onFormChange({ ...formData, organizationName: e.target.value })
           }
         />
       </Grid>

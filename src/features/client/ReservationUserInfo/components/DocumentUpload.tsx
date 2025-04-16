@@ -26,8 +26,9 @@ const DocumentUpload = ({
   const [dragActive, setDragActive] = useState(false);
 
   const handleFileChange = (files: FileList) => {
-    const newFiles = Array.from(files);
-    onDocumentsChange([...documents, ...newFiles]);
+    if (files.length > 0) {
+      onDocumentsChange([files[0]]);
+    }
   };
 
   const removeFile = (index: number) => {
@@ -64,7 +65,6 @@ const DocumentUpload = ({
       >
         <input
           type="file"
-          multiple
           onChange={(e) => e.target.files && handleFileChange(e.target.files)}
           style={{ display: "none" }}
           id="document-upload"

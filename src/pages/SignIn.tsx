@@ -17,6 +17,7 @@ import GoogleIcon from "@mui/icons-material/Google";
 import bgImage from "../assets/images/bg-sign-up.jpeg";
 import { signInSchema, SignInFormData } from "../validations/signInValidation";
 import { authService } from "../services/api";
+import { decodeToken } from "../utils/token";
 
 function SignIn() {
   const navigate = useNavigate();
@@ -44,7 +45,12 @@ function SignIn() {
   const handleFormSubmit = async (data: SignInFormData) => {
     setLoginError("");
     try {
-      await authService.login(data.email, data.password);
+      const response = await authService.login(data.email, data.password);
+
+      // Decode the token and log it
+      const decodedToken = decodeToken(response.token);
+      console.log("Decoded Token:", decodedToken);
+
       const from = location.state?.from || "/";
       navigate(from, { replace: true });
     } catch (error) {

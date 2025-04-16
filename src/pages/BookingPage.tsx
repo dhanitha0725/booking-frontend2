@@ -136,10 +136,8 @@ const BookingPage = () => {
       selectedItems,
       total,
       customerType,
-      dates: {
-        start: dateRange.startDate?.toISOString(),
-        end: dateRange.endDate?.toISOString(),
-      },
+      startDate: dateRange.startDate?.toISOString(),
+      endDate: dateRange.endDate?.toISOString(),
     };
 
     localStorage.setItem("currentReservation", JSON.stringify(reservationData));

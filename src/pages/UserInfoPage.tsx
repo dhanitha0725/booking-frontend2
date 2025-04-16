@@ -31,8 +31,8 @@ const UserInfoPage = () => {
     firstName: "",
     lastName: "",
     email: "",
-    phone: "",
-    organization: "",
+    phoneNumber: "",
+    organizationName: "",
   });
   const [documents, setDocuments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,9 +44,9 @@ const UserInfoPage = () => {
     if (!temp) navigate("/facilities");
     else {
       const parsedReservation = JSON.parse(temp);
-      parsedReservation.startDate = dayjs(parsedReservation.dates.start);
-      parsedReservation.endDate = dayjs(parsedReservation.dates.end);
-      setTempReservation(JSON.parse(temp));
+      parsedReservation.startDate = dayjs(parsedReservation.startDate);
+      parsedReservation.endDate = dayjs(parsedReservation.endDate);
+      setTempReservation(parsedReservation);
     }
   }, [navigate]);
 
@@ -68,28 +68,30 @@ const UserInfoPage = () => {
         throw new Error("Please upload at least one document");
       }
 
-      // create reservation
+      // Create reservation payload
       const reservationPayload = {
-        facilityId: tempReservation.facilityId,
-        startDate: new Date(tempReservation.startDate).toISOString(),
-        endDate: new Date(tempReservation.endDate).toISOString(),
-        customerType: tempReservation.customerType,
-        items: tempReservation.selectedItems.map((item) => ({
-          itemId: item.itemId,
-          type: item.type,
-          quantity: item.quantity,
+        StartDate: dayjs(tempReservation.startDate).toISOString(),
+        EndDate: dayjs(tempReservation.endDate).toISOString(),
+        Total: tempReservation.total,
+        CustomerType: tempReservation.customerType,
+        Items: tempReservation.selectedItems.map((item) => ({
+          ItemId: item.itemId,
+          Quantity: item.quantity,
+          Type: item.type,
         })),
-        userDetails: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phoneNumber: formData.phone || undefined,
-          organizationName:
-            tempReservation.customerType === "corporate"
-              ? formData.organization
-              : undefined,
+        UserDetails: {
+          FirstName: formData.firstName,
+          LastName: formData.lastName,
+          Email: formData.email,
+          PhoneNumber: formData.phoneNumber || "",
+          OrganizationName: formData.organizationName || "",
         },
       };
+
+      console.log(
+        "Sending Payload: ",
+        JSON.stringify(reservationPayload, null, 2)
+      );
 
       const createRes = await axios.post(
         "http://localhost:5162/api/Reservation/createReservation",
@@ -99,15 +101,22 @@ const UserInfoPage = () => {
       // Upload documents if required
       if (tempReservation.customerType !== "private") {
         const formData = new FormData();
-        formData.append("ReservationId", createRes.data.reservationId);
+        formData.append(
+          "ReservationId",
+          createRes.data.value.reservationId.toString()
+        );
 
-        documents.forEach((doc, index) => {
-          formData.append(
-            `Documents[${index}].DocumentType`,
-            "ApprovalDocument"
-          );
-          formData.append(`Documents[${index}].File`, doc);
-        });
+        if (documents.length > 0) {
+          formData.append("Document.DocumentType", "ApprovalDocument");
+          formData.append("Document.File", documents[0]);
+        }
+
+        console.log(
+          "Create Reservation Response:",
+          createRes.data.value.reservationId
+        );
+
+        console.log("Uploading Documents: ", createRes.data);
 
         await axios.post(
           "http://localhost:5162/api/Reservation/uploadDocument",
@@ -118,7 +127,9 @@ const UserInfoPage = () => {
 
       localStorage.removeItem("currentReservation");
       navigate("/confirmation", {
-        state: { reservationId: createRes.data.reservationId },
+        state: {
+          reservationId: createRes.data.value.reservationId,
+        },
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -166,7 +177,8 @@ const UserInfoPage = () => {
           />
           <Divider sx={{ my: 3 }} />
 
-          {tempReservation.customerType !== "private" && (
+          {(tempReservation.customerType === "public" ||
+            tempReservation.customerType === "corporate") && (
             <DocumentUpload
               documents={documents}
               onDocumentsChange={setDocuments}

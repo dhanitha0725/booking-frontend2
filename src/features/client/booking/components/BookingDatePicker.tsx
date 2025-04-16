@@ -17,20 +17,22 @@ import axios from "axios";
 import { BookingItemDto } from "../../../../types/selectedFacility";
 
 export type CustomerType = "corporate" | "public" | "private";
-interface DateRangeType {
-  startDate: dayjs.Dayjs | null;
-  endDate: dayjs.Dayjs | null;
-}
 
 interface BookingDatePickerProps {
-  dateRange: DateRangeType;
-  onDateChange: (range: DateRangeType) => void;
+  dateRange: {
+    startDate: dayjs.Dayjs | null;
+    endDate: dayjs.Dayjs | null;
+  };
+  onDateChange: (range: {
+    startDate: dayjs.Dayjs | null;
+    endDate: dayjs.Dayjs | null;
+  }) => void;
   customerType: CustomerType;
   onCustomerTypeChange: (type: CustomerType) => void;
   required: boolean;
   facilityId: number | undefined;
   selectedItems: BookingItemDto[];
-  onAvailabilityChange: (availability: boolean) => void; // New prop
+  onAvailabilityChange: (availability: boolean) => void;
 }
 
 const BookingDatePicker = ({
@@ -41,7 +43,7 @@ const BookingDatePicker = ({
   required,
   facilityId,
   selectedItems,
-  onAvailabilityChange, // New prop
+  onAvailabilityChange,
 }: BookingDatePickerProps) => {
   const [error, setError] = useState<string | null>(null);
   const [, setIsAvailable] = useState<boolean | null>(null);
@@ -53,7 +55,7 @@ const BookingDatePicker = ({
     } else {
       setError(null);
     }
-    onDateChange({ ...dateRange, startDate: date });
+    onDateChange({ startDate: date, endDate: dateRange.endDate });
   };
 
   const handleEndDateChange = (date: dayjs.Dayjs | null) => {
@@ -62,7 +64,7 @@ const BookingDatePicker = ({
     } else {
       setError(null);
     }
-    onDateChange({ ...dateRange, endDate: date });
+    onDateChange({ startDate: dateRange.startDate, endDate: date });
   };
 
   const handleCheckAvailability = async () => {

@@ -14,6 +14,7 @@ import SignIn from "../pages/SignIn";
 import FacilitiesPage from "../pages/FacilitiesPage";
 import BookingPage from "../pages/BookingPage";
 import UserInfoPage from "../pages/UserInfoPage";
+import ConfirmationPage from "../pages/ConfirmationPage";
 
 const Router: React.FC = () => {
   return (
@@ -28,6 +29,7 @@ const Router: React.FC = () => {
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/userinfo" element={<UserInfoPage />} />
+        <Route path="/confirmation" element={<ConfirmationPage />} />
       </Route>
 
       {/* Protected Client Routes */}
