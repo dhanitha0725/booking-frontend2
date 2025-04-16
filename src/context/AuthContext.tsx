@@ -83,7 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("authToken", response.token);
       setUser(user);
       setIsAuthenticated(true);
-      navigate(getDefaultRoute(user.role));
       return true;
     } catch (error) {
       console.error("Login error:", error);
