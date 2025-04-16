@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const TOKEN_KEY = "auth_token";
+const TOKEN_KEY = "authToken";
 
 
 const getToken = (): string | null => localStorage.getItem(TOKEN_KEY);

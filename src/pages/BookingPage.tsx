@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Container,
   Box,
@@ -27,6 +27,8 @@ import BookingDatePicker from "../features/client/booking/components/BookingDate
 import SelectionTable from "../features/client/booking/components/SelectionTable";
 import TotalSummary from "../features/client/booking/components/TotalSummary";
 import axios from "axios";
+import { useAuth } from "../context/AuthContext";
+import SignInPromptModal from "../features/client/booking/components/SignInPromptModal";
 
 interface DateRangeType {
   startDate: Dayjs | null;
@@ -104,6 +106,13 @@ const BookingPage = () => {
   const [total, setTotal] = useState<number>(0);
   const [selectedItems, setSelectedItems] = useState<BookingItemDto[]>([]);
   const [isAvailable, setIsAvailable] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const [signInModalOpen, setSignInModalOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log("isAuthenticated:", isAuthenticated);
+  }, [isAuthenticated]);
 
   const requiresDates = selectedItems.some(
     (item) =>
@@ -141,6 +150,16 @@ const BookingPage = () => {
     };
 
     localStorage.setItem("currentReservation", JSON.stringify(reservationData));
+  };
+
+  const handleReserveNow = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      setSignInModalOpen(true);
+      return;
+    }
+    handleReservation();
+    navigate("/userinfo", { state: { facilityId: facility?.id } });
   };
 
   // handle selection changes for packages and rooms
@@ -192,6 +211,15 @@ const BookingPage = () => {
   const handleAvailabilityChange = (availability: boolean) => {
     setIsAvailable(availability);
   };
+
+  useEffect(() => {
+    if (isAuthenticated && signInModalOpen) {
+      setSignInModalOpen(false);
+      // Optionally, you can navigate automatically here if you want:
+      // handleReservation();
+      // navigate("/userinfo", { state: { facilityId: facility?.id } });
+    }
+  }, [isAuthenticated, signInModalOpen]);
 
   if (loading) {
     return (
@@ -258,7 +286,7 @@ const BookingPage = () => {
           required={requiresDates}
           facilityId={facility?.id}
           selectedItems={selectedItems}
-          onAvailabilityChange={handleAvailabilityChange} // Pass handler
+          onAvailabilityChange={handleAvailabilityChange}
         />
       </Paper>
 
@@ -288,14 +316,16 @@ const BookingPage = () => {
         <Button
           variant="contained"
           color="success"
-          onClick={handleReservation}
+          onClick={handleReserveNow}
           disabled={isReserveDisabled()}
-          component={Link}
-          to="/userinfo"
           sx={{ mt: 1 }}
         >
           Reserve Now
         </Button>
+        <SignInPromptModal
+          open={signInModalOpen}
+          onClose={() => setSignInModalOpen(false)}
+        />
       </Paper>
     </Container>
   );
