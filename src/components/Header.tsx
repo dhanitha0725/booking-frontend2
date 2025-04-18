@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);

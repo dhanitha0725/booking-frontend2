@@ -27,7 +27,7 @@ import BookingDatePicker from "../features/client/booking/components/BookingDate
 import SelectionTable from "../features/client/booking/components/SelectionTable";
 import TotalSummary from "../features/client/booking/components/TotalSummary";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import SignInPromptModal from "../features/client/booking/components/SignInPromptModal";
 
 interface DateRangeType {

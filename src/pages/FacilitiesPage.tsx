@@ -177,9 +177,15 @@ const FacilitiesPage = () => {
                 </InputAdornment>
               }
             >
-              <MenuItem value="recommended">Recommended</MenuItem>
-              <MenuItem value="price-low">Price: Low to High</MenuItem>
-              <MenuItem value="price-high">Price: High to Low</MenuItem>
+              <MenuItem key="recommended" value="recommended">
+                Recommended
+              </MenuItem>
+              <MenuItem key="price-low" value="price-low">
+                Price: Low to High
+              </MenuItem>
+              <MenuItem key="price-high" value="price-high">
+                Price: High to Low
+              </MenuItem>
             </Select>
           </FormControl>
         </Box>

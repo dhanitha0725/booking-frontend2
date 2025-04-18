@@ -1,7 +1,7 @@
 import * as React from "react";
 import { extendTheme } from "@mui/material/styles";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import PeopleIcon from "@mui/icons-material/People";
 import SettingsIcon from "@mui/icons-material/Settings";
 import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";

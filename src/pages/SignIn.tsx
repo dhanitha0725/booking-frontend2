@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
-  Grid,
   Link,
   Box,
   Typography,
@@ -12,8 +11,6 @@ import {
   Button,
   Alert,
 } from "@mui/material";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GoogleIcon from "@mui/icons-material/Google";
 import bgImage from "../assets/images/bg-sign-up.jpeg";
 import { signInSchema, SignInFormData } from "../validations/signInValidation";
 import { authService } from "../services/api";
@@ -75,18 +72,6 @@ function SignIn() {
           <Typography variant="h4" fontWeight="medium">
             Sign In
           </Typography>
-          <Grid container spacing={2} justifyContent="center" mt={1}>
-            <Grid item>
-              <Link href="#">
-                <FacebookIcon />
-              </Link>
-            </Grid>
-            <Grid item>
-              <Link href="#">
-                <GoogleIcon />
-              </Link>
-            </Grid>
-          </Grid>
         </Box>
         {successMessage && (
           <Alert severity="success" sx={{ mb: 2 }}>

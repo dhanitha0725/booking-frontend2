@@ -1,21 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Card,
-  Grid,
-  Link,
-  Box,
-  Typography,
-  TextField,
-  Button,
-} from "@mui/material";
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GoogleIcon from "@mui/icons-material/Google";
+import { Card, Link, Box, Typography, TextField, Button } from "@mui/material";
 import bgImage from "../assets/images/bg-sign-up.jpeg";
 import api from "../services/api";
-import { SignUpFormData } from "../types/auth";
-import { signUpSchema } from "../validations/signUpValidation";
+import { SignUpFormData, signUpSchema } from "../validations/signUpValidation";
 
 function SignUp() {
   const navigate = useNavigate();
@@ -27,9 +16,6 @@ function SignUp() {
     formState: { errors },
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      terms: false,
-    },
   });
 
   // Handle form submission
@@ -73,18 +59,6 @@ function SignUp() {
           <Typography variant="h4" fontWeight="medium">
             Sign Up
           </Typography>
-          <Grid container spacing={2} justifyContent="center" mt={1}>
-            <Grid item>
-              <Link href="#">
-                <FacebookIcon />
-              </Link>
-            </Grid>
-            <Grid item>
-              <Link href="#">
-                <GoogleIcon />
-              </Link>
-            </Grid>
-          </Grid>
         </Box>
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
           <TextField
