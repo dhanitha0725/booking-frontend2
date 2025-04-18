@@ -58,7 +58,7 @@ const UserInfoPage = () => {
     try {
       if (!tempReservation) throw new Error("Reservation data missing");
 
-      // Validate form data using Zod schema
+      // validate form data using Zod schema
       userFormValidationSchema.parse(formData);
 
       if (
