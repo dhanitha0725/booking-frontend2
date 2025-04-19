@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   addUserSchema,
   AddUserFormData,
-} from "../../../validations/addUserValidation";
+} from "../../../../validations/addUserValidation";
 
 interface AddUserDialogProps {
   open: boolean;
@@ -44,21 +44,21 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       lastName: "",
       email: "",
       phoneNumber: "",
-      role: undefined, // Set role to undefined by default
+      role: undefined,
     },
   });
 
-  // Reset form when the dialog opens or closes
+  // reset form when the dialog opens or closes
   useEffect(() => {
     if (!open) {
-      reset(); // Reset form fields when dialog closes
+      reset();
     } else {
       reset({
         firstName: "",
         lastName: "",
         email: "",
         phoneNumber: "",
-        role: undefined, // Use undefined instead of an empty string
+        role: undefined,
       });
     }
   }, [open, reset]);
@@ -141,7 +141,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
             render={({ field }) => (
               <FormControl fullWidth margin="dense" error={!!errors.role}>
                 <InputLabel id="role-select-label">Role</InputLabel>
-                <Select {...field} labelId="role-select-label" label="Role">
+                <Select
+                  {...field}
+                  labelId="role-select-label"
+                  label="Role"
+                  value={field.value || ""} // Ensure value is never undefined
+                >
                   <MenuItem value="" disabled>
                     <em>Select Role</em>
                   </MenuItem>

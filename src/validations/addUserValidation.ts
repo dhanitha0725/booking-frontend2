@@ -10,9 +10,13 @@ export const addUserSchema = z.object({
     .string()
     .min(1, "Phone number is required")
     .regex(/^\+?[0-9]{10,15}$/, "Invalid phone number format"),
-  role: z.enum(roles, {
-    errorMap: () => ({ message: "Please select a valid role" }),
-  }),
+  role: z
+    .enum(roles, {
+      errorMap: () => ({ message: "Please select a valid role" }),
+    })
+    .refine((value) => value !== undefined, {
+      message: "Role is required",
+    }),
 });
 
 export type AddUserFormData = z.infer<typeof addUserSchema>;

@@ -1,8 +1,15 @@
 export interface User {
-    userId: number;
+  userId: number;
   firstName: string;
   lastName: string;
   email: string;
   phoneNumber: string;
   role: string;
+}
+
+export interface BackendError {
+  isSuccess: boolean;
+  error: {
+    message: string;
+  };
 }

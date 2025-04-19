@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
-import UserManagement from "../features/admin/components/UserManagement";
-import FacilityManagement from "../features/admin/components/FacilityManagement";
+import UserManagement from "../features/admin/components/staff/UserManagement";
+import FacilityManagement from "../features/admin/components/facilities/FacilityManagement";
 
 const AdminDashboard: React.FC = () => {
   return (
