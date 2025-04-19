@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button, Typography, Chip } from "@mui/material";
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -34,14 +34,39 @@ const UserManagement: React.FC = () => {
     setOpenDialog(false);
   };
 
+  // use chips for roles
+  const renderRoleChip = (role: string) => {
+    let color:
+      | "default"
+      | "primary"
+      | "secondary"
+      | "success"
+      | "warning"
+      | "error" = "default";
+
+    switch (role.toLowerCase()) {
+      case "admin":
+        color = "primary";
+        break;
+      case "accountant":
+        color = "secondary";
+        break;
+      case "employee":
+        color = "success";
+        break;
+      case "hostel":
+        color = "warning";
+        break;
+      default:
+        color = "default";
+    }
+
+    return <Chip label={role} color={color} size="small" />;
+  };
+
   // material-react-table columns
   const columns = useMemo<MRT_ColumnDef<User>[]>(
     () => [
-      {
-        accessorKey: "userId",
-        header: "User ID",
-        size: 100,
-      },
       {
         accessorKey: "firstName",
         header: "First Name",
@@ -66,6 +91,7 @@ const UserManagement: React.FC = () => {
         accessorKey: "role",
         header: "Role",
         size: 120,
+        Cell: ({ cell }) => renderRoleChip(cell.getValue<string>()),
       },
     ],
     []
@@ -82,9 +108,19 @@ const UserManagement: React.FC = () => {
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          mb: 2,
+        }}
+      >
         <Typography variant="h5">User Management</Typography>
-        <Button variant="contained" onClick={handleOpen}>
+        <Button
+          variant="contained"
+          onClick={handleOpen}
+          sx={{ width: "200px" }}
+        >
           Add User
         </Button>
       </Box>

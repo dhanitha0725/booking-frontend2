@@ -72,7 +72,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const getDefaultRoute = (role: string): string => {
     switch (role.toLowerCase()) {
       case "admin":
-        return "/admin/dashboard";
+        return "/admin/staff";
       case "employee":
         return "/admin/dashboard";
       case "accountant":
@@ -105,24 +105,12 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Define public and admin routes
       const publicRoutes = ["/", "/login", "/signup"];
-      const adminRoutes = [
-        "/admin",
-        "/admin/dashboard",
-        "/admin/staff",
-        "/admin/facilities",
-      ];
+      const currentPath = window.location.pathname;
+      const isPublicRoute = publicRoutes.includes(currentPath);
+      const isAdminRoute = currentPath.startsWith("/admin");
 
-      // Redirect only if the user is on a public route
-      if (publicRoutes.includes(window.location.pathname)) {
+      if (isPublicRoute || (user.role !== "customer" && !isAdminRoute)) {
         navigate(getDefaultRoute(user.role));
-      }
-
-      // Prevent redirection if the user is already on a valid admin route
-      if (
-        user.role === "admin" &&
-        adminRoutes.includes(window.location.pathname)
-      ) {
-        return;
       }
     } catch (error) {
       console.error("Token decode error:", error);
