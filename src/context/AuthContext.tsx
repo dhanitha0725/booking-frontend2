@@ -21,7 +21,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const navigate = useNavigate();
@@ -103,9 +103,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsAuthenticated(true);
       setUser(user);
 
-      // Redirect if on public page
-      if (["/", "/login"].includes(window.location.pathname)) {
+      // Define public and admin routes
+      const publicRoutes = ["/", "/login", "/signup"];
+      const adminRoutes = [
+        "/admin",
+        "/admin/dashboard",
+        "/admin/staff",
+        "/admin/facilities",
+      ];
+
+      // Redirect only if the user is on a public route
+      if (publicRoutes.includes(window.location.pathname)) {
         navigate(getDefaultRoute(user.role));
+      }
+
+      // Prevent redirection if the user is already on a valid admin route
+      if (
+        user.role === "admin" &&
+        adminRoutes.includes(window.location.pathname)
+      ) {
+        return;
       }
     } catch (error) {
       console.error("Token decode error:", error);
@@ -127,3 +144,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     </AuthContext.Provider>
   );
 };
+
+export { AuthProvider };

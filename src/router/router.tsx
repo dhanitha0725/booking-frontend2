@@ -4,7 +4,6 @@ import { ProtectedRoute } from "./ProtectedRoute";
 
 //pages
 import AdminLayout from "../layouts/AdminLayout";
-import AdminDashboard from "../pages/AdminDashboard";
 import SignUp from "../pages/SignUp";
 import Home from "../pages/Home";
 import MainLayout from "../layouts/MainLayout";
@@ -28,14 +27,14 @@ const Router: React.FC = () => {
         <Route path="/booking/:id" element={<BookingPage />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/userinfo" element={<UserInfoPage />} />
-        <Route path="/confirmation" element={<ConfirmationPage />} />
       </Route>
 
       {/* Protected Client Routes */}
       <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
         <Route element={<MainLayout />}>
           {/* Add client-specific protected routes here */}
+          <Route path="/userinfo" element={<UserInfoPage />} />
+          <Route path="/confirmation" element={<ConfirmationPage />} />
         </Route>
       </Route>
 
@@ -47,9 +46,8 @@ const Router: React.FC = () => {
         }
       >
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<UserManagement />} />
+          <Route index element={<Navigate to="staff" replace />} />
+          <Route path="staff" element={<UserManagement />} />
           <Route path="facilities" element={<FacilityManagement />} />
         </Route>
       </Route>

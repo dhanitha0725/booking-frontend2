@@ -34,7 +34,7 @@ const UserManagement: React.FC = () => {
     setOpenDialog(false);
   };
 
-  // Define columns for Material React Table
+  // material-react-table columns
   const columns = useMemo<MRT_ColumnDef<User>[]>(
     () => [
       {
@@ -75,7 +75,6 @@ const UserManagement: React.FC = () => {
     columns,
     data: users,
     layoutMode: "grid",
-    density: "compact",
     muiTableContainerProps: {
       sx: { maxWidth: "100%" },
     },

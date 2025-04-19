@@ -1,5 +1,4 @@
 import {
-  Dashboard as DashboardIcon,
   People as PeopleIcon,
   MeetingRoom as MeetingRoomIcon,
   Settings as SettingsIcon,
@@ -7,16 +6,10 @@ import {
 
 export const menuItems = [
   {
-    text: "Dashboard",
-    icon: <DashboardIcon />,
-    path: "/admin/dashboard",
-    selected: window.location.pathname === "/admin/dashboard",
-  },
-  {
-    text: "Staff Management",
+    text: "Staff",
     icon: <PeopleIcon />,
-    path: "/admin/users",
-    selected: window.location.pathname === "/admin/users",
+    path: "/admin/staff",
+    selected: window.location.pathname === "/admin/staff",
   },
   {
     text: "Facilities",

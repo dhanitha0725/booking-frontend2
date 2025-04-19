@@ -19,6 +19,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { menuItems } from "./AdminMenuItems";
+import { useAuth } from "../../../context/useAuth";
 
 interface AdminDrawerProps {
   open: boolean;
@@ -28,9 +29,10 @@ interface AdminDrawerProps {
 const AdminDrawer: React.FC<AdminDrawerProps> = ({ open, onClose }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    // Add logout logic here
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -75,16 +77,14 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({ open, onClose }) => {
         ))}
       </List>
       <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText primary="Logout" />
-          </ListItemButton>
-        </ListItem>
-      </List>
+      <Box sx={{ padding: 2 }}>
+        <ListItemButton onClick={handleLogout}>
+          <ListItemIcon>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText primary="Logout" />
+        </ListItemButton>
+      </Box>
     </Drawer>
   );
 };
