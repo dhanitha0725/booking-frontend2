@@ -13,13 +13,14 @@ import {
   styled, // Import styled for creating styled components
   Theme, // Import Theme type
   CSSObject, // Import CSSObject type
+  Avatar, // Import Avatar
 } from "@mui/material";
 import {
   ChevronLeft as ChevronLeftIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
 import { menuItems } from "./AdminMenuItems"; // Ensure this import is correct
 import { useAuth } from "../../../context/useAuth";
 
@@ -93,11 +94,23 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
   miniDrawerWidth,
 }) => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const location = useLocation(); // Get current location
+  const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    // No need to navigate here, AuthContext handles it
+  };
+
+  // Get user initials for Avatar
+  const getInitials = () => {
+    // Assuming user object has firstName and lastName, adjust if needed
+    // Fallback if user or names are not available
+    if (!user || !user.email) return "?"; // Or some default
+    // Simple email initial if names aren't directly available
+    return user.email.charAt(0).toUpperCase();
+    // If you fetch first/last names later, update this:
+    // return `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
   };
 
   return (
@@ -112,11 +125,13 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
         {/* Show title only when open */}
         <Typography
           variant="h6"
+          noWrap // Prevent wrapping
           sx={{
             flexGrow: 1,
             ml: 2,
             opacity: open ? 1 : 0,
-            transition: "opacity 0.3s",
+            transition: (theme) => theme.transitions.create("opacity"),
+            whiteSpace: "nowrap", // Keep on one line
           }}
         >
           Admin Panel
@@ -124,17 +139,23 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
         {/* Show close button only when open */}
         <IconButton
           onClick={onClose}
-          sx={{ opacity: open ? 1 : 0, transition: "opacity 0.3s" }}
+          sx={{
+            opacity: open ? 1 : 0,
+            transition: (theme) => theme.transitions.create("opacity"),
+          }}
         >
           <ChevronLeftIcon />
         </IconButton>
       </DrawerHeader>
       <Divider />
-      <List>
+      <List sx={{ flexGrow: 1, overflowY: "auto" }}>
+        {" "}
+        {/* Allow list to scroll */}
         {menuItems.map((item: MenuItemType) => (
           <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
             <ListItemButton
-              selected={item.selected}
+              // Use location.pathname for selection logic
+              selected={location.pathname === item.path}
               onClick={() => navigate(item.path)}
               sx={{
                 minHeight: 48,
@@ -154,35 +175,52 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
               {/* Hide text when closed */}
               <ListItemText
                 primary={item.text}
-                sx={{ opacity: open ? 1 : 0 }}
+                sx={{
+                  opacity: open ? 1 : 0,
+                  transition: (theme) => theme.transitions.create("opacity"),
+                  whiteSpace: "nowrap", // Prevent text wrapping
+                }}
               />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
       <Divider />
-      {/* Logout Button - Adjust for mini state */}
-      <Box sx={{ padding: 2, mt: "auto", overflow: "hidden" }}>
-        <ListItemButton
-          onClick={handleLogout}
-          sx={{
-            minHeight: 48,
-            justifyContent: open ? "initial" : "center",
-            px: 2.5,
-          }}
-        >
-          <ListItemIcon
+      {/* User Profile Section */}
+      <Box sx={{ p: 2, mt: "auto", overflow: "hidden", whiteSpace: "nowrap" }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
+            {getInitials()}
+          </Avatar>
+          <Box
             sx={{
-              minWidth: 0,
-              mr: open ? 3 : "auto",
-              justifyContent: "center", // Corrected prop name
+              ml: 1.5, // Adjusted margin
+              opacity: open ? 1 : 0,
+              transition: (theme) => theme.transitions.create("opacity"),
+              overflow: "hidden", // Hide overflow when closed
+              flexGrow: 1, // Allow text to take space
             }}
           >
-            <LogoutIcon />
-          </ListItemIcon>
-          <ListItemText primary="Logout" sx={{ opacity: open ? 1 : 0 }} />
-        </ListItemButton>{" "}
-        {/* Correct closing tag placement */}
+            <Typography variant="body2" fontWeight="medium" noWrap>
+              {user?.email || "User"} {/* Display email or placeholder */}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {user?.role || "Role"} {/* Display role or placeholder */}
+            </Typography>
+          </Box>
+          {/* Logout Button - Show only when open */}
+          <IconButton
+            onClick={handleLogout}
+            sx={{
+              ml: "auto", // Push to the right
+              opacity: open ? 1 : 0,
+              transition: (theme) => theme.transitions.create("opacity"),
+            }}
+            size="small"
+          >
+            <LogoutIcon fontSize="small" />
+          </IconButton>
+        </Box>
       </Box>
     </StyledDrawer>
   );

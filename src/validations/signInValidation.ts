@@ -8,4 +8,3 @@ export const signInSchema = z.object({
 
 export type SignInFormData = z.infer<typeof signInSchema>;
 
-// Other schemas can be added here as needed

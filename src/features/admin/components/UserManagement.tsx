@@ -8,6 +8,7 @@ import {
 import api from "../../../services/api";
 import { User } from "../../../types/user";
 import AddUserDialog from "./AddUserDialog";
+import { AddUserFormData } from "../../../validations/addUserValidation";
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -34,7 +35,18 @@ const UserManagement: React.FC = () => {
     setOpenDialog(false);
   };
 
-  // use chips for roles
+  const handleAddUserSuccess = (formData: AddUserFormData) => {
+    // Transform AddUserFormData into a User object
+    const newUser: User = {
+      userId: Math.random().toString(36).substr(2, 9),
+      ...formData,
+    };
+
+    setUsers((prevUsers) => [...prevUsers, newUser]);
+    handleClose(); // Close the dialog after successful submission
+  };
+
+  // Use chips for roles
   const renderRoleChip = (role: string) => {
     let color:
       | "default"
@@ -64,7 +76,7 @@ const UserManagement: React.FC = () => {
     return <Chip label={role} color={color} size="small" />;
   };
 
-  // material-react-table columns
+  // Material React Table columns
   const columns = useMemo<MRT_ColumnDef<User>[]>(
     () => [
       {
@@ -125,7 +137,11 @@ const UserManagement: React.FC = () => {
         </Button>
       </Box>
       <MaterialReactTable table={table} />
-      <AddUserDialog open={openDialog} onClose={handleClose} />
+      <AddUserDialog
+        open={openDialog}
+        onClose={handleClose}
+        onSubmitSuccess={handleAddUserSuccess} // Pass the success handler
+      />
     </Box>
   );
 };
