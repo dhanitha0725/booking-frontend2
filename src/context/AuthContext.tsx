@@ -104,12 +104,19 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(user);
 
       // Define public and admin routes
-      const publicRoutes = ["/", "/login", "/signup"];
+      const publicRoutes = ["/", "/home", "/facilities", "/login", "/signup"];
+      const adminRoutes = ["/admin/staff", "/admin/facilities-management"];
       const currentPath = window.location.pathname;
-      const isPublicRoute = publicRoutes.includes(currentPath);
-      const isAdminRoute = currentPath.startsWith("/admin");
 
-      if (isPublicRoute || (user.role !== "customer" && !isAdminRoute)) {
+      // Determine if redirection is needed
+      const shouldRedirect =
+        (publicRoutes.includes(currentPath) &&
+          user.role.toLowerCase() !== "customer") || // Non-customer on public route
+        (currentPath.startsWith("/admin") && // Invalid admin route
+          !adminRoutes.includes(currentPath) &&
+          getDefaultRoute(user.role) !== currentPath);
+
+      if (shouldRedirect) {
         navigate(getDefaultRoute(user.role));
       }
     } catch (error) {

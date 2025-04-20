@@ -6,10 +6,10 @@ import {
   type MRT_ColumnDef,
 } from "material-react-table";
 import api from "../../../../services/api";
-import { Facility } from "../../../../types/selectedFacility";
+import { AdminFacilityDetails } from "../../../../types/adminFacilityDetails";
 
 const FacilityManagement: React.FC = () => {
-  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [facilities, setFacilities] = useState<AdminFacilityDetails[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ const FacilityManagement: React.FC = () => {
   }, []);
 
   // Define columns for Material React Table
-  const columns = useMemo<MRT_ColumnDef<Facility>[]>(
+  const columns = useMemo<MRT_ColumnDef<AdminFacilityDetails>[]>(
     () => [
       {
         accessorKey: "facilityId",
@@ -35,7 +35,7 @@ const FacilityManagement: React.FC = () => {
       },
       {
         accessorKey: "facilityName",
-        header: "Name",
+        header: "Facility Name",
         size: 200,
       },
       {
@@ -61,7 +61,6 @@ const FacilityManagement: React.FC = () => {
     columns,
     data: facilities,
     layoutMode: "grid",
-    density: "compact",
     muiTableContainerProps: {
       sx: { maxWidth: "100%" },
     },

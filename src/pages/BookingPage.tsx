@@ -4,7 +4,7 @@ import {
   Container,
   Box,
   Typography,
-  Paper,
+  Divider,
   Button,
   Breadcrumbs,
   Link as MuiLink,
@@ -215,9 +215,6 @@ const BookingPage = () => {
   useEffect(() => {
     if (isAuthenticated && signInModalOpen) {
       setSignInModalOpen(false);
-      // Optionally, you can navigate automatically here if you want:
-      // handleReservation();
-      // navigate("/userinfo", { state: { facilityId: facility?.id } });
     }
   }, [isAuthenticated, signInModalOpen]);
 
@@ -273,25 +270,27 @@ const BookingPage = () => {
         <FacilityDetails facility={facility} />
       </Box>
 
+      <Divider sx={{ my: 3 }} />
+
       {/* display booking date picker and customer type selection */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Select Booking Details
-        </Typography>
-        <BookingDatePicker
-          dateRange={dateRange}
-          onDateChange={handleDateChange}
-          customerType={customerType}
-          onCustomerTypeChange={handleCustomerTypeChange}
-          required={requiresDates}
-          facilityId={facility?.id}
-          selectedItems={selectedItems}
-          onAvailabilityChange={handleAvailabilityChange}
-        />
-      </Paper>
+      <Typography variant="h6" gutterBottom>
+        Select Booking Details
+      </Typography>
+      <BookingDatePicker
+        dateRange={dateRange}
+        onDateChange={handleDateChange}
+        customerType={customerType}
+        onCustomerTypeChange={handleCustomerTypeChange}
+        required={requiresDates}
+        facilityId={facility?.id}
+        selectedItems={selectedItems}
+        onAvailabilityChange={handleAvailabilityChange}
+      />
+
+      <Divider sx={{ my: 3 }} />
 
       {/* display packages and rooms*/}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+      <Box sx={{ mb: 3, p: 3, border: "1px solid #e0e0e0", borderRadius: 1 }}>
         <SelectionTable
           packages={facility?.packages || []}
           rooms={facility?.rooms || []}
@@ -299,34 +298,34 @@ const BookingPage = () => {
           requiresDates={requiresDates}
           selectedItems={selectedItems}
         />
-      </Paper>
+      </Box>
+
+      <Divider sx={{ my: 3 }} />
 
       {/* display total price */}
-      <Paper elevation={2} sx={{ p: 3 }}>
-        <TotalSummary
-          total={total}
-          setTotal={setTotal}
-          facilityId={facility?.id}
-          customerType={customerType}
-          dateRange={dateRange}
-          selectedItems={selectedItems}
-          requiresDates={requiresDates}
-        />
+      <TotalSummary
+        total={total}
+        setTotal={setTotal}
+        facilityId={facility?.id}
+        customerType={customerType}
+        dateRange={dateRange}
+        selectedItems={selectedItems}
+        requiresDates={requiresDates}
+      />
 
-        <Button
-          variant="contained"
-          color="success"
-          onClick={handleReserveNow}
-          disabled={isReserveDisabled()}
-          sx={{ mt: 1 }}
-        >
-          Reserve Now
-        </Button>
-        <SignInPromptModal
-          open={signInModalOpen}
-          onClose={() => setSignInModalOpen(false)}
-        />
-      </Paper>
+      <Button
+        variant="contained"
+        color="success"
+        onClick={handleReserveNow}
+        disabled={isReserveDisabled()}
+        sx={{ mt: 1 }}
+      >
+        Reserve Now
+      </Button>
+      <SignInPromptModal
+        open={signInModalOpen}
+        onClose={() => setSignInModalOpen(false)}
+      />
     </Container>
   );
 };

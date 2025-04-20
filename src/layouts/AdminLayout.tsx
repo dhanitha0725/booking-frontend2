@@ -38,7 +38,7 @@ const AdminLayout: React.FC = () => {
         sx={{
           flexGrow: 1,
           p: 3,
-          marginLeft: { sm: `${currentDrawerWidth}px` },
+          ml: `${currentDrawerWidth}px`,
           transition: theme.transitions.create(["margin"], {
             // Only transition margin now
             easing: theme.transitions.easing.sharp,

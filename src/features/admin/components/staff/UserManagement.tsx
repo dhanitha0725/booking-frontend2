@@ -23,7 +23,6 @@ const UserManagement: React.FC = () => {
           "http://localhost:5162/api/Auth/get-user-details"
         );
         setUsers(response.data);
-        console.log("Users fetched successfully", response.data);
       } catch (error) {
         console.error("Error fetching users", error);
       }
@@ -98,7 +97,7 @@ const UserManagement: React.FC = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h5">User Management</Typography>
+        <Typography variant="h5">Staff Management</Typography>
         <Button
           variant="contained"
           onClick={handleOpen}

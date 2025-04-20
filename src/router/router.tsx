@@ -46,9 +46,12 @@ const Router: React.FC = () => {
         }
       >
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="staff" replace />} />
+          <Route index element={<Navigate to="staff" replace />} />{" "}
           <Route path="staff" element={<UserManagement />} />
-          <Route path="facilities" element={<FacilityManagement />} />
+          <Route
+            path="facilities-management"
+            element={<FacilityManagement />}
+          />
         </Route>
       </Route>
 

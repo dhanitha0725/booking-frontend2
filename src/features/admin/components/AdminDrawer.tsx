@@ -1,7 +1,7 @@
 import React from "react";
 import {
   Box,
-  Drawer as MuiDrawer, // Rename Drawer to avoid conflict
+  Drawer as MuiDrawer,
   List,
   ListItem,
   ListItemButton,
@@ -10,18 +10,15 @@ import {
   Divider,
   Typography,
   IconButton,
-  styled, // Import styled for creating styled components
-  Theme, // Import Theme type
-  CSSObject, // Import CSSObject type
-  Avatar, // Import Avatar
+  styled,
+  Theme,
+  CSSObject,
+  Avatar,
 } from "@mui/material";
-import {
-  ChevronLeft as ChevronLeftIcon,
-  Logout as LogoutIcon,
-} from "@mui/icons-material";
+import { Logout as LogoutIcon } from "@mui/icons-material";
 
-import { useNavigate, useLocation } from "react-router-dom"; // Import useLocation
-import { menuItems } from "./AdminMenuItems"; // Ensure this import is correct
+import { useNavigate, useLocation } from "react-router-dom";
+import { menuItems } from "./AdminMenuItems";
 import { useAuth } from "../../../context/useAuth";
 
 // Define the type for a menu item based on the imported array
@@ -88,8 +85,6 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 
 const AdminDrawer: React.FC<AdminDrawerProps> = ({
-  open,
-  onClose,
   drawerWidth,
   miniDrawerWidth,
 }) => {
@@ -104,80 +99,57 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
 
   // Get user initials for Avatar
   const getInitials = () => {
-    // Assuming user object has firstName and lastName, adjust if needed
-    // Fallback if user or names are not available
     if (!user || !user.email) return "?"; // Or some default
-    // Simple email initial if names aren't directly available
     return user.email.charAt(0).toUpperCase();
-    // If you fetch first/last names later, update this:
-    // return `${user.firstName?.charAt(0) ?? ''}${user.lastName?.charAt(0) ?? ''}`.toUpperCase();
   };
 
   return (
     <StyledDrawer
       variant="permanent" // Use permanent variant for mini-drawer effect
-      open={open}
+      open={true} // Keep the drawer always open
       drawerWidth={drawerWidth}
       miniDrawerWidth={miniDrawerWidth}
     >
-      {/* Use DrawerHeader for consistent spacing and alignment */}
       <DrawerHeader>
-        {/* Show title only when open */}
         <Typography
           variant="h6"
           noWrap // Prevent wrapping
           sx={{
             flexGrow: 1,
             ml: 2,
-            opacity: open ? 1 : 0,
-            transition: (theme) => theme.transitions.create("opacity"),
+            opacity: 1, // Always visible
             whiteSpace: "nowrap", // Keep on one line
           }}
         >
           Admin Panel
         </Typography>
-        {/* Show close button only when open */}
-        <IconButton
-          onClick={onClose}
-          sx={{
-            opacity: open ? 1 : 0,
-            transition: (theme) => theme.transitions.create("opacity"),
-          }}
-        >
-          <ChevronLeftIcon />
-        </IconButton>
       </DrawerHeader>
       <Divider />
       <List sx={{ flexGrow: 1, overflowY: "auto" }}>
-        {" "}
-        {/* Allow list to scroll */}
         {menuItems.map((item: MenuItemType) => (
           <ListItem key={item.text} disablePadding sx={{ display: "block" }}>
             <ListItemButton
-              // Use location.pathname for selection logic
               selected={location.pathname === item.path}
               onClick={() => navigate(item.path)}
               sx={{
                 minHeight: 48,
-                justifyContent: open ? "initial" : "center", // Center icon when closed
+                justifyContent: "initial",
                 px: 2.5,
               }}
             >
               <ListItemIcon
                 sx={{
                   minWidth: 0,
-                  mr: open ? 3 : "auto", // Adjust margin based on open state
+                  mr: 3,
                   justifyContent: "center",
                 }}
               >
                 {item.icon}
               </ListItemIcon>
-              {/* Hide text when closed */}
               <ListItemText
                 primary={item.text}
                 sx={{
-                  opacity: open ? 1 : 0,
-                  transition: (theme) => theme.transitions.create("opacity"),
+                  opacity: 1, // Always visible
                   whiteSpace: "nowrap", // Prevent text wrapping
                 }}
               />
@@ -186,7 +158,6 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
         ))}
       </List>
       <Divider />
-      {/* User Profile Section */}
       <Box sx={{ p: 2, mt: "auto", overflow: "hidden", whiteSpace: "nowrap" }}>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
@@ -194,30 +165,20 @@ const AdminDrawer: React.FC<AdminDrawerProps> = ({
           </Avatar>
           <Box
             sx={{
-              ml: 1.5, // Adjusted margin
-              opacity: open ? 1 : 0,
-              transition: (theme) => theme.transitions.create("opacity"),
-              overflow: "hidden", // Hide overflow when closed
-              flexGrow: 1, // Allow text to take space
+              ml: 1.5,
+              opacity: 1, // Always visible
+              overflow: "hidden",
+              flexGrow: 1,
             }}
           >
             <Typography variant="body2" fontWeight="medium" noWrap>
-              {user?.email || "User"} {/* Display email or placeholder */}
+              {user?.email || "User"}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
-              {user?.role || "Role"} {/* Display role or placeholder */}
+              {user?.role || "Role"}
             </Typography>
           </Box>
-          {/* Logout Button - Show only when open */}
-          <IconButton
-            onClick={handleLogout}
-            sx={{
-              ml: "auto", // Push to the right
-              opacity: open ? 1 : 0,
-              transition: (theme) => theme.transitions.create("opacity"),
-            }}
-            size="small"
-          >
+          <IconButton onClick={handleLogout} sx={{ ml: "auto" }} size="small">
             <LogoutIcon fontSize="small" />
           </IconButton>
         </Box>

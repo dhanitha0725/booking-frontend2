@@ -14,8 +14,8 @@ export const menuItems = [
   {
     text: "Facilities",
     icon: <MeetingRoomIcon />,
-    path: "/admin/facilities",
-    selected: window.location.pathname === "/admin/facilities",
+    path: "/admin/facilities-management",
+    selected: window.location.pathname === "/admin/facilities-management",
   },
   {
     text: "Settings",
