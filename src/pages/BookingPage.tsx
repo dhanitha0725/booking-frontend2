@@ -290,15 +290,14 @@ const BookingPage = () => {
       <Divider sx={{ my: 3 }} />
 
       {/* display packages and rooms*/}
-      <Box sx={{ mb: 3, p: 3, border: "1px solid #e0e0e0", borderRadius: 1 }}>
-        <SelectionTable
-          packages={facility?.packages || []}
-          rooms={facility?.rooms || []}
-          onSelectionChange={handleSelectionChange}
-          requiresDates={requiresDates}
-          selectedItems={selectedItems}
-        />
-      </Box>
+
+      <SelectionTable
+        packages={facility?.packages || []}
+        rooms={facility?.rooms || []}
+        onSelectionChange={handleSelectionChange}
+        requiresDates={requiresDates}
+        selectedItems={selectedItems}
+      />
 
       <Divider sx={{ my: 3 }} />
 
@@ -326,6 +325,7 @@ const BookingPage = () => {
         open={signInModalOpen}
         onClose={() => setSignInModalOpen(false)}
       />
+      <Divider sx={{ my: 3 }} />
     </Container>
   );
 };

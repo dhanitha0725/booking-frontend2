@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Box, Button, Typography, Snackbar, Alert } from "@mui/material";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { User, BackendError } from "../../../../types/user";
 import AddUserDialog from "./AddUserDialog";
 import { AddUserFormData } from "../../../../validations/addUserValidation";
@@ -71,13 +71,14 @@ const UserManagement: React.FC = () => {
         message: "User added successfully!",
         severity: "success",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error adding user", error);
 
-      // Extract error message from the backend response
-      const backendError = error.response?.data as BackendError;
+      // Extract error message from the backend response using proper typing
+      const err = error as AxiosError<BackendError>;
       const errorMessage =
-        backendError?.error?.message || "Failed to add user. Please try again.";
+        err.response?.data?.error?.message ||
+        "Failed to add user. Please try again.";
 
       // Show error snackbar with the backend error message
       setSnackbar({
