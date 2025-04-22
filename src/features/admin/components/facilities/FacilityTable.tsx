@@ -64,6 +64,11 @@ const FacilityTable: React.FC<FacilityTableProps> = ({
         size: 200,
       },
       {
+        accessorKey: "location",
+        header: "Location",
+        size: 500,
+      },
+      {
         accessorKey: "status",
         header: "Status",
         size: 150,

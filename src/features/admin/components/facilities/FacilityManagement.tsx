@@ -11,11 +11,16 @@ import api from "../../../../services/api";
 import { AdminFacilityDetails } from "../../../../types/adminFacilityDetails";
 import FacilityTable from "./FacilityTable";
 import AddFacilityDialog from "./AddFacilityDialog";
+import FullFacilityInfo from "./FullFacilityInfo";
 import { AddFacilityFormData } from "../../../../validations/addFacilityValidation";
 
 const FacilityManagement: React.FC = () => {
   const [facilities, setFacilities] = useState<AdminFacilityDetails[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(
+    null
+  );
+  const [openFacilityInfo, setOpenFacilityInfo] = useState(false);
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -46,14 +51,21 @@ const FacilityManagement: React.FC = () => {
   }, []);
 
   const handleViewDetails = (facilityId: number) => {
-    // Handle viewing facility details
-    console.log(`View details for facility: ${facilityId}`);
+    setSelectedFacilityId(facilityId);
+    setOpenFacilityInfo(true);
+  };
+
+  const handleCloseFacilityInfo = () => {
+    setOpenFacilityInfo(false);
   };
 
   const handleAddFacilitySuccess = (
     data: AddFacilityFormData,
     newFacilityId?: number
   ) => {
+    // API call is now handled in the AddFacilityDialog component
+    // Just add the new facility to the list or refresh the list
+
     if (newFacilityId) {
       // If we got a new facility ID back, create a new facility object
       const newFacility: AdminFacilityDetails = {
@@ -105,11 +117,17 @@ const FacilityManagement: React.FC = () => {
         onSubmitSuccess={handleAddFacilitySuccess}
       />
 
+      <FullFacilityInfo
+        open={openFacilityInfo}
+        onClose={handleCloseFacilityInfo}
+        facilityId={selectedFacilityId}
+      />
+
       <Snackbar
         open={notification.open}
         autoHideDuration={6000}
         onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert
           onClose={handleCloseNotification}
