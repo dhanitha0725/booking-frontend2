@@ -6,8 +6,10 @@ import {
   Alert,
   List,
   ListItem,
+  ListItemIcon,
+  ListItemText,
 } from "@mui/material";
-import { LocationOn } from "@mui/icons-material";
+import { LocationOn, CheckCircleOutline } from "@mui/icons-material";
 import { Facility } from "../../../../types/facilityDetails";
 
 // receive facility object
@@ -59,21 +61,31 @@ const FacilityDetails = ({ facility }: FacilityDetailsProps) => {
         </Grid>
 
         <Grid item xs={12}>
-          <Box display="flex" alignItems="center" gap={1}>
+          <Box display="flex" alignItems="center" gap={1} mb={2}>
             <LocationOn color="action" />
             <Typography variant="body1" color="text.secondary">
               {facility.location}
             </Typography>
           </Box>
+
           <Typography variant="body1" paragraph>
             {facility.description}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+
+          <Typography variant="h6" color="text.primary" gutterBottom>
             Amenities:
           </Typography>
-          <List>
-            {facility.amenities.map((amenity, index) => (
-              <ListItem key={index}>{amenity}</ListItem>
+
+          <List dense>
+            {facility.amenities.map((amenity) => (
+              <ListItem
+                key={`amenity-${amenity.replace(/\s+/g, "-").toLowerCase()}`}
+              >
+                <ListItemIcon>
+                  <CheckCircleOutline color="success" />
+                </ListItemIcon>
+                <ListItemText primary={amenity} />
+              </ListItem>
             ))}
           </List>
         </Grid>
@@ -81,4 +93,5 @@ const FacilityDetails = ({ facility }: FacilityDetailsProps) => {
     </Box>
   );
 };
+
 export default FacilityDetails;

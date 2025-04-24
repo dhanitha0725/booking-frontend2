@@ -42,9 +42,7 @@ const mapResponseToFacility = (response: ApiResponse): SelectedFacility => ({
   location: response.value.location,
   description: response.value.description || "No description available",
   images: response.value.imageUrls || [],
-  amenities: Object.entries(response.value.attributes || {}).map(
-    ([key, val]) => `${key}: ${val}`
-  ),
+  amenities: response.value.attributes || [],
   packages:
     response.value.packages?.map((pkg: PackagesDto) => ({
       packageId: pkg.packageId,
@@ -187,6 +185,7 @@ const BookingPage = () => {
           if (response.data.isSuccess) {
             setFacility(mapResponseToFacility(response.data));
           }
+          console.log("Facility data:", response.data);
         }
       } catch (error) {
         console.error("Error fetching facility:", error);

@@ -40,7 +40,7 @@ export interface ApiResponse {
     location: string;
     description?: string;
     imageUrls?: string[];
-    attributes?: Record<string, string>;
+    attributes?: string[];
     packages?: PackagesDto[];
     rooms?: RoomDto[];
   };
