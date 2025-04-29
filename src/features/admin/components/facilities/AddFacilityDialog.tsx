@@ -29,6 +29,14 @@ import AddIcon from "@mui/icons-material/Add";
 import { ApiFacility } from "../../../../types/addFacilityDetails";
 import { AxiosError } from "axios";
 
+// Add an interface for the backend error response
+interface BackendError {
+  message?: string;
+  error?: {
+    message?: string;
+  };
+}
+
 interface FacilityType {
   typeName: string;
   id?: number;
@@ -38,6 +46,7 @@ interface AddFacilityDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmitSuccess: (data: AddFacilityFormData, newFacilityId?: number) => void;
+  onSubmitError: (errorMessage: string) => void;
 }
 
 const statuses = ["Active", "Inactive", "Maintenance"];
@@ -46,6 +55,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
   open,
   onClose,
   onSubmitSuccess,
+  onSubmitError,
 }) => {
   const [facilities, setFacilities] = useState<{ id: number; name: string }[]>(
     []
@@ -120,7 +130,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
         const response = await api.get<ApiFacility[]>("/Facility/admin");
         setFacilities(
           response.data.map((f: ApiFacility) => ({
-            id: f.facilityID,
+            id: f.facilityId,
             name: f.facilityName,
           }))
         );
@@ -156,11 +166,18 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
       onSubmitSuccess(data, response.data?.facilityId);
     } catch (error) {
       console.error("Error adding facility:", error);
-      const err = error as AxiosError<{ message: string }>;
-      setError(
+
+      // Improved error handling to extract the backend error message
+      const err = error as AxiosError<BackendError>;
+      const errorMessage =
         err.response?.data?.message ||
-          "Failed to add facility. Please try again."
-      );
+        err.response?.data?.error?.message ||
+        "Failed to add facility. Please try again.";
+
+      setError(errorMessage);
+
+      // Pass the error message to the parent component
+      onSubmitError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -215,9 +232,12 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
                       Loading facility types...
                     </MenuItem>
                   ) : (
-                    facilityTypes.map((type) => (
-                      // Use the actual id if available, otherwise use index
-                      <MenuItem key={type.id} value={type.id}>
+                    facilityTypes.map((type, index) => (
+                      // Use the actual id if available, otherwise use index + 1
+                      <MenuItem
+                        key={type.id || `type-${index}`}
+                        value={type.id || index + 1}
+                      >
                         {type.typeName}
                       </MenuItem>
                     ))
@@ -321,7 +341,11 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
               <Box sx={{ mt: 2, border: 1, p: 2, borderRadius: 1 }}>
                 <Typography variant="subtitle1">Attributes</Typography>
                 {field.value?.map((attr, index) => (
-                  <Box key={index} sx={{ display: "flex", gap: 1, my: 1 }}>
+                  // Add a predictable unique key using the index
+                  <Box
+                    key={`attribute-${index}`}
+                    sx={{ display: "flex", gap: 1, my: 1 }}
+                  >
                     <TextField
                       value={attr}
                       onChange={(e) => {

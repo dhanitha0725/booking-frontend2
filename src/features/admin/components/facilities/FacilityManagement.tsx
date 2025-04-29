@@ -21,7 +21,7 @@ const FacilityManagement: React.FC = () => {
     null
   );
   const [openFacilityInfo, setOpenFacilityInfo] = useState(false);
-  const [notification, setNotification] = useState<{
+  const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
     severity: "success" | "error";
@@ -37,7 +37,7 @@ const FacilityManagement: React.FC = () => {
       setFacilities(response.data);
     } catch (error) {
       console.error("Error fetching facilities", error);
-      setNotification({
+      setSnackbar({
         open: true,
         message: "Failed to load facilities",
         severity: "error",
@@ -63,9 +63,6 @@ const FacilityManagement: React.FC = () => {
     data: AddFacilityFormData,
     newFacilityId?: number
   ) => {
-    // API call is now handled in the AddFacilityDialog component
-    // Just add the new facility to the list or refresh the list
-
     if (newFacilityId) {
       // If we got a new facility ID back, create a new facility object
       const newFacility: AdminFacilityDetails = {
@@ -84,15 +81,23 @@ const FacilityManagement: React.FC = () => {
 
     // Close the dialog and show success notification
     setOpenDialog(false);
-    setNotification({
+    setSnackbar({
       open: true,
       message: "Facility added successfully",
       severity: "success",
     });
   };
 
-  const handleCloseNotification = () => {
-    setNotification((prev) => ({ ...prev, open: false }));
+  const handleAddFacilityError = (errorMessage: string) => {
+    setSnackbar({
+      open: true,
+      message: errorMessage,
+      severity: "error",
+    });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
   return (
@@ -115,6 +120,7 @@ const FacilityManagement: React.FC = () => {
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         onSubmitSuccess={handleAddFacilitySuccess}
+        onSubmitError={handleAddFacilityError}
       />
 
       <FullFacilityInfo
@@ -124,17 +130,17 @@ const FacilityManagement: React.FC = () => {
       />
 
       <Snackbar
-        open={notification.open}
+        open={snackbar.open}
         autoHideDuration={6000}
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
         <Alert
-          onClose={handleCloseNotification}
-          severity={notification.severity}
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
           sx={{ width: "100%" }}
         >
-          {notification.message}
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>
