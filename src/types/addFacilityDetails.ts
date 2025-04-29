@@ -1,5 +1,5 @@
 export interface ApiFacility {
-  facilityID: number;
+  facilityId: number;
   facilityName: string;
   status?: string;
   parentFacilityID?: number;

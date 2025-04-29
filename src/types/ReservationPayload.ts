@@ -6,7 +6,7 @@ export interface ReservationPayload {
   Items: Array<{
     itemId: number; 
     quantity: number;  
-    type: string; 
+    type: "room" | "package";
   }>;
   UserDetails: {
     FirstName: string;
