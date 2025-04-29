@@ -29,7 +29,6 @@ function SignIn() {
     }
   }, [location.state]);
 
-  // React Hook Form setup
   const {
     register,
     handleSubmit,

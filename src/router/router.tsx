@@ -14,6 +14,8 @@ import FacilitiesPage from "../pages/FacilitiesPage";
 import BookingPage from "../pages/BookingPage";
 import UserInfoPage from "../pages/UserInfoPage";
 import ConfirmationPage from "../pages/ConfirmationPage";
+import PaymentPage from "../pages/PaymentPage";
+import PaymentInfoPage from "../pages/PaymentInfoPage";
 
 const Router: React.FC = () => {
   return (
@@ -35,6 +37,8 @@ const Router: React.FC = () => {
           {/* Add client-specific protected routes here */}
           <Route path="/userinfo" element={<UserInfoPage />} />
           <Route path="/confirmation" element={<ConfirmationPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="paymentInfo" element={<PaymentInfoPage />} />
         </Route>
       </Route>
 

@@ -32,7 +32,7 @@ export interface UserInfo {
 }
 
 export interface ReservationResultDto {
-  // Core reservation identifiers
+  // reservation details
   reservationId: number;
   facilityId: number;
   facilityName: string;
@@ -50,10 +50,10 @@ export interface ReservationResultDto {
 
   // Status information
   status: "PendingApproval" | "PendingPayment" | "PartialPayment" | "Approved" | "Completed" | "Cancelled";
-  documentStatus?: "Pending" | "Approved" | "Rejected"; // Only for corporate/public
+  documentStatus?: "Pending" | "Approved" | "Rejected";
   paymentStatus?: "Unpaid" | "Partial" | "Paid";
 
-  // User-facing information
+  // User-form information
   customerType: "corporate" | "public" | "private";
   userDetails: {
     firstName: string;
@@ -67,19 +67,9 @@ export interface ReservationResultDto {
   items: Array<{
     itemId: number;
     type: "room" | "package";
-    name: string; // Room type or package name
+    name: string; // room type or package name
     quantity: number;
     pricePerUnit: number;
     totalPrice: number;
   }>;
-
-  // Payment workflow information
-  paymentMethod?: string;
-  paymentDueDate?: string; // For pending payments
-  paymentLink?: string; // If payment gateway integrated
-  reservationExpiry?: string; // When reservation will expire if not paid
-
-  // Additional metadata
-  reservationDuration?: string; // Human-readable duration
-  facilityLocation?: string;
 }
