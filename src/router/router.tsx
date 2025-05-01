@@ -30,6 +30,10 @@ const Router: React.FC = () => {
         <Route path="/booking/:id" element={<BookingPage />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route
+          path="/payment-confirmation"
+          element={<PaymentConfirmationPage />}
+        />
       </Route>
 
       {/* Protected Client Routes */}
@@ -40,10 +44,6 @@ const Router: React.FC = () => {
           <Route path="/confirmation" element={<ConfirmationPage />} />
           <Route path="/payment" element={<PaymentPage />} />
           <Route path="/paymentInfo" element={<PaymentInfoPage />} />
-          <Route
-            path="/payment-confirmation"
-            element={<PaymentConfirmationPage />}
-          />
         </Route>
       </Route>
 

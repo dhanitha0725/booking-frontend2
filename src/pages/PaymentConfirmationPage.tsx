@@ -28,7 +28,7 @@ const steps = [
 // Define the possible payment statuses
 type PaymentStatus = "success" | "failed" | "pending" | "cancelled";
 
-// Define the payment result structure
+// Define the payment result structure (coming from backend)
 interface PaymentResult {
   reservationId: number;
   orderId: string;
@@ -48,9 +48,23 @@ const PaymentConfirmationPage = () => {
   );
 
   useEffect(() => {
+    // Parse the URL parameters to get order_id and status
     const queryParams = new URLSearchParams(location.search);
     const orderId = queryParams.get("order_id");
-    //const status = queryParams.get("status_code") || "pending";
+    const status = queryParams.get("status");
+
+    // If there's a status=cancelled parameter, handle it directly
+    if (status === "cancelled") {
+      setPaymentResult({
+        reservationId: parseInt(queryParams.get("reservationId") || "0"),
+        orderId: orderId || "unknown",
+        status: "cancelled" as PaymentStatus,
+        amount: 0,
+        message: "Payment cancelled",
+      });
+      setLoading(false);
+      return;
+    }
 
     // Check if we have the necessary parameters
     if (!orderId) {
@@ -59,17 +73,36 @@ const PaymentConfirmationPage = () => {
       return;
     }
 
+    // Function to verify payment status
     const verifyPayment = async () => {
       try {
         const response = await axios.get(
           `http://localhost:5162/api/Payments/status?orderId=${orderId}`
         );
 
+        console.log("Payment response:", response.data);
+
         if (response.data.isSuccess) {
+          // Map backend status to frontend expected status
+          let paymentStatus: PaymentStatus = "pending";
+
+          // Normalize and map the status
+          const backendStatus = response.data.value.status?.toLowerCase();
+
+          // status mapping
+          if (backendStatus === "completed" || backendStatus === "success") {
+            paymentStatus = "success";
+          } else if (backendStatus === "failed") {
+            paymentStatus = "failed";
+          } else if (backendStatus === "cancelled") {
+            paymentStatus = "cancelled";
+          }
+          // Else remains as "pending" by default
+
           setPaymentResult({
             reservationId: response.data.value.reservationId,
             orderId: response.data.value.orderId,
-            status: response.data.value.status as PaymentStatus,
+            status: paymentStatus,
             amount: response.data.value.amount,
             message: response.data.value.message,
           });
@@ -170,13 +203,12 @@ const PaymentConfirmationPage = () => {
 
             <Box sx={{ maxWidth: 600, mx: "auto", my: 4 }}>
               <Typography variant="body1" paragraph>
-                Thank you for your payment. Your reservation has been confirmed
-                and is ready for use.
+                Thank you for your payment. Your reservation has been confirmed.
               </Typography>
 
               <Typography variant="body1" paragraph>
                 You will receive a confirmation email with all the details of
-                your reservation shortly.
+                your reservation.
               </Typography>
 
               <Alert severity="info" sx={{ mt: 3 }}>
@@ -186,6 +218,7 @@ const PaymentConfirmationPage = () => {
           </>
         );
 
+      // Handle other cancel payment statuses
       case "cancelled":
         return (
           <>
@@ -224,6 +257,7 @@ const PaymentConfirmationPage = () => {
           </>
         );
 
+      // handle failed payment statuses
       case "failed":
         return (
           <>
