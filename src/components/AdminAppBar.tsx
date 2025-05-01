@@ -9,7 +9,7 @@ import {
   AppBarProps as MuiAppBarProps, // Import AppBarProps
 } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
-import { useAuth } from "../../../context/useAuth";
+import { useAuth } from "../context/useAuth";
 import { useLocation } from "react-router-dom"; // Import useLocation
 
 // Extend AppBarProps to include custom props for styling

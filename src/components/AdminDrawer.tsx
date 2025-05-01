@@ -19,7 +19,7 @@ import { Logout as LogoutIcon } from "@mui/icons-material";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { menuItems } from "./AdminMenuItems";
-import { useAuth } from "../../../context/useAuth";
+import { useAuth } from "../context/useAuth";
 
 // Define the type for a menu item based on the imported array
 type MenuItemType = (typeof menuItems)[0];
@@ -28,7 +28,8 @@ interface AdminDrawerProps {
   open: boolean;
   onClose: () => void;
   drawerWidth: number;
-  miniDrawerWidth: number; // Add miniDrawerWidth prop
+  miniDrawerWidth: number;
+  variant?: "permanent" | "persistent" | "temporary";
 }
 
 // Helper function for opened drawer mixin
