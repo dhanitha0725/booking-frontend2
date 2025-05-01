@@ -29,7 +29,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { ApiFacility } from "../../../../types/addFacilityDetails";
 import { AxiosError } from "axios";
 
-// Add an interface for the backend error response
+// backend error response
 interface BackendError {
   message?: string;
   error?: {

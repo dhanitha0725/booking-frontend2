@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Box,
   Divider,
+  Alert,
 } from "@mui/material";
 import UserForm from "../features/client/ReservationUserInfo/components/UserForm";
 import DocumentUpload from "../features/client/ReservationUserInfo/components/DocumentUpload";
@@ -39,6 +40,8 @@ const UserInfoPage = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // check if the user has a reservation in local storage
+  // if not, redirect to the facilities page
   useEffect(() => {
     const temp = localStorage.getItem("currentReservation");
     if (!temp) navigate("/facilities");
@@ -58,111 +61,101 @@ const UserInfoPage = () => {
     try {
       if (!tempReservation) throw new Error("Reservation data missing");
 
-      // validate form data using Zod schema
+      // Validate form data using Zod schema
       userFormValidation.parse(formData);
 
+      // document upload validation
       if (
         tempReservation.customerType !== "private" &&
         documents.length === 0
       ) {
-        throw new Error("Please upload at least one document");
+        throw new Error(
+          "Please upload at least one document for non-private customers."
+        );
       }
 
       // reservation user details
       const basicUserDetails = {
-        FirstName: formData.firstName,
-        LastName: formData.lastName,
-        Email: formData.email,
-        PhoneNumber: formData.phoneNumber || "",
-        OrganizationName: formData.organizationName || "",
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber || "",
+        organizationName: formData.organizationName || "",
       };
 
-      if (tempReservation.customerType === "private") {
-        // private customers --> go to payment page
-        const reservationData = {
-          StartDate: dayjs(tempReservation.startDate).toISOString(),
-          EndDate: dayjs(tempReservation.endDate).toISOString(),
-          Total: tempReservation.total,
-          CustomerType: tempReservation.customerType,
-          Items: tempReservation.selectedItems.map((item) => ({
-            ItemId: item.itemId,
-            Quantity: item.quantity,
-            Type: item.type,
-          })),
-          UserDetails: basicUserDetails,
-        };
-
-        // Save reservation data locally
-        localStorage.setItem(
-          "pendingReservation",
-          JSON.stringify(reservationData)
-        );
-
-        navigate("/paymentInfo");
-
-        return;
-      }
-
-      // public, cooperative customers --> create reservation with docs
+      // Prepare reservation payload for all customer types
       const reservationPayload = {
-        StartDate: dayjs(tempReservation.startDate).toISOString(),
-        EndDate: dayjs(tempReservation.endDate).toISOString(),
-        Total: tempReservation.total,
-        CustomerType: tempReservation.customerType,
-        Items: tempReservation.selectedItems.map((item) => ({
-          ItemId: item.itemId,
-          Quantity: item.quantity,
-          Type: item.type,
+        startDate: dayjs(tempReservation.startDate).toISOString(),
+        endDate: dayjs(tempReservation.endDate).toISOString(),
+        total: tempReservation.total,
+        customerType: tempReservation.customerType,
+        items: tempReservation.selectedItems.map((item) => ({
+          itemId: item.itemId,
+          quantity: item.quantity,
+          type: item.type,
         })),
-        UserDetails: basicUserDetails,
+        userDetails: basicUserDetails,
       };
 
       console.log(
-        "Sending Payload: ",
+        "Sending Reservation Payload: ",
         JSON.stringify(reservationPayload, null, 2)
       );
 
+      // Create reservation for all customer types
       const createRes = await axios.post(
         "http://localhost:5162/api/Reservation/createReservation",
         reservationPayload
       );
 
+      if (!createRes.data.isSuccess) {
+        throw new Error(createRes.data.error || "Failed to create reservation");
+      }
+
+      const reservationId = createRes.data.value.reservationId; //db generated id from response
+      console.log("Reservation ID:", reservationId);
+      console.log("Reservation created successfully:", createRes.data.value);
+
+      // Handle document upload for public/corporate customers
       if (
         tempReservation.customerType === "public" ||
         tempReservation.customerType === "corporate"
       ) {
-        const formDataUpload = new FormData();
-        formDataUpload.append(
-          "ReservationId",
-          createRes.data.value.reservationId.toString()
-        );
-
         if (documents.length > 0) {
+          const formDataUpload = new FormData();
+          formDataUpload.append("ReservationId", reservationId.toString());
           formDataUpload.append("Document.DocumentType", "ApprovalDocument");
           formDataUpload.append("Document.File", documents[0]);
+
+          console.log("Uploading Documents for Reservation ID:", reservationId);
+
+          await axios.post(
+            "http://localhost:5162/api/Reservation/uploadDocument",
+            formDataUpload,
+            { headers: { "Content-Type": "multipart/form-data" } }
+          );
         }
 
-        console.log(
-          "Create Reservation Response:",
-          createRes.data.value.reservationId
-        );
-
-        console.log("Uploading Documents: ", createRes.data);
-
-        await axios.post(
-          "http://localhost:5162/api/Reservation/uploadDocument",
-          formDataUpload,
-          { headers: { "Content-Type": "multipart/form-data" } }
-        );
+        // Clear local storage and navigate to confirmation
+        localStorage.removeItem("currentReservation");
+        navigate("/confirmation", {
+          state: {
+            reservationId: reservationId,
+            status: "PendingApproval",
+          },
+        });
+      } else if (tempReservation.customerType === "private") {
+        // For private customers, navigate to payment info page
+        localStorage.removeItem("currentReservation");
+        navigate("/paymentInfo", {
+          state: {
+            reservationId: reservationId,
+            total: tempReservation.total,
+            userDetails: basicUserDetails,
+            items: tempReservation.selectedItems,
+          },
+        });
       }
-
-      // clear the temporary reservation from local storage
-      localStorage.removeItem("currentReservation");
-      navigate("/confirmation", {
-        state: {
-          reservationId: createRes.data.value.reservationId,
-        },
-      });
     } catch (err) {
       if (err instanceof z.ZodError) {
         setError(err.errors.map((e) => e.message).join(", "));
@@ -218,9 +211,14 @@ const UserInfoPage = () => {
           )}
 
           {error && (
-            <Typography color="error" sx={{ mt: 2 }}>
+            <Alert
+              severity="error"
+              variant="filled"
+              sx={{ mt: 2, mb: 2 }}
+              onClose={() => setError("")}
+            >
               {error}
-            </Typography>
+            </Alert>
           )}
 
           <Button

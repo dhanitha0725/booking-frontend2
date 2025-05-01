@@ -1,43 +1,33 @@
-// PaymentService.ts
 import axios from 'axios';
-//import { ReservationPayload } from '../types/ReservationPayload';
 import { PaymentInitiationResponse } from '../types/PaymentInitiationResponse';
+import { PaymentRequest } from '../types/PaymentTypes';
 
-interface ReservationRequest {
-  startDate: string;
-  endDate: string;
-  total: number;
-  customerType: string;
-  items: Array<{
-    itemId: number;
-    quantity: number;
-    type: string;
-  }>;
-  userDetails: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    phone: string;
-    address: string;
-    city: string;
-    country: string;
-    organizationName: string;
-  };
-}
-
-export const createReservation = async (payload: ReservationRequest) => {
-  return await axios.post(
-    "http://localhost:5162/api/Reservation/createReservation",
-    payload
-  );
+export const initiatePayment = async (paymentData: PaymentRequest) => {
+  try {
+    // Ensure we're using the reservation ID that was provided
+    if (!paymentData.reservationId) {
+      console.error("Missing reservation ID in payment data:", paymentData);
+      throw new Error("Missing reservation ID. Cannot process payment without a valid reservation.");
+    }
+    
+    const response = await axios.post(
+      "http://localhost:5162/api/Payments/checkout",
+      paymentData
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Payment initiation failed:", error);
+    throw error;
+  }
 };
 
 export const submitPaymentForm = (paymentData: PaymentInitiationResponse) => {
+  // Create a form element to submit to PayHere
   const form = document.createElement("form");
   form.method = "POST";
   form.action = paymentData.actionUrl;
 
+  // PayHere required parameters
   const fields = {
     merchant_id: paymentData.merchantId,
     return_url: paymentData.returnUrl,
@@ -46,7 +36,9 @@ export const submitPaymentForm = (paymentData: PaymentInitiationResponse) => {
     order_id: paymentData.orderId,
     items: paymentData.items,
     currency: paymentData.currency,
-    amount: paymentData.amount,
+    amount: typeof paymentData.amount === 'number' 
+      ? paymentData.amount.toFixed(2) 
+      : paymentData.amount,
     first_name: paymentData.firstName,
     last_name: paymentData.lastName,
     email: paymentData.email,
@@ -57,6 +49,7 @@ export const submitPaymentForm = (paymentData: PaymentInitiationResponse) => {
     hash: paymentData.hash,
   };
 
+  // Add all fields to the form
   Object.entries(fields).forEach(([name, value]) => {
     const input = document.createElement("input");
     input.type = "hidden";
@@ -65,6 +58,11 @@ export const submitPaymentForm = (paymentData: PaymentInitiationResponse) => {
     form.appendChild(input);
   });
 
+  // Log for debugging
+  console.log("Submitting payment form to:", paymentData.actionUrl);
+  console.log("Payment form data:", fields);
+
+  // Add the form to the body and submit it
   document.body.appendChild(form);
   form.submit();
 };

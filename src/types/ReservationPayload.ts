@@ -1,4 +1,5 @@
 export interface ReservationPayload {
+  ReservationId?: number; // Optional: ID of the reservation (if applicable)
   StartDate: string;
   EndDate: string;
   Total: number;
