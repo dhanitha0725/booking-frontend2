@@ -16,6 +16,7 @@ import UserInfoPage from "../pages/UserInfoPage";
 import ConfirmationPage from "../pages/ConfirmationPage";
 import PaymentPage from "../pages/PaymentPage";
 import PaymentInfoPage from "../pages/PaymentInfoPage";
+import PaymentConfirmationPage from "../pages/PaymentConfirmationPage";
 
 const Router: React.FC = () => {
   return (
@@ -38,7 +39,11 @@ const Router: React.FC = () => {
           <Route path="/userinfo" element={<UserInfoPage />} />
           <Route path="/confirmation" element={<ConfirmationPage />} />
           <Route path="/payment" element={<PaymentPage />} />
-          <Route path="paymentInfo" element={<PaymentInfoPage />} />
+          <Route path="/paymentInfo" element={<PaymentInfoPage />} />
+          <Route
+            path="/payment-confirmation"
+            element={<PaymentConfirmationPage />}
+          />
         </Route>
       </Route>
 
