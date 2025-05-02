@@ -17,6 +17,7 @@ import ConfirmationPage from "../pages/ConfirmationPage";
 import PaymentPage from "../pages/PaymentPage";
 import PaymentInfoPage from "../pages/PaymentInfoPage";
 import PaymentConfirmationPage from "../pages/PaymentConfirmationPage";
+import CustomerManagement from "../features/admin/components/customers/CustomerManagement";
 
 const Router: React.FC = () => {
   return (
@@ -61,6 +62,7 @@ const Router: React.FC = () => {
             path="facilities-management"
             element={<FacilityManagement />}
           />
+          <Route path="customers-management" element={<CustomerManagement />} />
         </Route>
       </Route>
 

@@ -105,7 +105,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Define public and admin routes
       const publicRoutes = ["/", "/home", "/facilities", "/login", "/signup"];
-      const adminRoutes = ["/admin/staff", "/admin/facilities-management"];
+      const adminRoutes = [
+        "/admin/staff",
+        "/admin/facilities-management",
+        "/admin/customers-management",
+      ];
       const currentPath = window.location.pathname;
 
       // Determine if redirection is needed

@@ -13,3 +13,12 @@ export interface BackendError {
     message: string;
   };
 }
+
+export interface Customer {
+  userId: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+}
