@@ -6,6 +6,12 @@ import {
   Divider,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import api from "../../../../services/api";
 import { AdminFacilityDetails } from "../../../../types/adminFacilityDetails";
@@ -13,24 +19,38 @@ import FacilityTable from "./FacilityTable";
 import AddFacilityDialog from "./AddFacilityDialog";
 import FullFacilityInfo from "./FullFacilityInfo";
 import { AddFacilityFormData } from "../../../../validations/addFacilityValidation";
+import axios, { AxiosError } from "axios";
 
 const FacilityManagement: React.FC = () => {
+  // store all facilities data retrieved from the backend
   const [facilities, setFacilities] = useState<AdminFacilityDetails[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
+
+  // to view details of a facility
   const [selectedFacilityId, setSelectedFacilityId] = useState<number | null>(
     null
   );
+
   const [openFacilityInfo, setOpenFacilityInfo] = useState(false);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const [facilityToDelete, setFacilityToDelete] = useState<number | null>(null);
+
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // notification feedback to users (success/error messages)
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
-    severity: "success" | "error";
+    severity: "success" | "error" | "warning" | "info";
   }>({
     open: false,
     message: "",
     severity: "success",
   });
 
+  // Fetch facilities from the API
   const fetchFacilities = async () => {
     try {
       const response = await api.get("/Facility/admin");
@@ -45,26 +65,27 @@ const FacilityManagement: React.FC = () => {
     }
   };
 
-  // Initial load of facilities
   useEffect(() => {
     fetchFacilities();
   }, []);
 
+  // Handle opening the facility info dialog
   const handleViewDetails = (facilityId: number) => {
     setSelectedFacilityId(facilityId);
     setOpenFacilityInfo(true);
   };
 
+  // Handle closing the facility info dialog
   const handleCloseFacilityInfo = () => {
     setOpenFacilityInfo(false);
   };
 
+  // Handle adding a facility
   const handleAddFacilitySuccess = (
-    data: AddFacilityFormData,
+    data: AddFacilityFormData, //validated data from the form
     newFacilityId?: number
   ) => {
     if (newFacilityId) {
-      // If we got a new facility ID back, create a new facility object
       const newFacility: AdminFacilityDetails = {
         facilityId: newFacilityId,
         facilityName: data.facilityName,
@@ -72,14 +93,10 @@ const FacilityManagement: React.FC = () => {
         location: data.location,
         description: data.description,
       };
-
       setFacilities([...facilities, newFacility]);
     } else {
-      // If we don't have a facility ID, refresh the full list
       fetchFacilities();
     }
-
-    // Close the dialog and show success notification
     setOpenDialog(false);
     setSnackbar({
       open: true,
@@ -94,6 +111,60 @@ const FacilityManagement: React.FC = () => {
       message: errorMessage,
       severity: "error",
     });
+  };
+
+  // Handle deleting a facility
+  const handleDeleteInitiate = (facilityId: number) => {
+    setFacilityToDelete(facilityId);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle confirming the deletion of a facility
+  const handleConfirmDelete = async () => {
+    if (!facilityToDelete) return;
+    setDeleteLoading(true);
+    try {
+      await api.delete(`/Facility/${facilityToDelete}`);
+      setFacilities(
+        facilities.filter((f) => f.facilityId !== facilityToDelete)
+      );
+      setSnackbar({
+        open: true,
+        message: "Facility deleted successfully",
+        severity: "success",
+      });
+      setDeleteDialogOpen(false);
+      setFacilityToDelete(null);
+    } catch (error) {
+      console.error("Error deleting facility:", error);
+      let errorMessage = "Failed to delete facility";
+      if (axios.isAxiosError(error)) {
+        // Check if the error is an AxiosError
+        const axiosError = error as AxiosError<{ error: string }>;
+        if (axiosError.response?.data?.error) {
+          // Check if the error response has a message
+          errorMessage = axiosError.response.data.error;
+        } else if (axiosError.response?.status === 403) {
+          // Check for 403 unauthorized status
+          errorMessage = "You don't have permission to delete this facility";
+        } else if (axiosError.response?.status === 404) {
+          // Check for 404 Not Found status
+          errorMessage = "Facility not found";
+        }
+      }
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setFacilityToDelete(null);
   };
 
   const handleCloseSnackbar = () => {
@@ -114,6 +185,7 @@ const FacilityManagement: React.FC = () => {
       <FacilityTable
         facilities={facilities}
         onViewDetails={handleViewDetails}
+        onDeleteInitiate={handleDeleteInitiate}
       />
 
       <AddFacilityDialog
@@ -128,6 +200,38 @@ const FacilityManagement: React.FC = () => {
         onClose={handleCloseFacilityInfo}
         facilityId={selectedFacilityId}
       />
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCancelDelete}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this facility? This action cannot be
+            undone.
+            <br />
+            <br />
+            <strong>Note:</strong> If this facility has child facilities, you
+            must delete them first.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} disabled={deleteLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={deleteLoading}
+            startIcon={deleteLoading ? <CircularProgress size={20} /> : null}
+          >
+            {deleteLoading ? "Deleting..." : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}
