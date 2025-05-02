@@ -18,6 +18,9 @@ import PaymentPage from "../pages/PaymentPage";
 import PaymentInfoPage from "../pages/PaymentInfoPage";
 import PaymentConfirmationPage from "../pages/PaymentConfirmationPage";
 import CustomerManagement from "../features/admin/components/customers/CustomerManagement";
+import EmployeeDashboard from "../features/employee/components/EmployeeDashboard";
+import EmployeeLayout from "../layouts/EmployeeLayout";
+import EmployeeManagement from "../features/employee/components/reservations/ReservationManagement";
 
 const Router: React.FC = () => {
   return (
@@ -49,12 +52,8 @@ const Router: React.FC = () => {
       </Route>
 
       {/* protected admin routes */}
-      {/* only authenticated users can access these routes */}
-      <Route
-        element={
-          <ProtectedRoute allowedRoles={["admin", "employee", "accountant"]} />
-        }
-      >
+      {/* only admin can access these routes */}
+      <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="staff" replace />} />{" "}
           <Route path="staff" element={<UserManagement />} />
@@ -63,6 +62,15 @@ const Router: React.FC = () => {
             element={<FacilityManagement />}
           />
           <Route path="customers-management" element={<CustomerManagement />} />
+        </Route>
+      </Route>
+
+      {/* protected employee routes */}
+      <Route element={<ProtectedRoute allowedRoles={["employee"]} />}>
+        <Route path="/employee" element={<EmployeeLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<EmployeeDashboard />} />
+          <Route path="reservations" element={<EmployeeManagement />} />
         </Route>
       </Route>
 
