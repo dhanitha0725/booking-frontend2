@@ -2,13 +2,14 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 
-//pages
+// layouts
 import AdminLayout from "../layouts/AdminLayout";
+import MainLayout from "../layouts/MainLayout";
+import EmployeeLayout from "../layouts/EmployeeLayout";
+
+//pages
 import SignUp from "../pages/SignUp";
 import Home from "../pages/Home";
-import MainLayout from "../layouts/MainLayout";
-import UserManagement from "../features/admin/components/staff/UserManagement";
-import FacilityManagement from "../features/admin/components/facilities/FacilityManagement";
 import SignIn from "../pages/SignIn";
 import FacilitiesPage from "../pages/FacilitiesPage";
 import BookingPage from "../pages/BookingPage";
@@ -17,10 +18,13 @@ import ConfirmationPage from "../pages/ConfirmationPage";
 import PaymentPage from "../pages/PaymentPage";
 import PaymentInfoPage from "../pages/PaymentInfoPage";
 import PaymentConfirmationPage from "../pages/PaymentConfirmationPage";
+
+//components
+import UserManagement from "../features/admin/components/staff/UserManagement";
+import FacilityManagement from "../features/admin/components/facilities/FacilityManagement";
 import CustomerManagement from "../features/admin/components/customers/CustomerManagement";
-import EmployeeDashboard from "../features/employee/components/EmployeeDashboard";
-import EmployeeLayout from "../layouts/EmployeeLayout";
-import EmployeeManagement from "../features/employee/components/reservations/ReservationManagement";
+import EmployeeDashboard from "../features/employee/components/dashboard/EmployeeDashboard";
+import ReservationManagement from "../features/employee/components/reservations/ReservationManagement";
 
 const Router: React.FC = () => {
   return (
@@ -70,7 +74,10 @@ const Router: React.FC = () => {
         <Route path="/employee" element={<EmployeeLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<EmployeeDashboard />} />
-          <Route path="reservations" element={<EmployeeManagement />} />
+          <Route
+            path="reservation-management"
+            element={<ReservationManagement />}
+          />
         </Route>
       </Route>
 

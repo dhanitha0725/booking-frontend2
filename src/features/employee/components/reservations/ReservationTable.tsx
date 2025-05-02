@@ -18,25 +18,23 @@ interface ReservationTableProps {
   reservations: Reservation[];
   onModify?: (reservationId: number) => void;
   onCancel?: (reservationId: number) => void;
+  showActions?: boolean;
+  enablePagination?: boolean;
+  enableFilters?: boolean;
 }
 
 const ReservationTable: React.FC<ReservationTableProps> = ({
   reservations,
   onModify,
   onCancel,
+  showActions = true,
+  enablePagination = true,
+  enableFilters = true,
 }) => {
   // Format date for display
   const formatDate = (date: string | Date): string => {
     if (!date) return "N/A";
     return format(new Date(date), "MMM dd, yyyy HH:mm");
-  };
-
-  // Format currency for display
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   // Render status chips with appropriate colors
@@ -142,7 +140,7 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
         accessorKey: "total",
         header: "Total",
         size: 120,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
       },
       {
         accessorKey: "status",
@@ -157,56 +155,59 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
         size: 130,
         Cell: ({ cell }) => renderUserTypeChip(cell.getValue<UserType>()),
       },
-      {
-        id: "actions",
-        header: "Actions",
-        size: 120,
-        Cell: ({ row }) => (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Tooltip title="Modify Reservation">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => onModify?.(row.original.reservationId)}
-                // Disable modify button for cancelled or completed reservations
-                disabled={
-                  row.original.status === "Cancelled" ||
-                  row.original.status === "Completed" ||
-                  row.original.status === "Expired"
-                }
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Cancel Reservation">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => onCancel?.(row.original.reservationId)}
-                // Disable cancel button for already cancelled, completed, or expired reservations
-                disabled={
-                  row.original.status === "Cancelled" ||
-                  row.original.status === "Completed" ||
-                  row.original.status === "Expired"
-                }
-              >
-                <CancelIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        ),
-      },
+      ...(showActions
+        ? [
+            {
+              id: "actions",
+              header: "Actions",
+              size: 120,
+              Cell: ({ row }) => (
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Tooltip title="Modify Reservation">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => onModify?.(row.original.reservationId)}
+                      disabled={
+                        row.original.status === "Cancelled" ||
+                        row.original.status === "Completed" ||
+                        row.original.status === "Expired"
+                      }
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Cancel Reservation">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => onCancel?.(row.original.reservationId)}
+                      disabled={
+                        row.original.status === "Cancelled" ||
+                        row.original.status === "Completed" ||
+                        row.original.status === "Expired"
+                      }
+                    >
+                      <CancelIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              ),
+            },
+          ]
+        : []),
     ],
-    [onModify, onCancel]
+    [onModify, onCancel, showActions]
   );
 
   const table = useMaterialReactTable({
     columns,
     data: reservations,
     layoutMode: "grid",
-    enableFilters: true,
-    enableColumnFilters: true,
-    enableGlobalFilter: true,
+    enablePagination: enablePagination,
+    enableFilters: enableFilters,
+    enableColumnFilters: enableFilters,
+    enableGlobalFilter: enableFilters,
     enableColumnResizing: true,
     enableSorting: true,
     muiTableContainerProps: {
@@ -219,6 +220,7 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
           desc: true, // Most recent reservations first
         },
       ],
+      pagination: { pageSize: 10, pageIndex: 0 }, // Default page size
     },
   });
 

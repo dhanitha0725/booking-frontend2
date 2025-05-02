@@ -1,19 +1,20 @@
 import {
-  MeetingRoom as MeetingRoomIcon,
-  Person as PersonIcon,
+  BookOnline as BookOnlineIcon,
+  Dashboard as DashboardIcon,
 } from "@mui/icons-material";
 
 export const employeeMenuItems = [
   {
-    text: "Customers",
-    icon: <PersonIcon />,
-    path: "/employee/customers-management",
-    selected: window.location.pathname === "/employee/customers-management",
+    text: "Dashboard",
+    icon: <DashboardIcon />,
+    path: "/employee/dashboard",
+    selected: window.location.pathname === "/employee/dashboard",
   },
+
   {
-    text: "Facilities",
-    icon: <MeetingRoomIcon />,
-    path: "/employee/facilities-management",
-    selected: window.location.pathname === "/employee/facilities-management",
+    text: "Reservations",
+    icon: <BookOnlineIcon />,
+    path: "/employee/reservation-management",
+    selected: window.location.pathname === "/employee/reservation-management",
   },
 ];
