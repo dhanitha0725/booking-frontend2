@@ -36,10 +36,9 @@ interface BackendError {
     message?: string;
   };
 }
-
 interface FacilityType {
   typeName: string;
-  id?: number;
+  facilityTypeId: number;
 }
 
 interface AddFacilityDialogProps {
@@ -128,12 +127,12 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     const fetchFacilities = async () => {
       try {
         const response = await api.get<ApiFacility[]>("/Facility/admin");
-        setFacilities(
-          response.data.map((f: ApiFacility) => ({
-            id: f.facilityId,
-            name: f.facilityName,
-          }))
-        );
+        // validate sub facility does not have parent facility itself
+        const facilityOptions = response.data.map((f: ApiFacility) => ({
+          id: f.facilityId,
+          name: f.facilityName,
+        }));
+        setFacilities(facilityOptions);
       } catch (error) {
         console.error("Error fetching facilities", error);
       }
@@ -155,9 +154,15 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
         description: data.description || "",
         status: data.status,
         attributes: data.attributes.filter((attr) => attr.trim() !== ""),
-        parentFacilityId: data.parentFacilityId,
+        parentFacilityId: data.parentFacilityId
+          ? Number(data.parentFacilityId)
+          : null,
       };
 
+      // Debug log the payload
+      console.log("Facility payload being sent:", payload);
+
+      // send facility data to the backend
       const response = await api.post(
         "http://localhost:5162/api/Facility/add-facility",
         payload
@@ -167,7 +172,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     } catch (error) {
       console.error("Error adding facility:", error);
 
-      // Improved error handling to extract the backend error message
+      // extract the backend error message
       const err = error as AxiosError<BackendError>;
       const errorMessage =
         err.response?.data?.message ||
@@ -232,11 +237,10 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
                       Loading facility types...
                     </MenuItem>
                   ) : (
-                    facilityTypes.map((type, index) => (
-                      // Use the actual id if available, otherwise use index + 1
+                    facilityTypes.map((type) => (
                       <MenuItem
-                        key={type.id || `type-${index}`}
-                        value={type.id || index + 1}
+                        key={`facility-type-${type.facilityTypeId}`}
+                        value={type.facilityTypeId}
                       >
                         {type.typeName}
                       </MenuItem>
@@ -313,12 +317,14 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
               <FormControl fullWidth margin="dense">
                 <InputLabel>Parent Facility (Optional)</InputLabel>
                 <Select
-                  value={field.value === undefined ? "" : String(field.value)}
+                  value={
+                    field.value === null || field.value === undefined
+                      ? ""
+                      : String(field.value)
+                  }
                   onChange={(e) => {
                     const value =
-                      e.target.value === ""
-                        ? undefined
-                        : Number(e.target.value);
+                      e.target.value === "" ? null : Number(e.target.value);
                     field.onChange(value);
                   }}
                   label="Parent Facility"
