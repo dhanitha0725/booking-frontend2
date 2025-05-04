@@ -13,7 +13,7 @@ import {
   Reservation,
   ReservationStatus,
   UserType,
-} from "../../../../types/ReservationDetails";
+} from "../../../types/ReservationDetails";
 import FullReservationInfo from "./FullReservationInfo";
 
 interface ReservationTableProps {

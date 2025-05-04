@@ -13,12 +13,12 @@ import {
   DialogActions,
   CircularProgress,
 } from "@mui/material";
-import api from "../../../../services/api";
-import { AdminFacilityDetails } from "../../../../types/adminFacilityDetails";
+import api from "../../../services/api";
+import { AdminFacilityDetails } from "../../../types/adminFacilityDetails";
 import FacilityTable from "./FacilityTable";
 import AddFacilityDialog from "./AddFacilityDialog";
 import FullFacilityInfo from "./FullFacilityInfo";
-import { AddFacilityFormData } from "../../../../validations/addFacilityValidation";
+import { AddFacilityFormData } from "../../../validations/addFacilityValidation";
 import axios, { AxiosError } from "axios";
 
 const FacilityManagement: React.FC = () => {

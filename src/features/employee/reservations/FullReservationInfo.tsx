@@ -31,7 +31,7 @@ import {
   Business,
 } from "@mui/icons-material";
 import { format } from "date-fns";
-import api from "../../../../services/api";
+import api from "../../../services/api";
 import { AxiosError } from "axios";
 import {
   FullReservationDetails,
@@ -41,7 +41,7 @@ import {
   ReservationUser,
   PaymentDetails,
   BookedItem,
-} from "../../../../types/ReservationDetails";
+} from "../../../types/ReservationDetails";
 
 // Utility component for displaying fields
 const DetailField: React.FC<{

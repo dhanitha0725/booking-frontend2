@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Box, Button, Typography, Snackbar, Alert } from "@mui/material";
 import axios, { AxiosError } from "axios";
-import { User, BackendError } from "../../../../types/user";
+import { User, BackendError } from "../../../types/user";
 import AddUserDialog from "./AddUserDialog";
-import { AddUserFormData } from "../../../../validations/addUserValidation";
+import { AddUserFormData } from "../../../validations/addUserValidation";
 import UserTable from "./UserTable";
 
 const UserManagement: React.FC = () => {

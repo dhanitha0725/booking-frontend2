@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   addUserSchema,
   AddUserFormData,
-} from "../../../../validations/addUserValidation";
+} from "../../../validations/addUserValidation";
 
 interface AddUserDialogProps {
   open: boolean;

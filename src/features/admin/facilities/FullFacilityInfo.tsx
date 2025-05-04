@@ -19,12 +19,12 @@ import {
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import api from "../../../../services/api";
+import api from "../../../services/api";
 import { AxiosError } from "axios";
 import {
   FullFacilityDetails,
   FullFacilityInfoProps,
-} from "../../../../types/fullFacilityDetails";
+} from "../../../types/fullFacilityDetails";
 
 const FullFacilityInfo: React.FC<FullFacilityInfoProps> = ({
   open,

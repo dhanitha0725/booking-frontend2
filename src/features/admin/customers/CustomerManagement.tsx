@@ -8,9 +8,9 @@ import {
   Paper,
 } from "@mui/material";
 import axios, { AxiosError } from "axios";
-import { Customer, BackendError } from "../../../../types/user";
+import { Customer, BackendError } from "../../../types/user";
 import CustomerTable from "./CustomerTable";
-import api from "../../../../services/api";
+import api from "../../../services/api";
 
 const CustomerManagement: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);

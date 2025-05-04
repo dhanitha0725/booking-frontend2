@@ -5,7 +5,7 @@ import {
   type MRT_ColumnDef,
 } from "material-react-table";
 import { Box, Chip } from "@mui/material";
-import { User } from "../../../../types/user";
+import { User } from "../../../types/user";
 
 interface UserTableProps {
   users: User[];

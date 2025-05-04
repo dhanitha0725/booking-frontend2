@@ -8,9 +8,9 @@ import {
   Paper,
 } from "@mui/material";
 import axios, { AxiosError } from "axios";
-import api from "../../../../services/api";
-import ReservationTable from "../reservations/ReservationTable";
-import { Reservation } from "../../../../types/ReservationDetails";
+import api from "../../../services/api";
+import ReservationTable from "./ReservationTable";
+import { Reservation } from "../../../types/ReservationDetails";
 
 const ReservationManagement: React.FC = () => {
   // State for storing reservation data retrieved from the API

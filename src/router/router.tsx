@@ -20,11 +20,11 @@ import PaymentInfoPage from "../pages/PaymentInfoPage";
 import PaymentConfirmationPage from "../pages/PaymentConfirmationPage";
 
 //components
-import UserManagement from "../features/admin/components/staff/UserManagement";
-import FacilityManagement from "../features/admin/components/facilities/FacilityManagement";
-import CustomerManagement from "../features/admin/components/customers/CustomerManagement";
-import EmployeeDashboard from "../features/employee/components/dashboard/EmployeeDashboard";
-import ReservationManagement from "../features/employee/components/reservations/ReservationManagement";
+import UserManagement from "../features/admin/staff/UserManagement";
+import FacilityManagement from "../features/admin/facilities/FacilityManagement";
+import CustomerManagement from "../features/admin/customers/CustomerManagement";
+import EmployeeDashboard from "../features/employee/dashboard/EmployeeDashboard";
+import ReservationManagement from "../features/employee/reservations/ReservationManagement";
 
 const Router: React.FC = () => {
   return (

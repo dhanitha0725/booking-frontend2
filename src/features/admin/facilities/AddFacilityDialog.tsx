@@ -22,11 +22,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   addFacilitySchema,
   AddFacilityFormData,
-} from "../../../../validations/addFacilityValidation";
-import api from "../../../../services/api";
+} from "../../../validations/addFacilityValidation";
+import api from "../../../services/api";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import { ApiFacility } from "../../../../types/addFacilityDetails";
+import { ApiFacility } from "../../../types/addFacilityDetails";
 import { AxiosError } from "axios";
 
 // backend error response

@@ -15,8 +15,8 @@ import {
   AttachMoney,
 } from "@mui/icons-material";
 import axios from "axios";
-import api from "../../../../services/api";
-import { Reservation } from "../../../../types/ReservationDetails";
+import api from "../../../services/api";
+import { Reservation } from "../../../types/ReservationDetails";
 import ReservationTable from "../reservations/ReservationTable";
 import StatCard from "./StatCard";
 

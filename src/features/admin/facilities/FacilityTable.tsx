@@ -7,7 +7,7 @@ import {
   useMaterialReactTable,
   type MRT_ColumnDef,
 } from "material-react-table";
-import { AdminFacilityDetails } from "../../../../types/adminFacilityDetails";
+import { AdminFacilityDetails } from "../../../types/adminFacilityDetails";
 
 interface FacilityTableProps {
   facilities: AdminFacilityDetails[];
