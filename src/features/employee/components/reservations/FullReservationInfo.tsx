@@ -13,11 +13,11 @@ import {
   CircularProgress,
   Paper,
   Table,
-  TableBody,
-  TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TableCell,
+  TableBody,
 } from "@mui/material";
 import {
   Person,
@@ -28,6 +28,7 @@ import {
   Receipt,
   EventAvailable,
   Update,
+  Business,
 } from "@mui/icons-material";
 import { format } from "date-fns";
 import api from "../../../../services/api";
@@ -37,9 +38,9 @@ import {
   FullReservationInfoProps,
   ReservationStatus,
   UserType,
-  BookedItem,
   ReservationUser,
   PaymentDetails,
+  BookedItem,
 } from "../../../../types/ReservationDetails";
 
 // Utility component for displaying fields
@@ -61,7 +62,7 @@ const DetailField: React.FC<{
 const ReservationDetailsSection: React.FC<{
   reservation: FullReservationDetails;
 }> = ({ reservation }) => {
-  const formatDate = (dateString: string) =>
+  const formatDate = (dateString: string | null) =>
     dateString ? format(new Date(dateString), "MMM dd, yyyy HH:mm") : "N/A";
   const statusColors: Record<
     ReservationStatus,
@@ -81,11 +82,11 @@ const ReservationDetailsSection: React.FC<{
     Confirmed: "success",
     Expired: "error",
   };
-  const renderStatusChip = (status: ReservationStatus | undefined | null) =>
+  const renderStatusChip = (status: string) =>
     status ? (
       <Chip
         label={status}
-        color={statusColors[status] || "default"}
+        color={statusColors[status as ReservationStatus] || "default"}
         size="small"
       />
     ) : (
@@ -132,7 +133,7 @@ const ReservationDetailsSection: React.FC<{
             <Typography variant="body2" sx={{ color: "text.secondary", mr: 1 }}>
               Status:
             </Typography>
-            {renderStatusChip(reservation.status as ReservationStatus)}
+            {renderStatusChip(reservation.status)}
           </Box>
         </Grid>
       </Grid>
@@ -142,10 +143,32 @@ const ReservationDetailsSection: React.FC<{
 
 // Booked Items Section
 const BookedItemsSection: React.FC<{
-  bookedItems: BookedItem[];
+  reservedPackages: FullReservationDetails["reservedPackages"];
+  reservedRooms: FullReservationDetails["reservedRooms"];
   total: number;
-}> = ({ bookedItems, total }) => {
+}> = ({ reservedPackages, reservedRooms, total }) => {
   const formatCurrency = (amount: number) => `LKR ${amount.toFixed(2)}`;
+
+  // Transform packages and rooms into bookedItems
+  const bookedItems: BookedItem[] = [
+    ...reservedPackages.map((pkg, index) => ({
+      id: index + 1,
+      name: pkg.packageName,
+      type: "Package" as const,
+      price: total / (reservedPackages.length + reservedRooms.length || 1),
+      quantity: 1,
+      facilityName: pkg.facilityName,
+    })),
+    ...reservedRooms.map((room, index) => ({
+      id: index + 1 + reservedPackages.length,
+      name: room.roomType,
+      type: "Room" as const,
+      price: total / (reservedPackages.length + reservedRooms.length || 1),
+      quantity: 1,
+      facilityName: room.facilityName,
+    })),
+  ];
+
   return (
     <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
       <Table size="small">
@@ -153,25 +176,37 @@ const BookedItemsSection: React.FC<{
           <TableRow sx={{ bgcolor: "#f5f5f5" }}>
             <TableCell>Name</TableCell>
             <TableCell>Type</TableCell>
+            <TableCell>Facility</TableCell>
             <TableCell align="right">Price</TableCell>
             <TableCell align="right">Quantity</TableCell>
             <TableCell align="right">Subtotal</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {bookedItems.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.type}</TableCell>
-              <TableCell align="right">{formatCurrency(item.price)}</TableCell>
-              <TableCell align="right">{item.quantity || 1}</TableCell>
-              <TableCell align="right">
-                {formatCurrency(item.price * (item.quantity || 1))}
+          {bookedItems.length > 0 ? (
+            bookedItems.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>{item.name}</TableCell>
+                <TableCell>{item.type}</TableCell>
+                <TableCell>{item.facilityName}</TableCell>
+                <TableCell align="right">
+                  {formatCurrency(item.price)}
+                </TableCell>
+                <TableCell align="right">{item.quantity || 1}</TableCell>
+                <TableCell align="right">
+                  {formatCurrency(item.price * (item.quantity || 1))}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={6} align="center">
+                No booked items available
               </TableCell>
             </TableRow>
-          ))}
+          )}
           <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-            <TableCell colSpan={4} align="right" sx={{ fontWeight: "bold" }}>
+            <TableCell colSpan={5} align="right" sx={{ fontWeight: "bold" }}>
               Total:
             </TableCell>
             <TableCell align="right" sx={{ fontWeight: "bold" }}>
@@ -185,7 +220,10 @@ const BookedItemsSection: React.FC<{
 };
 
 // User Details Section
-const UserDetailsSection: React.FC<{ user: ReservationUser }> = ({ user }) => {
+const UserDetailsSection: React.FC<{
+  user: ReservationUser;
+  userType: UserType;
+}> = ({ user, userType }) => {
   const userTypeColors: Record<
     UserType,
     "default" | "primary" | "secondary" | "warning"
@@ -194,11 +232,11 @@ const UserDetailsSection: React.FC<{ user: ReservationUser }> = ({ user }) => {
     private: "secondary",
     corporate: "warning",
   };
-  const renderUserTypeChip = (userType: UserType | undefined | null) =>
+  const renderUserTypeChip = (userType: string) =>
     userType ? (
       <Chip
         label={userType.charAt(0).toUpperCase() + userType.slice(1)}
-        color={userTypeColors[userType] || "default"}
+        color={userTypeColors[userType as UserType] || "default"}
         size="small"
       />
     ) : (
@@ -224,20 +262,22 @@ const UserDetailsSection: React.FC<{ user: ReservationUser }> = ({ user }) => {
           />
         </Grid>
         <Grid item xs={12} md={6}>
-          <DetailField
-            icon={<Phone sx={{ mr: 1, color: "text.secondary" }} />}
-            label="Phone"
-            value={user.phoneNumber}
-          />
+          {user.phoneNumber && (
+            <DetailField
+              icon={<Phone sx={{ mr: 1, color: "text.secondary" }} />}
+              label="Phone"
+              value={user.phoneNumber}
+            />
+          )}
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <Typography variant="body2" sx={{ color: "text.secondary", mr: 1 }}>
               User Type:
             </Typography>
-            {renderUserTypeChip(user.userType as UserType)}
+            {renderUserTypeChip(userType)}
           </Box>
-          {user.organizationName && (
+          {user.organizationName && user.organizationName.trim() !== "" && (
             <DetailField
-              icon={<Person sx={{ mr: 1, color: "text.secondary" }} />}
+              icon={<Business sx={{ mr: 1, color: "text.secondary" }} />}
               label="Organization"
               value={user.organizationName}
             />
@@ -249,57 +289,81 @@ const UserDetailsSection: React.FC<{ user: ReservationUser }> = ({ user }) => {
 };
 
 // Payment Details Section
-const PaymentDetailsSection: React.FC<{ payment: PaymentDetails }> = ({
-  payment,
-}) => {
+const PaymentDetailsSection: React.FC<{
+  payments: PaymentDetails[];
+}> = ({ payments }) => {
   const formatDate = (dateString: string) =>
     dateString ? format(new Date(dateString), "MMM dd, yyyy HH:mm") : "N/A";
   const formatCurrency = (amount: number) => `LKR ${amount.toFixed(2)}`;
+
   return (
     <Paper elevation={0} sx={{ p: 2, bgcolor: "#f5f5f5" }}>
       <Typography variant="h6" gutterBottom>
         Payment Details
       </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <DetailField
-            icon={<Receipt sx={{ mr: 1, color: "text.secondary" }} />}
-            label="Order ID"
-            value={payment.orderId}
-          />
-          <DetailField
-            icon={<AttachMoney sx={{ mr: 1, color: "text.secondary" }} />}
-            label="Amount Paid"
-            value={formatCurrency(payment.amountPaid)}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <DetailField
-            icon={<CalendarMonth sx={{ mr: 1, color: "text.secondary" }} />}
-            label="Payment Date"
-            value={formatDate(payment.paidDate)}
-          />
-          <DetailField
-            icon={<AttachMoney sx={{ mr: 1, color: "text.secondary" }} />}
-            label="Payment Method"
-            value={payment.paymentMethod}
-          />
-        </Grid>
-        <Grid item xs={12}>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Typography variant="body2" sx={{ color: "text.secondary", mr: 1 }}>
-              Payment Status:
-            </Typography>
-            <Chip
-              label={payment.status}
-              size="small"
-              color={
-                payment.status.toLowerCase() === "paid" ? "success" : "warning"
-              }
-            />
+      {payments.length > 0 ? (
+        payments.map((payment, index) => (
+          <Box
+            key={payment.orderID}
+            sx={{
+              mb: 2,
+              pb: 2,
+              borderBottom:
+                index < payments.length - 1 ? "1px solid #e0e0e0" : "none",
+            }}
+          >
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <DetailField
+                  icon={<Receipt sx={{ mr: 1, color: "text.secondary" }} />}
+                  label="Order ID"
+                  value={payment.orderID}
+                />
+                <DetailField
+                  icon={<AttachMoney sx={{ mr: 1, color: "text.secondary" }} />}
+                  label="Amount Paid"
+                  value={formatCurrency(payment.amountPaid)}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <DetailField
+                  icon={
+                    <CalendarMonth sx={{ mr: 1, color: "text.secondary" }} />
+                  }
+                  label="Payment Date"
+                  value={formatDate(payment.createdDate)}
+                />
+                <DetailField
+                  icon={<AttachMoney sx={{ mr: 1, color: "text.secondary" }} />}
+                  label="Payment Method"
+                  value={payment.method}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "text.secondary", mr: 1 }}
+                  >
+                    Payment Status:
+                  </Typography>
+                  <Chip
+                    label={payment.status}
+                    size="small"
+                    color={
+                      payment.status.toLowerCase() === "completed"
+                        ? "success"
+                        : "warning"
+                    }
+                  />
+                </Box>
+              </Grid>
+            </Grid>
           </Box>
-        </Grid>
-      </Grid>
+        ))
+      ) : (
+        <Typography>No payment details available</Typography>
+      )}
     </Paper>
   );
 };
@@ -331,7 +395,7 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
         const token = localStorage.getItem("authToken");
         if (!token) throw new Error("Authentication token not found");
         const response = await api.get(
-          `http://localhost:5162/api/Reservation/${reservationId}/details`,
+          `http://localhost:5162/api/Reservation/reservation-details/${reservationId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -343,6 +407,7 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
           axiosError.response?.data?.message ||
             "Failed to fetch reservation details"
         );
+        console.error("Error fetching reservation details:", err);
       } finally {
         setLoading(false);
       }
@@ -369,11 +434,15 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
           <>
             <ReservationDetailsSection reservation={reservation} />
             <BookedItemsSection
-              bookedItems={reservation.bookedItems}
+              reservedPackages={reservation.reservedPackages}
+              reservedRooms={reservation.reservedRooms}
               total={reservation.total}
             />
-            <UserDetailsSection user={reservation.user} />
-            <PaymentDetailsSection payment={reservation.payment} />
+            <UserDetailsSection
+              user={reservation.user}
+              userType={reservation.userType}
+            />
+            <PaymentDetailsSection payments={reservation.payments} />
           </>
         ) : (
           <Typography>No reservation details available</Typography>

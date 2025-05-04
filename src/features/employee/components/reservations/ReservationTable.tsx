@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -7,12 +7,14 @@ import {
 import { Box, Chip, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { format } from "date-fns";
 import {
   Reservation,
   ReservationStatus,
   UserType,
 } from "../../../../types/ReservationDetails";
+import FullReservationInfo from "./FullReservationInfo";
 
 interface ReservationTableProps {
   reservations: Reservation[];
@@ -31,6 +33,23 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
   enablePagination = true,
   enableFilters = true,
 }) => {
+  // State for managing reservation details dialog
+  const [selectedReservationId, setSelectedReservationId] = useState<
+    number | undefined
+  >(undefined);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Handle opening the reservation details dialog
+  const handleViewReservation = (reservationId: number) => {
+    setSelectedReservationId(reservationId);
+    setIsDialogOpen(true);
+  };
+
+  // Handle closing the reservation details dialog
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+  };
+
   // Format date for display
   const formatDate = (date: string | Date): string => {
     if (!date) return "N/A";
@@ -160,9 +179,23 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
             {
               id: "actions",
               header: "Actions",
-              size: 120,
-              Cell: ({ row }) => (
+              size: 150,
+              Cell: ({ row }: { row: { original: Reservation } }) => (
                 <Box sx={{ display: "flex", gap: 1 }}>
+                  {/* View Details Button */}
+                  <Tooltip title="View Reservation Details">
+                    <IconButton
+                      size="small"
+                      color="info"
+                      onClick={() =>
+                        handleViewReservation(row.original.reservationId)
+                      }
+                    >
+                      <VisibilityIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* Modify Button */}
                   <Tooltip title="Modify Reservation">
                     <IconButton
                       size="small"
@@ -177,6 +210,8 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
                       <EditIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
+
+                  {/* Cancel Button */}
                   <Tooltip title="Cancel Reservation">
                     <IconButton
                       size="small"
@@ -226,7 +261,15 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
 
   return (
     <Box sx={{ width: "100%" }}>
+      {/* ReservationTable */}
       <MaterialReactTable table={table} />
+
+      {/* Full Reservation Info Dialog */}
+      <FullReservationInfo
+        open={isDialogOpen}
+        onClose={handleCloseDialog}
+        reservationId={selectedReservationId}
+      />
     </Box>
   );
 };

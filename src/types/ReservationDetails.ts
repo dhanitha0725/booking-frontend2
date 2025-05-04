@@ -1,3 +1,7 @@
+/**
+ * Type definitions related to reservations
+ */
+
 // Define Reservation Status type for type safety
 export type ReservationStatus =
   | "PendingApproval"
@@ -11,7 +15,7 @@ export type ReservationStatus =
 // Define User Type for type safety
 export type UserType = "public" | "private" | "corporate";
 
-// Interface for Reservation data for the table
+// Basic Reservation interface for table display
 export interface Reservation {
   reservationId: number;
   startDate: string | Date;
@@ -22,56 +26,65 @@ export interface Reservation {
   userType: UserType;
 }
 
+// User information related to a reservation
 export interface ReservationUser {
-  userId: number;
-  userType: string;
   firstName: string;
   lastName: string;
   email: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   organizationName?: string;
 }
 
-export interface BookedItem {
-  id: number;
-  name: string;
-  type: string; // "Package" or "Room"
-  price: number;
-  quantity?: number;
-  details?: string;
+// Package reservation information
+export interface ReservedPackage {
+  packageName: string;
+  facilityName: string;
 }
 
-export interface PaymentDocument {
-  id: number;
-  name: string;
-  url: string;
-  uploadDate: string;
+// Room reservation information
+export interface ReservedRoom {
+  roomType: string;
+  facilityName: string;
 }
 
+// Payment information for a reservation
 export interface PaymentDetails {
-  orderId: string;
+  orderID: string;
+  method: string;
   amountPaid: number;
-  paymentMethod: string;
-  paidDate: string;
-  documents?: PaymentDocument[];
+  createdDate: string;
   status: string;
 }
 
+// Complete reservation details for the full view
 export interface FullReservationDetails {
   reservationId: number;
   startDate: string;
   endDate: string;
   createdDate: string;
-  updatedDate?: string;
+  updatedDate: string | null;
   total: number;
-  bookedItems: BookedItem[];
+  status: ReservationStatus;
+  userType: UserType;
   user: ReservationUser;
-  payment: PaymentDetails;
-  status: string;
+  payments: PaymentDetails[];
+  reservedPackages: ReservedPackage[];
+  reservedRooms: ReservedRoom[];
 }
 
+// Props for the FullReservationInfo component
 export interface FullReservationInfoProps {
   open: boolean;
   onClose: () => void;
   reservationId?: number;
+}
+
+// For internal use in BookedItemsSection
+export interface BookedItem {
+  id: number;
+  name: string;
+  type: "Package" | "Room";
+  price: number;
+  quantity: number;
+  facilityName: string;
 }
