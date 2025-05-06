@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Container,
@@ -12,20 +12,32 @@ import {
 } from "@mui/material";
 import { NavigateNext, ArrowBack } from "@mui/icons-material";
 import { Link } from "react-router-dom";
-import { SelectedFacility, BookingItemDto } from "../types/selectedFacility";
+import { Dayjs } from "dayjs";
+import {
+  PackagesDto,
+  pricingDto,
+  RoomDto,
+  RoomPricingDto,
+  SelectedFacility,
+  ApiResponse,
+  BookingItemDto,
+} from "../types/selectedFacility";
 import FacilityDetails from "../features/client/booking/components/FacilityDetails";
 import BookingDatePicker from "../features/client/booking/components/BookingDatePicker";
 import SelectionTable from "../features/client/booking/components/SelectionTable";
 import TotalSummary from "../features/client/booking/components/TotalSummary";
-import api from "../services/api";
+import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import SignInPromptModal from "../features/client/booking/components/SignInPromptModal";
-import { useFacilityMapper } from "../hooks/useFacilityMapper";
-import { useBooking, DateRangeType } from "../hooks/useBooking";
+import { useTimeConversion } from "../hooks/useTimeConversion";
+
+interface DateRangeType {
+  startDate: Dayjs | null;
+  endDate: Dayjs | null;
+}
 
 const BookingPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { mapResponseToFacility } = useFacilityMapper();
   const [facility, setFacility] = useState<SelectedFacility | null>(null);
   const [loading, setLoading] = useState(true);
   const [customerType, setCustomerType] = useState<
@@ -42,64 +54,81 @@ const BookingPage = () => {
   const [signInModalOpen, setSignInModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // POTENTIAL ISSUE: The useBooking hook might be causing re-renders
-  // Let's memoize the values to prevent infinite loops
-  const bookingParams = useMemo(
-    () => ({
-      selectedItems,
-      facility,
-      dateRange,
-      isAvailable,
+  // Use the custom hook for time conversion
+  const { convertTimeSpanToString, convertHoursToNumbers } =
+    useTimeConversion();
+
+  // map backend response to Facility type - converted to a memoized callback
+  const mapResponseToFacility = useCallback(
+    (response: ApiResponse): SelectedFacility => ({
+      id: response.value.facilityId,
+      name: response.value.facilityName,
+      location: response.value.location,
+      description: response.value.description || "No description available",
+      images: response.value.imageUrls || [],
+      amenities: response.value.attributes || [],
+
+      packages:
+        response.value.packages?.map((pkg: PackagesDto) => ({
+          packageId: pkg.packageId,
+          packageName: pkg.packageName,
+          duration: pkg.duration
+            ? convertTimeSpanToString(pkg.duration)
+            : undefined,
+
+          requiresDates: pkg.duration
+            ? convertHoursToNumbers(pkg.duration) >= 24
+            : false,
+          pricing: pkg.pricing.map((price: pricingDto) => ({
+            sector: price.sector,
+            price: price.price,
+          })),
+        })) || [],
+      rooms:
+        response.value.rooms?.map((room: RoomDto) => ({
+          roomId: room.roomId,
+          roomType: room.roomType,
+          pricing: room.pricing.map((price: RoomPricingDto) => ({
+            sector: price.sector,
+            price: price.price,
+          })),
+        })) || [],
     }),
-    [selectedItems, facility, dateRange, isAvailable]
+    [convertTimeSpanToString, convertHoursToNumbers]
   );
 
-  // Use our custom booking hook for validation logic with memoized params
-  const { requiresDates, isReserveDisabled } = useBooking(
-    bookingParams.selectedItems,
-    bookingParams.facility,
-    bookingParams.dateRange,
-    bookingParams.isAvailable
-  );
-
-  // Memoize the fetchData function to prevent recreation on each render
-  const fetchFacilityData = useCallback(async () => {
-    if (!id) return;
-
-    setLoading(true);
-    try {
-      const facilityId = parseInt(id, 10);
-      if (isNaN(facilityId)) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await api.get(`/Reservation/${facilityId}`);
-
-      if (response.data?.isSuccess) {
-        setFacility(mapResponseToFacility(response.data));
-      }
-    } catch (error) {
-      console.error("Error fetching facility:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, mapResponseToFacility]);
-
-  // Fetch facility data only when component mounts or id changes
   useEffect(() => {
-    // Only fetch when we have an ID
-    if (id) {
-      fetchFacilityData();
-    }
-  }, [id, fetchFacilityData]);
+    console.log("isAuthenticated:", isAuthenticated);
+  }, [isAuthenticated]);
 
-  // Handle reservation and store reservation data temporarily
-  const handleReservation = useCallback(() => {
-    if (!facility) return;
+  const requiresDates = selectedItems.some(
+    (item) =>
+      item.type === "room" ||
+      facility?.packages.find((p) => p.packageId === item.itemId)?.requiresDates
+  );
 
+  // check if the selected dates are valid
+  const validateDates = () => {
+    if (!requiresDates) return true;
+    return (
+      dateRange.startDate &&
+      dateRange.endDate &&
+      dateRange.endDate.isAfter(dateRange.startDate)
+    );
+  };
+
+  const hasSelectedPackage = () => {
+    return selectedItems.some((item) => item.type === "package");
+  };
+
+  const isReserveDisabled = () => {
+    return !isAvailable || !hasSelectedPackage() || !validateDates();
+  };
+
+  // handle reservation and store reservation data temporarily
+  const handleReservation = () => {
     const reservationData = {
-      facilityId: facility.id,
+      facilityId: facility!.id,
       selectedItems,
       total,
       customerType,
@@ -108,40 +137,61 @@ const BookingPage = () => {
     };
 
     localStorage.setItem("currentReservation", JSON.stringify(reservationData));
-  }, [facility, selectedItems, total, customerType, dateRange]);
+  };
 
-  const handleReserveNow = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.preventDefault();
-      if (!isAuthenticated) {
-        setSignInModalOpen(true);
-        return;
-      }
-      handleReservation();
-      navigate("/userinfo", { state: { facilityId: facility?.id } });
-    },
-    [isAuthenticated, handleReservation, navigate, facility?.id]
-  );
+  const handleReserveNow = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      setSignInModalOpen(true);
+      return;
+    }
+    handleReservation();
+    navigate("/userinfo", { state: { facilityId: facility?.id } });
+  };
 
-  // Handle selection changes for packages and rooms
+  // handle selection changes for packages and rooms
   const handleSelectionChange = useCallback(
     (type: "package" | "room", id: number, quantity: number) => {
       setSelectedItems((prev) => {
-        // First filter out any existing item with the same type and id
-        const filtered = prev.filter(
+        // Fix the filter logic: we want to keep items that DON'T match the current item
+        const filteredItems = prev.filter(
           (item) => !(item.type === type && item.itemId === id)
         );
 
-        // If quantity > 0, add the new item
+        // Add the new item if quantity > 0
         if (quantity > 0) {
-          return [...filtered, { type, itemId: id, quantity }];
+          return [...filteredItems, { type, itemId: id, quantity }];
         }
 
-        return filtered;
+        return filteredItems;
       });
     },
     []
   );
+
+  // fetch facility data from the API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const facilityId = parseInt(id || "", 10);
+        if (!isNaN(facilityId)) {
+          const response = await axios.get(
+            `http://localhost:5162/api/Reservation/${facilityId}`
+          );
+
+          if (response.data.isSuccess) {
+            setFacility(mapResponseToFacility(response.data));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching facility:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, mapResponseToFacility]);
 
   const handleDateChange = useCallback((newDateRange: DateRangeType) => {
     setDateRange(newDateRange);
@@ -158,14 +208,12 @@ const BookingPage = () => {
     setIsAvailable(availability);
   }, []);
 
-  // Close sign-in modal when user is authenticated
   useEffect(() => {
     if (isAuthenticated && signInModalOpen) {
       setSignInModalOpen(false);
     }
   }, [isAuthenticated, signInModalOpen]);
 
-  // Render the loading state
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, textAlign: "center" }}>
@@ -175,7 +223,6 @@ const BookingPage = () => {
     );
   }
 
-  // Render the error state when facility is not found
   if (!facility) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -194,9 +241,11 @@ const BookingPage = () => {
     );
   }
 
+  // Rest of component remains the same
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Breadcrumbs */}
+      {/* Your existing JSX */}
       <Breadcrumbs
         separator={<NavigateNext fontSize="small" />}
         aria-label="breadcrumb"
@@ -222,7 +271,7 @@ const BookingPage = () => {
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Booking details section */}
+      {/* display booking date picker and customer type selection */}
       <Typography variant="h6" gutterBottom>
         Select Booking Details
       </Typography>
@@ -232,17 +281,17 @@ const BookingPage = () => {
         customerType={customerType}
         onCustomerTypeChange={handleCustomerTypeChange}
         required={requiresDates}
-        facilityId={facility.id}
+        facilityId={facility?.id}
         selectedItems={selectedItems}
         onAvailabilityChange={handleAvailabilityChange}
       />
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Selection table */}
+      {/* display packages and rooms*/}
       <SelectionTable
-        packages={facility.packages || []}
-        rooms={facility.rooms || []}
+        packages={facility?.packages || []}
+        rooms={facility?.rooms || []}
         onSelectionChange={handleSelectionChange}
         requiresDates={requiresDates}
         selectedItems={selectedItems}
@@ -250,18 +299,17 @@ const BookingPage = () => {
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Total summary */}
+      {/* display total price */}
       <TotalSummary
         total={total}
         setTotal={setTotal}
-        facilityId={facility.id}
+        facilityId={facility?.id}
         customerType={customerType}
         dateRange={dateRange}
         selectedItems={selectedItems}
         requiresDates={requiresDates}
       />
 
-      {/* Action buttons */}
       <Button
         variant="contained"
         color="success"
@@ -271,12 +319,10 @@ const BookingPage = () => {
       >
         Reserve Now
       </Button>
-
       <SignInPromptModal
         open={signInModalOpen}
         onClose={() => setSignInModalOpen(false)}
       />
-
       <Divider sx={{ my: 3 }} />
     </Container>
   );
