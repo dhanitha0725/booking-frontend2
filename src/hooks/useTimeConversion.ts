@@ -1,5 +1,5 @@
 /**
- * Custom hook for time conversion utilities
+ * Custom hook for time conversion
  * 
  * Provides functions to convert between different time formats
  */

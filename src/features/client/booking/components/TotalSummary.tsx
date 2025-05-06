@@ -23,18 +23,20 @@ const TotalSummary = ({
   selectedItems,
   requiresDates,
 }: TotalSummaryProps) => {
-  // Ref to store the previous request payload string (fix: unnecessary api calls)
   const prevRequestRef = useRef<string>("");
 
-  // Calculate total price based on selected items and dates
+  // Create stable string versions of dates for dependencies
+  const startDateString = dateRange.startDate?.toISOString();
+  const endDateString = dateRange.endDate?.toISOString();
+
+  // Memoize calculateTotal to prevent unnecessary re-creation
   const calculateTotal = useCallback(async () => {
-    //calculation conditions
-    // Don't calculate if we're missing required dates
+    // Skip if required dates are missing
     if (requiresDates && (!dateRange.startDate || !dateRange.endDate)) {
       return;
     }
 
-    // Don't calculate if the date range is invalid
+    // Skip if date range is invalid
     if (
       dateRange.startDate &&
       dateRange.endDate &&
@@ -43,13 +45,12 @@ const TotalSummary = ({
       return;
     }
 
-    // Don't calculate if there are no selected items or no facility ID
+    // Reset total if no items or facilityId
     if (selectedItems.length === 0 || !facilityId) {
       setTotal(0);
       return;
     }
 
-    // Create the payload for calculation
     const payload = {
       calculateTotalDto: {
         facilityId,
@@ -60,20 +61,16 @@ const TotalSummary = ({
       },
     };
 
-    // Convert payload to string to check if it has changed
+    // Stringify payload to compare with previous request
     const payloadString = JSON.stringify(payload);
-
-    // Skip API call if the request is equal to the previous one
     if (payloadString === prevRequestRef.current) {
-      return;
+      return; // Skip if payload hasn't changed
     }
 
-    // Update the ref with current payload
     prevRequestRef.current = payloadString;
 
     try {
       const response = await api.post("/Reservation/calculateTotal", payload);
-
       if (response.data?.value?.total !== undefined) {
         setTotal(response.data.value.total);
       }
@@ -83,14 +80,14 @@ const TotalSummary = ({
   }, [
     facilityId,
     customerType,
-    dateRange.startDate,
-    dateRange.endDate,
+    startDateString, // Using stable string version instead of object reference
+    endDateString, // Using stable string version instead of object reference
     selectedItems,
     requiresDates,
     setTotal,
   ]);
 
-  // Calculate total when calculateTotal changes
+  // Trigger calculation only when calculateTotal changes
   useEffect(() => {
     calculateTotal();
   }, [calculateTotal]);
