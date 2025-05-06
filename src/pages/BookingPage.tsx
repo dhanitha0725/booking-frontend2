@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Container,
@@ -29,12 +29,69 @@ import TotalSummary from "../features/client/booking/components/TotalSummary";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import SignInPromptModal from "../features/client/booking/components/SignInPromptModal";
-import { useTimeConversion } from "../hooks/useTimeConversion";
 
 interface DateRangeType {
   startDate: Dayjs | null;
   endDate: Dayjs | null;
 }
+
+// Modified mapResponseToFacility function to handle the actual API response structure
+
+const mapResponseToFacility = (response: ApiResponse): SelectedFacility => ({
+  id: response.value.facilityId,
+  name: response.value.facilityName,
+  location: response.value.location,
+  description: response.value.description || "No description available",
+  images: response.value.imageUrls || [],
+  amenities: response.value.attributes || [],
+
+  packages:
+    response.value.packages?.map((pkg: PackagesDto) => ({
+      packageId: pkg.packageId,
+      packageName: pkg.packageName,
+      duration: pkg.duration
+        ? convertTimeSpanToString(pkg.duration)
+        : undefined,
+      requiresDates: pkg.duration
+        ? convertHoursToNumbers(pkg.duration) >= 24
+        : false,
+      pricing:
+        pkg.pricing?.map((price: pricingDto) => ({
+          sector: price.sector,
+          price: price.price,
+        })) || [],
+    })) || [],
+  rooms:
+    response.value.rooms?.map((room: RoomDto) => ({
+      roomId: room.roomId,
+      roomType: room.roomType,
+      roomPricing:
+        room.roomPricing?.map((price: RoomPricingDto) => ({
+          sector: price.sector,
+          price: price.price,
+        })) || [],
+    })) || [],
+});
+
+// helper function to convert time span to string
+const convertTimeSpanToString = (timeSpan: string) => {
+  const [hours, minutes] = timeSpan.split(":").map(Number);
+  if (hours >= 24) {
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return `${days} day${days > 1 ? "s" : ""}${remainingHours > 0 ? ` ${remainingHours} hour${remainingHours > 1 ? "s" : ""}` : ""}`;
+  }
+  const hourString = hours > 0 ? `${hours} hour${hours > 1 ? "s" : ""}` : "";
+  const minuteString =
+    minutes > 0 ? `${minutes} minute${minutes > 1 ? "s" : ""}` : "";
+  return [hourString, minuteString].filter(Boolean).join(" ");
+};
+
+// helper function to convert hours to numbers
+const convertHoursToNumbers = (timeSpan: string) => {
+  const [hours] = timeSpan.split(":");
+  return parseInt(hours, 10);
+};
 
 const BookingPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,53 +110,6 @@ const BookingPage = () => {
   const { isAuthenticated } = useAuth();
   const [signInModalOpen, setSignInModalOpen] = useState(false);
   const navigate = useNavigate();
-
-  // Use the custom hook for time conversion
-  const { convertTimeSpanToString, convertHoursToNumbers } =
-    useTimeConversion();
-
-  // map backend response to Facility type - converted to a memoized callback
-  const mapResponseToFacility = useCallback(
-    (response: ApiResponse): SelectedFacility => ({
-      id: response.value.facilityId,
-      name: response.value.facilityName,
-      location: response.value.location,
-      description: response.value.description || "No description available",
-      images: response.value.imageUrls || [],
-      amenities: response.value.attributes || [],
-
-      packages:
-        response.value.packages?.map((pkg: PackagesDto) => ({
-          packageId: pkg.packageId,
-          packageName: pkg.packageName,
-          duration: pkg.duration
-            ? convertTimeSpanToString(pkg.duration)
-            : undefined,
-
-          requiresDates: pkg.duration
-            ? convertHoursToNumbers(pkg.duration) >= 24
-            : false,
-          pricing: pkg.pricing.map((price: pricingDto) => ({
-            sector: price.sector,
-            price: price.price,
-          })),
-        })) || [],
-      rooms:
-        response.value.rooms?.map((room: RoomDto) => ({
-          roomId: room.roomId,
-          roomType: room.roomType,
-          pricing: room.pricing.map((price: RoomPricingDto) => ({
-            sector: price.sector,
-            price: price.price,
-          })),
-        })) || [],
-    }),
-    [convertTimeSpanToString, convertHoursToNumbers]
-  );
-
-  useEffect(() => {
-    console.log("isAuthenticated:", isAuthenticated);
-  }, [isAuthenticated]);
 
   const requiresDates = selectedItems.some(
     (item) =>
@@ -150,24 +160,16 @@ const BookingPage = () => {
   };
 
   // handle selection changes for packages and rooms
-  const handleSelectionChange = useCallback(
-    (type: "package" | "room", id: number, quantity: number) => {
-      setSelectedItems((prev) => {
-        // Fix the filter logic: we want to keep items that DON'T match the current item
-        const filteredItems = prev.filter(
-          (item) => !(item.type === type && item.itemId === id)
-        );
-
-        // Add the new item if quantity > 0
-        if (quantity > 0) {
-          return [...filteredItems, { type, itemId: id, quantity }];
-        }
-
-        return filteredItems;
-      });
-    },
-    []
-  );
+  const handleSelectionChange = (
+    type: "package" | "room",
+    id: number,
+    quantity: number
+  ) => {
+    setSelectedItems((prev) => [
+      ...prev.filter((item) => !(item.type === type && item.itemId === id)),
+      ...(quantity > 0 ? [{ type, itemId: id, quantity }] : []),
+    ]);
+  };
 
   // fetch facility data from the API
   useEffect(() => {
@@ -182,6 +184,7 @@ const BookingPage = () => {
           if (response.data.isSuccess) {
             setFacility(mapResponseToFacility(response.data));
           }
+          console.log("Facility data:", response.data);
         }
       } catch (error) {
         console.error("Error fetching facility:", error);
@@ -191,22 +194,21 @@ const BookingPage = () => {
     };
 
     fetchData();
-  }, [id, mapResponseToFacility]);
+  }, [id]);
 
-  const handleDateChange = useCallback((newDateRange: DateRangeType) => {
+  const handleDateChange = (newDateRange: DateRangeType) => {
     setDateRange(newDateRange);
-  }, []);
+  };
 
-  const handleCustomerTypeChange = useCallback(
-    (type: "corporate" | "public" | "private") => {
-      setCustomerType(type);
-    },
-    []
-  );
+  const handleCustomerTypeChange = (
+    type: "corporate" | "public" | "private"
+  ) => {
+    setCustomerType(type);
+  };
 
-  const handleAvailabilityChange = useCallback((availability: boolean) => {
+  const handleAvailabilityChange = (availability: boolean) => {
     setIsAvailable(availability);
-  }, []);
+  };
 
   useEffect(() => {
     if (isAuthenticated && signInModalOpen) {
@@ -241,11 +243,8 @@ const BookingPage = () => {
     );
   }
 
-  // Rest of component remains the same
-
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Your existing JSX */}
       <Breadcrumbs
         separator={<NavigateNext fontSize="small" />}
         aria-label="breadcrumb"
@@ -289,6 +288,7 @@ const BookingPage = () => {
       <Divider sx={{ my: 3 }} />
 
       {/* display packages and rooms*/}
+
       <SelectionTable
         packages={facility?.packages || []}
         rooms={facility?.rooms || []}

@@ -25,7 +25,7 @@ export interface pricingDto {
 export interface RoomDto {
   roomId: number;
   roomType: string;
-  pricing: RoomPricingDto[];
+  roomPricing?: RoomPricingDto[]; 
 }
 
 export interface RoomPricingDto {

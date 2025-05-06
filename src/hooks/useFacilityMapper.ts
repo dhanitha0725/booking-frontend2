@@ -38,7 +38,7 @@ export const useFacilityMapper = () => {
       response.value.rooms?.map((room) => ({
         roomId: room.roomId,
         roomType: room.roomType,
-        pricing: room.pricing.map((price) => ({
+        pricing: room.roomPricing.map((price) => ({
           sector: price.sector,
           price: price.price,
         })),

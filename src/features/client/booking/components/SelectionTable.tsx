@@ -131,13 +131,14 @@ const SelectionTable = ({
                 {rooms.map((room) => (
                   <TableRow key={room.roomId}>
                     <TableCell>{room.roomType}</TableCell>
-                    {["public", "corporate", "private"].map((sector) => (
-                      <TableCell key={sector}>
-                        Rs.{" "}
-                        {room.pricing.find((price) => price.sector === sector)
-                          ?.price || "N/A"}
-                      </TableCell>
-                    ))}
+                    {["public", "corporate", "private"].map((sector) => {
+                      const price =
+                        (room.roomPricing || []).find(
+                          (price) => price.sector === sector
+                        )?.price || "N/A";
+
+                      return <TableCell key={sector}>Rs. {price}</TableCell>;
+                    })}
                     <TableCell>
                       <TextField
                         type="number"

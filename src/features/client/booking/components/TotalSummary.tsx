@@ -1,8 +1,8 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback } from "react";
 import { Box, Typography } from "@mui/material";
+import axios from "axios";
 import { BookingItemDto } from "../../../../types/selectedFacility";
 import dayjs from "dayjs";
-import api from "../../../../services/api";
 
 interface TotalSummaryProps {
   total: number;
@@ -23,71 +23,57 @@ const TotalSummary = ({
   selectedItems,
   requiresDates,
 }: TotalSummaryProps) => {
-  const prevRequestRef = useRef<string>("");
-
-  // Create stable string versions of dates for dependencies
-  const startDateString = dateRange.startDate?.toISOString();
-  const endDateString = dateRange.endDate?.toISOString();
-
-  // Memoize calculateTotal to prevent unnecessary re-creation
   const calculateTotal = useCallback(async () => {
-    // Skip if required dates are missing
     if (requiresDates && (!dateRange.startDate || !dateRange.endDate)) {
+      console.error("Start date and end date are required.");
       return;
     }
 
-    // Skip if date range is invalid
     if (
       dateRange.startDate &&
       dateRange.endDate &&
       !dateRange.endDate.isAfter(dateRange.startDate)
     ) {
+      console.error(
+        "Invalid date range: End date must be after the start date."
+      );
       return;
     }
-
-    // Reset total if no items or facilityId
-    if (selectedItems.length === 0 || !facilityId) {
-      setTotal(0);
-      return;
-    }
-
-    const payload = {
-      calculateTotalDto: {
-        facilityId,
-        customerType,
-        startDate: dateRange.startDate?.toISOString(),
-        endDate: dateRange.endDate?.toISOString(),
-        selectedItems,
-      },
-    };
-
-    // Stringify payload to compare with previous request
-    const payloadString = JSON.stringify(payload);
-    if (payloadString === prevRequestRef.current) {
-      return; // Skip if payload hasn't changed
-    }
-
-    prevRequestRef.current = payloadString;
 
     try {
-      const response = await api.post("/Reservation/calculateTotal", payload);
-      if (response.data?.value?.total !== undefined) {
-        setTotal(response.data.value.total);
-      }
+      const payload = {
+        calculateTotalDto: {
+          facilityId,
+          customerType,
+          startDate: dateRange.startDate?.toISOString(),
+          endDate: dateRange.endDate?.toISOString(),
+          selectedItems,
+        },
+      };
+
+      console.log("Payload:", payload);
+
+      const response = await axios.post(
+        "http://localhost:5162/api/Reservation/calculateTotal",
+        payload
+      );
+
+      setTotal(response.data.value.total);
     } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error("Error response:", error.response?.data);
+      }
       console.error("Error calculating total:", error);
     }
   }, [
     facilityId,
     customerType,
-    startDateString, // Using stable string version instead of object reference
-    endDateString, // Using stable string version instead of object reference
+    dateRange,
     selectedItems,
     requiresDates,
     setTotal,
   ]);
 
-  // Trigger calculation only when calculateTotal changes
   useEffect(() => {
     calculateTotal();
   }, [calculateTotal]);
