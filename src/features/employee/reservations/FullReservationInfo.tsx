@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -31,8 +31,6 @@ import {
   Business,
 } from "@mui/icons-material";
 import { format } from "date-fns";
-import api from "../../../services/api";
-import { AxiosError } from "axios";
 import {
   FullReservationDetails,
   FullReservationInfoProps,
@@ -42,6 +40,7 @@ import {
   PaymentDetails,
   BookedItem,
 } from "../../../types/ReservationDetails";
+import useReservationDetails from "../../../hooks/useReservationDetails";
 
 // Utility component for displaying fields
 const DetailField: React.FC<{
@@ -148,22 +147,24 @@ const BookedItemsSection: React.FC<{
   total: number;
 }> = ({ reservedPackages, reservedRooms, total }) => {
   const formatCurrency = (amount: number) => `LKR ${amount.toFixed(2)}`;
-
-  // Transform packages and rooms into bookedItems
   const bookedItems: BookedItem[] = [
-    ...reservedPackages.map((pkg, index) => ({
+    ...(reservedPackages || []).map((pkg, index) => ({
       id: index + 1,
       name: pkg.packageName,
       type: "Package" as const,
-      price: total / (reservedPackages.length + reservedRooms.length || 1),
+      price:
+        total /
+        ((reservedPackages?.length || 0) + (reservedRooms?.length || 0) || 1),
       quantity: 1,
       facilityName: pkg.facilityName,
     })),
-    ...reservedRooms.map((room, index) => ({
-      id: index + 1 + reservedPackages.length,
+    ...(reservedRooms || []).map((room, index) => ({
+      id: index + 1 + (reservedPackages?.length || 0),
       name: room.roomType,
       type: "Room" as const,
-      price: total / (reservedPackages.length + reservedRooms.length || 1),
+      price:
+        total /
+        ((reservedPackages?.length || 0) + (reservedRooms?.length || 0) || 1),
       quantity: 1,
       facilityName: room.facilityName,
     })),
@@ -221,9 +222,20 @@ const BookedItemsSection: React.FC<{
 
 // User Details Section
 const UserDetailsSection: React.FC<{
-  user: ReservationUser;
+  user?: ReservationUser;
   userType: UserType;
 }> = ({ user, userType }) => {
+  if (!user) {
+    return (
+      <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
+        <Typography variant="h6" gutterBottom>
+          User Details
+        </Typography>
+        <Typography>User information is not available</Typography>
+      </Paper>
+    );
+  }
+
   const userTypeColors: Record<
     UserType,
     "default" | "primary" | "secondary" | "warning"
@@ -253,12 +265,12 @@ const UserDetailsSection: React.FC<{
           <DetailField
             icon={<Person sx={{ mr: 1, color: "text.secondary" }} />}
             label="Name"
-            value={`${user.firstName} ${user.lastName}`}
+            value={`${user.firstName || ""} ${user.lastName || ""}`}
           />
           <DetailField
             icon={<Email sx={{ mr: 1, color: "text.secondary" }} />}
             label="Email"
-            value={user.email}
+            value={user.email || "N/A"}
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -289,9 +301,9 @@ const UserDetailsSection: React.FC<{
 };
 
 // Payment Details Section
-const PaymentDetailsSection: React.FC<{
-  payments: PaymentDetails[];
-}> = ({ payments }) => {
+const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
+  payments = [],
+}) => {
   const formatDate = (dateString: string) =>
     dateString ? format(new Date(dateString), "MMM dd, yyyy HH:mm") : "N/A";
   const formatCurrency = (amount: number) => `LKR ${amount.toFixed(2)}`;
@@ -374,47 +386,11 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
   onClose,
   reservationId,
 }) => {
-  const [reservation, setReservation] = useState<FullReservationDetails | null>(
-    null
+  // Use the custom hook
+  const { reservation, loading, error } = useReservationDetails(
+    reservationId,
+    open
   );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open || !reservationId) {
-      setReservation(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    const fetchReservationDetails = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) throw new Error("Authentication token not found");
-        const response = await api.get(
-          `http://localhost:5162/api/Reservation/reservation-details/${reservationId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setReservation(response.data);
-      } catch (err) {
-        const axiosError = err as AxiosError<{ message: string }>;
-        setError(
-          axiosError.response?.data?.message ||
-            "Failed to fetch reservation details"
-        );
-        console.error("Error fetching reservation details:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchReservationDetails();
-  }, [open, reservationId]);
 
   if (!open) return null;
 
@@ -434,8 +410,8 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
           <>
             <ReservationDetailsSection reservation={reservation} />
             <BookedItemsSection
-              reservedPackages={reservation.reservedPackages}
-              reservedRooms={reservation.reservedRooms}
+              reservedPackages={reservation.reservedPackages || []}
+              reservedRooms={reservation.reservedRooms || []}
               total={reservation.total}
             />
             <UserDetailsSection
