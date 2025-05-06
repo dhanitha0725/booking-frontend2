@@ -19,17 +19,6 @@ import {
   TableCell,
   TableBody,
 } from "@mui/material";
-import {
-  Person,
-  CalendarMonth,
-  AttachMoney,
-  Phone,
-  Email,
-  Receipt,
-  EventAvailable,
-  Update,
-  Business,
-} from "@mui/icons-material";
 import { format } from "date-fns";
 import {
   FullReservationDetails,
@@ -42,14 +31,14 @@ import {
 } from "../../../types/ReservationDetails";
 import useReservationDetails from "../../../hooks/useReservationDetails";
 
+// fixes: start and end date format
+
 // Utility component for displaying fields
 const DetailField: React.FC<{
-  icon: React.ReactNode;
   label: string;
   value: string | number | React.ReactNode;
-}> = ({ icon, label, value }) => (
+}> = ({ label, value }) => (
   <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-    {icon}
     <Typography variant="body2" sx={{ color: "text.secondary", mr: 1 }}>
       {label}:
     </Typography>
@@ -100,30 +89,25 @@ const ReservationDetailsSection: React.FC<{
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <DetailField
-            icon={<CalendarMonth sx={{ mr: 1, color: "text.secondary" }} />}
             label="Start Date"
             value={formatDate(reservation.startDate)}
           />
           <DetailField
-            icon={<CalendarMonth sx={{ mr: 1, color: "text.secondary" }} />}
             label="End Date"
             value={formatDate(reservation.endDate)}
           />
           <DetailField
-            icon={<AttachMoney sx={{ mr: 1, color: "text.secondary" }} />}
             label="Total Amount"
             value={`LKR ${reservation.total.toFixed(2)}`}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <DetailField
-            icon={<EventAvailable sx={{ mr: 1, color: "text.secondary" }} />}
             label="Created On"
             value={formatDate(reservation.createdDate)}
           />
           {reservation.updatedDate && (
             <DetailField
-              icon={<Update sx={{ mr: 1, color: "text.secondary" }} />}
               label="Last Updated"
               value={formatDate(reservation.updatedDate)}
             />
@@ -263,23 +247,14 @@ const UserDetailsSection: React.FC<{
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <DetailField
-            icon={<Person sx={{ mr: 1, color: "text.secondary" }} />}
             label="Name"
             value={`${user.firstName || ""} ${user.lastName || ""}`}
           />
-          <DetailField
-            icon={<Email sx={{ mr: 1, color: "text.secondary" }} />}
-            label="Email"
-            value={user.email || "N/A"}
-          />
+          <DetailField label="Email" value={user.email || "N/A"} />
         </Grid>
         <Grid item xs={12} md={6}>
           {user.phoneNumber && (
-            <DetailField
-              icon={<Phone sx={{ mr: 1, color: "text.secondary" }} />}
-              label="Phone"
-              value={user.phoneNumber}
-            />
+            <DetailField label="Phone" value={user.phoneNumber} />
           )}
           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
             <Typography variant="body2" sx={{ color: "text.secondary", mr: 1 }}>
@@ -288,11 +263,7 @@ const UserDetailsSection: React.FC<{
             {renderUserTypeChip(userType)}
           </Box>
           {user.organizationName && user.organizationName.trim() !== "" && (
-            <DetailField
-              icon={<Business sx={{ mr: 1, color: "text.secondary" }} />}
-              label="Organization"
-              value={user.organizationName}
-            />
+            <DetailField label="Organization" value={user.organizationName} />
           )}
         </Grid>
       </Grid>
@@ -326,30 +297,18 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
           >
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
+                <DetailField label="Order ID" value={payment.orderID} />
                 <DetailField
-                  icon={<Receipt sx={{ mr: 1, color: "text.secondary" }} />}
-                  label="Order ID"
-                  value={payment.orderID}
-                />
-                <DetailField
-                  icon={<AttachMoney sx={{ mr: 1, color: "text.secondary" }} />}
                   label="Amount Paid"
                   value={formatCurrency(payment.amountPaid)}
                 />
               </Grid>
               <Grid item xs={12} md={6}>
                 <DetailField
-                  icon={
-                    <CalendarMonth sx={{ mr: 1, color: "text.secondary" }} />
-                  }
                   label="Payment Date"
                   value={formatDate(payment.createdDate)}
                 />
-                <DetailField
-                  icon={<AttachMoney sx={{ mr: 1, color: "text.secondary" }} />}
-                  label="Payment Method"
-                  value={payment.method}
-                />
+                <DetailField label="Payment Method" value={payment.method} />
               </Grid>
               <Grid item xs={12}>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
