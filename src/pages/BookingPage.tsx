@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Container,
@@ -16,11 +16,11 @@ import { Dayjs } from "dayjs";
 import {
   PackagesDto,
   pricingDto,
-  RoomDto,
   RoomPricingDto,
   SelectedFacility,
   ApiResponse,
   BookingItemDto,
+  RoomResponseDto,
 } from "../types/selectedFacility";
 import FacilityDetails from "../features/client/booking/components/FacilityDetails";
 import BookingDatePicker from "../features/client/booking/components/BookingDatePicker";
@@ -35,51 +35,19 @@ interface DateRangeType {
   endDate: Dayjs | null;
 }
 
-// Modified mapResponseToFacility function to handle the actual API response structure
-
-const mapResponseToFacility = (response: ApiResponse): SelectedFacility => ({
-  id: response.value.facilityId,
-  name: response.value.facilityName,
-  location: response.value.location,
-  description: response.value.description || "No description available",
-  images: response.value.imageUrls || [],
-  amenities: response.value.attributes || [],
-
-  packages:
-    response.value.packages?.map((pkg: PackagesDto) => ({
-      packageId: pkg.packageId,
-      packageName: pkg.packageName,
-      duration: pkg.duration
-        ? convertTimeSpanToString(pkg.duration)
-        : undefined,
-      requiresDates: pkg.duration
-        ? convertHoursToNumbers(pkg.duration) >= 24
-        : false,
-      pricing:
-        pkg.pricing?.map((price: pricingDto) => ({
-          sector: price.sector,
-          price: price.price,
-        })) || [],
-    })) || [],
-  rooms:
-    response.value.rooms?.map((room: RoomDto) => ({
-      roomId: room.roomId,
-      roomType: room.roomType,
-      roomPricing:
-        room.roomPricing?.map((price: RoomPricingDto) => ({
-          sector: price.sector,
-          price: price.price,
-        })) || [],
-    })) || [],
-});
-
-// helper function to convert time span to string
+// Helper function to convert time span to string
 const convertTimeSpanToString = (timeSpan: string) => {
+  if (!timeSpan) return undefined;
+
   const [hours, minutes] = timeSpan.split(":").map(Number);
   if (hours >= 24) {
     const days = Math.floor(hours / 24);
     const remainingHours = hours % 24;
-    return `${days} day${days > 1 ? "s" : ""}${remainingHours > 0 ? ` ${remainingHours} hour${remainingHours > 1 ? "s" : ""}` : ""}`;
+    return `${days} day${days > 1 ? "s" : ""}${
+      remainingHours > 0
+        ? ` ${remainingHours} hour${remainingHours > 1 ? "s" : ""}`
+        : ""
+    }`;
   }
   const hourString = hours > 0 ? `${hours} hour${hours > 1 ? "s" : ""}` : "";
   const minuteString =
@@ -87,10 +55,62 @@ const convertTimeSpanToString = (timeSpan: string) => {
   return [hourString, minuteString].filter(Boolean).join(" ");
 };
 
-// helper function to convert hours to numbers
+// Helper function to convert hours to numbers
 const convertHoursToNumbers = (timeSpan: string) => {
+  if (!timeSpan) return 0;
   const [hours] = timeSpan.split(":");
   return parseInt(hours, 10);
+};
+
+// Modified mapResponseToFacility function to handle the updated API response structure
+const mapResponseToFacility = (response: ApiResponse): SelectedFacility => {
+  if (!response?.value) {
+    return {
+      id: 0,
+      name: "",
+      location: "",
+      description: "No data available",
+      images: [],
+      amenities: [],
+      packages: [],
+      rooms: [],
+    };
+  }
+
+  return {
+    id: response.value.facilityId,
+    name: response.value.facilityName,
+    location: response.value.location,
+    description: response.value.description || "No description available",
+    images: response.value.imageUrls || [],
+    amenities: response.value.attributes || [],
+    packages:
+      response.value.packages?.map((pkg: PackagesDto) => ({
+        packageId: pkg.packageId,
+        packageName: pkg.packageName,
+        duration: pkg.duration
+          ? convertTimeSpanToString(pkg.duration)
+          : undefined,
+        requiresDates: pkg.duration
+          ? convertHoursToNumbers(pkg.duration) >= 24
+          : false,
+        pricing:
+          pkg.pricing?.map((price: pricingDto) => ({
+            sector: price.sector,
+            price: price.price,
+          })) || [],
+      })) || [],
+    rooms:
+      response.value.rooms?.map((room: RoomResponseDto) => ({
+        roomTypeId: room.roomTypeId,
+        roomType: room.roomType,
+        roomPricing:
+          room.roomPricing?.map((price: RoomPricingDto) => ({
+            sector: price.sector,
+            price: price.price,
+          })) || [],
+      })) || [],
+  };
 };
 
 const BookingPage = () => {
@@ -117,28 +137,30 @@ const BookingPage = () => {
       facility?.packages.find((p) => p.packageId === item.itemId)?.requiresDates
   );
 
-  // check if the selected dates are valid
-  const validateDates = () => {
+  // Check if the selected dates are valid
+  const validateDates = useCallback(() => {
     if (!requiresDates) return true;
     return (
       dateRange.startDate &&
       dateRange.endDate &&
       dateRange.endDate.isAfter(dateRange.startDate)
     );
-  };
+  }, [dateRange.endDate, dateRange.startDate, requiresDates]);
 
-  const hasSelectedPackage = () => {
+  const hasSelectedPackage = useCallback(() => {
     return selectedItems.some((item) => item.type === "package");
-  };
+  }, [selectedItems]);
 
-  const isReserveDisabled = () => {
+  const isReserveDisabled = useCallback(() => {
     return !isAvailable || !hasSelectedPackage() || !validateDates();
-  };
+  }, [isAvailable, hasSelectedPackage, validateDates]);
 
-  // handle reservation and store reservation data temporarily
-  const handleReservation = () => {
+  // Handle reservation and store reservation data temporarily
+  const handleReservation = useCallback(() => {
+    if (!facility) return;
+
     const reservationData = {
-      facilityId: facility!.id,
+      facilityId: facility.id,
       selectedItems,
       total,
       customerType,
@@ -147,34 +169,45 @@ const BookingPage = () => {
     };
 
     localStorage.setItem("currentReservation", JSON.stringify(reservationData));
-  };
+  }, [facility, selectedItems, total, customerType, dateRange]);
 
-  const handleReserveNow = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      setSignInModalOpen(true);
-      return;
-    }
-    handleReservation();
-    navigate("/userinfo", { state: { facilityId: facility?.id } });
-  };
+  const handleReserveNow = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      if (!isAuthenticated) {
+        setSignInModalOpen(true);
+        return;
+      }
+      handleReservation();
+      navigate("/userinfo", { state: { facilityId: facility?.id } });
+    },
+    [isAuthenticated, handleReservation, navigate, facility]
+  );
 
-  // handle selection changes for packages and rooms
-  const handleSelectionChange = (
-    type: "package" | "room",
-    id: number,
-    quantity: number
-  ) => {
-    setSelectedItems((prev) => [
-      ...prev.filter((item) => !(item.type === type && item.itemId === id)),
-      ...(quantity > 0 ? [{ type, itemId: id, quantity }] : []),
-    ]);
-  };
+  // Handle selection changes for packages and rooms
+  const handleSelectionChange = useCallback(
+    (type: "package" | "room", id: number, quantity: number) => {
+      setSelectedItems((prev) => {
+        // First, filter out the existing item with the same type and ID
+        const filteredItems = prev.filter(
+          (item) => !(item.type === type && item.itemId === id)
+        );
 
-  // fetch facility data from the API
+        // Only add the new item if quantity > 0
+        if (quantity > 0) {
+          return [...filteredItems, { type, itemId: id, quantity }];
+        }
+        return filteredItems;
+      });
+    },
+    []
+  );
+
+  // Fetch facility data from the API
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const facilityId = parseInt(id || "", 10);
         if (!isNaN(facilityId)) {
           const response = await axios.get(
@@ -182,9 +215,9 @@ const BookingPage = () => {
           );
 
           if (response.data.isSuccess) {
-            setFacility(mapResponseToFacility(response.data));
+            const mappedFacility = mapResponseToFacility(response.data);
+            setFacility(mappedFacility);
           }
-          console.log("Facility data:", response.data);
         }
       } catch (error) {
         console.error("Error fetching facility:", error);
@@ -196,19 +229,20 @@ const BookingPage = () => {
     fetchData();
   }, [id]);
 
-  const handleDateChange = (newDateRange: DateRangeType) => {
+  const handleDateChange = useCallback((newDateRange: DateRangeType) => {
     setDateRange(newDateRange);
-  };
+  }, []);
 
-  const handleCustomerTypeChange = (
-    type: "corporate" | "public" | "private"
-  ) => {
-    setCustomerType(type);
-  };
+  const handleCustomerTypeChange = useCallback(
+    (type: "corporate" | "public" | "private") => {
+      setCustomerType(type);
+    },
+    []
+  );
 
-  const handleAvailabilityChange = (availability: boolean) => {
+  const handleAvailabilityChange = useCallback((availability: boolean) => {
     setIsAvailable(availability);
-  };
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && signInModalOpen) {
@@ -270,7 +304,7 @@ const BookingPage = () => {
 
       <Divider sx={{ my: 3 }} />
 
-      {/* display booking date picker and customer type selection */}
+      {/* Display booking date picker and customer type selection */}
       <Typography variant="h6" gutterBottom>
         Select Booking Details
       </Typography>
@@ -287,8 +321,7 @@ const BookingPage = () => {
 
       <Divider sx={{ my: 3 }} />
 
-      {/* display packages and rooms*/}
-
+      {/* Display packages and rooms */}
       <SelectionTable
         packages={facility?.packages || []}
         rooms={facility?.rooms || []}
@@ -299,7 +332,7 @@ const BookingPage = () => {
 
       <Divider sx={{ my: 3 }} />
 
-      {/* display total price */}
+      {/* Display total price */}
       <TotalSummary
         total={total}
         setTotal={setTotal}

@@ -129,7 +129,7 @@ const SelectionTable = ({
               </TableHead>
               <TableBody>
                 {rooms.map((room) => (
-                  <TableRow key={room.roomId}>
+                  <TableRow key={room.roomTypeId}>
                     <TableCell>{room.roomType}</TableCell>
                     {["public", "corporate", "private"].map((sector) => {
                       const price =
@@ -143,11 +143,11 @@ const SelectionTable = ({
                       <TextField
                         type="number"
                         inputProps={{ min: 0 }}
-                        value={getRoomQuantity(room.roomId)}
+                        value={getRoomQuantity(room.roomTypeId)}
                         onChange={(e) =>
                           onSelectionChange(
                             "room",
-                            room.roomId,
+                            room.roomTypeId,
                             Math.max(0, parseInt(e.target.value) || 0)
                           )
                         }

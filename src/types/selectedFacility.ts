@@ -9,6 +9,12 @@ export interface SelectedFacility {
   rooms: RoomDto[];
 }
 
+export interface RoomResponseDto {
+  roomTypeId: number;
+  roomType: string;
+  roomPricing?: RoomPricingDto[];
+}
+
 export interface PackagesDto {
   packageId: number;
   packageName: string;
@@ -23,7 +29,7 @@ export interface pricingDto {
 }
 
 export interface RoomDto {
-  roomId: number;
+  roomTypeId: number;
   roomType: string;
   roomPricing?: RoomPricingDto[]; 
 }
