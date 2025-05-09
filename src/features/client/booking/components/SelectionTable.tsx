@@ -10,6 +10,8 @@ import {
   TextField,
   Box,
   Divider,
+  Paper,
+  Alert,
 } from "@mui/material";
 import {
   PackagesDto,
@@ -44,6 +46,16 @@ const SelectionTable = ({
 }: SelectionTableProps) => {
   const hasPackages = packages.length > 0;
   const hasRooms = rooms.length > 0;
+
+  // Check if any package is selected
+  const hasSelectedPackage = selectedItems.some(
+    (item) => item.type === "package" && item.quantity > 0
+  );
+
+  // Check if any room is selected
+  const hasSelectedRoom = selectedItems.some(
+    (item) => item.type === "room" && item.quantity > 0
+  );
 
   // Check if a package is selected
   const isPackageSelected = (packageId: number) => {
@@ -116,7 +128,13 @@ const SelectionTable = ({
           <Typography variant="h6" sx={{ mb: 2 }}>
             Available Packages
           </Typography>
-          <TableContainer>
+          <TableContainer
+            component={Paper}
+            sx={{
+              opacity: hasSelectedRoom ? 0.6 : 1,
+              pointerEvents: hasSelectedRoom ? "none" : "auto",
+            }}
+          >
             <Table>
               <TableHead>
                 <TableRow>
@@ -156,6 +174,7 @@ const SelectionTable = ({
                               e.target.checked
                             )
                           }
+                          disabled={hasSelectedRoom}
                         />
                       </TableCell>
                       <TableCell>
@@ -184,6 +203,11 @@ const SelectionTable = ({
               </TableBody>
             </Table>
           </TableContainer>
+          {hasSelectedRoom && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Please deselect all rooms to select packages
+            </Alert>
+          )}
         </>
       )}
 
@@ -194,7 +218,13 @@ const SelectionTable = ({
           <Typography variant="h6" sx={{ mt: 2, mb: 2 }}>
             Available Rooms
           </Typography>
-          <TableContainer>
+          <TableContainer
+            component={Paper}
+            sx={{
+              opacity: hasSelectedPackage ? 0.6 : 1,
+              pointerEvents: hasSelectedPackage ? "none" : "auto",
+            }}
+          >
             <Table>
               <TableHead>
                 <TableRow>
@@ -257,6 +287,7 @@ const SelectionTable = ({
                           }
                           size="small"
                           sx={{ width: 80 }}
+                          disabled={hasSelectedPackage}
                         />
                       </TableCell>
                     </TableRow>
@@ -265,6 +296,11 @@ const SelectionTable = ({
               </TableBody>
             </Table>
           </TableContainer>
+          {hasSelectedPackage && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Please deselect all packages to select rooms
+            </Alert>
+          )}
         </>
       )}
 
