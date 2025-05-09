@@ -10,29 +10,100 @@ import {
   Button,
   Box,
   useTheme,
+  Alert,
+  Divider,
 } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import { ReservationResultDto } from "../types/reservationData";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+//import { ReservationResultDto } from "../types/reservationData";
 
 const steps = ["Booking Details", "User Information", "Confirmation"];
+
+interface ConfirmationState {
+  reservationId: number;
+  status: string;
+  paymentMethod?: "online" | "bank" | "cash";
+}
 
 const ConfirmationPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const reservationState = location.state as ReservationResultDto | undefined;
+  const confirmationState = location.state as ConfirmationState | undefined;
 
   useEffect(() => {
-    // If reservationState is missing, redirect to home (not confirmation)
-    if (!reservationState || !reservationState.reservationId) {
+    // If state is missing, redirect to home
+    if (!confirmationState || !confirmationState.reservationId) {
       navigate("/", { replace: true });
     }
-  }, [navigate, reservationState]);
+  }, [navigate, confirmationState]);
 
-  if (!reservationState || !reservationState.reservationId) {
+  if (!confirmationState || !confirmationState.reservationId) {
     // Don't show loading spinner, just return null (redirect will happen)
     return null;
   }
+
+  const renderPaymentMethodMessage = () => {
+    switch (confirmationState.paymentMethod) {
+      case "bank":
+        return (
+          <Box
+            sx={{
+              mt: 3,
+              p: 2,
+              bgcolor: theme.palette.info.light,
+              borderRadius: 1,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <AccountBalanceIcon
+                sx={{ mr: 1, color: theme.palette.info.dark }}
+              />
+              <Typography variant="h6">Bank Transfer Payment</Typography>
+            </Box>
+            <Typography variant="body1" paragraph>
+              We've received your bank transfer receipt. Our team will verify
+              your payment within 24-48 hours.
+            </Typography>
+            <Typography variant="body1">
+              Once verified, you'll receive a payment confirmation email and
+              your reservation will be confirmed.
+            </Typography>
+          </Box>
+        );
+
+      case "cash":
+        return (
+          <Box
+            sx={{
+              mt: 3,
+              p: 2,
+              bgcolor: theme.palette.warning.light,
+              borderRadius: 1,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <MonetizationOnIcon
+                sx={{ mr: 1, color: theme.palette.warning.dark }}
+              />
+              <Typography variant="h6">Cash Payment</Typography>
+            </Box>
+            <Typography variant="body1" paragraph>
+              Your reservation has been temporarily reserved. Please complete
+              your cash payment within 2 days to confirm your reservation.
+            </Typography>
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              Important: If payment is not received within 2 days, your
+              reservation will be automatically cancelled.
+            </Alert>
+          </Box>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -58,26 +129,47 @@ const ConfirmationPage = () => {
         </Typography>
 
         <Typography variant="body1" sx={{ mb: 2 }}>
-          Your reservation ID: <strong>{reservationState.reservationId}</strong>
+          Your reservation ID:{" "}
+          <strong>{confirmationState.reservationId}</strong>
         </Typography>
 
-        <Box sx={{ maxWidth: 600, mx: "auto", my: 4 }}>
-          <Typography variant="body1" paragraph>
-            We've received your reservation request and will review your
-            documents shortly. Once approved, we'll send the payment link to
-            your email address.
+        {renderPaymentMethodMessage()}
+
+        <Divider sx={{ my: 3 }} />
+
+        <Box sx={{ maxWidth: 600, mx: "auto", my: 4, textAlign: "left" }}>
+          <Typography variant="h6" gutterBottom>
+            Next Steps:
           </Typography>
 
-          <Typography variant="body1" paragraph>
-            You can expect to receive:
-          </Typography>
+          {confirmationState.paymentMethod === "bank" && (
+            <ul>
+              <li>Your bank transfer receipt is being reviewed</li>
+              <li>Payment verification will be completed within 24-48 hours</li>
+              <li>You'll receive an email confirmation once verified</li>
+              <li>
+                Check your reservation status anytime in "My Reservations"
+              </li>
+            </ul>
+          )}
 
-          <ul style={{ textAlign: "left", paddingLeft: "1.5rem" }}>
-            <li>Immediate confirmation of your reservation submission</li>
-            <li>Document review status update within 24 hours</li>
-            <li>Payment link email after document approval</li>
-            <li>Final booking confirmation after payment completion</li>
-          </ul>
+          {confirmationState.paymentMethod === "cash" && (
+            <ul>
+              <li>Visit our office to make your cash payment</li>
+              <li>Bring your reservation ID and a valid ID</li>
+              <li>Payment must be completed within 2 days</li>
+              <li>You'll receive a receipt upon payment</li>
+            </ul>
+          )}
+
+          {confirmationState.status === "PendingApproval" && (
+            <ul>
+              <li>Your documents are being reviewed</li>
+              <li>Document review typically takes 24 hours</li>
+              <li>You'll receive a payment link after approval</li>
+              <li>Final booking confirmation will be sent after payment</li>
+            </ul>
+          )}
         </Box>
 
         <Button
