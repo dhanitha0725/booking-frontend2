@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Grid,
-  Alert,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Button,
+  Alert,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -16,23 +15,27 @@ import dayjs from "dayjs";
 import axios from "axios";
 import { BookingItemDto } from "../../../../types/selectedFacility";
 
+export interface AvailabilityResponseDto {
+  isAvailable: boolean;
+  message: string;
+}
+
 export type CustomerType = "corporate" | "public" | "private";
 
+interface DateRangeType {
+  startDate: dayjs.Dayjs | null;
+  endDate: dayjs.Dayjs | null;
+}
+
 interface BookingDatePickerProps {
-  dateRange: {
-    startDate: dayjs.Dayjs | null;
-    endDate: dayjs.Dayjs | null;
-  };
-  onDateChange: (range: {
-    startDate: dayjs.Dayjs | null;
-    endDate: dayjs.Dayjs | null;
-  }) => void;
-  customerType: CustomerType;
-  onCustomerTypeChange: (type: CustomerType) => void;
+  dateRange: DateRangeType;
+  onDateChange: (dateRange: DateRangeType) => void;
+  customerType: "corporate" | "public" | "private";
+  onCustomerTypeChange: (type: "corporate" | "public" | "private") => void;
   required: boolean;
-  facilityId: number | undefined;
+  facilityId?: number;
   selectedItems: BookingItemDto[];
-  onAvailabilityChange: (availability: boolean) => void;
+  onAvailabilityChange: (availabilityResponse: AvailabilityResponseDto) => void;
 }
 
 const BookingDatePicker = ({
@@ -46,9 +49,50 @@ const BookingDatePicker = ({
   onAvailabilityChange,
 }: BookingDatePickerProps) => {
   const [error, setError] = useState<string | null>(null);
-  const [, setIsAvailable] = useState<boolean | null>(null);
+  const [availability, setAvailability] =
+    useState<AvailabilityResponseDto | null>(null);
 
-  // handle dates changes
+  // Automatically check availability when dependencies change
+  useEffect(() => {
+    const checkAvailability = async () => {
+      if (
+        !dateRange.startDate ||
+        !dateRange.endDate ||
+        selectedItems.length === 0 ||
+        !facilityId
+      ) {
+        setAvailability(null);
+        onAvailabilityChange({ isAvailable: false, message: "" });
+        return;
+      }
+
+      try {
+        const response = await axios.post(
+          "http://localhost:5162/api/Reservation/checkAvailability",
+          {
+            facilityId,
+            startDate: dateRange.startDate.toISOString(),
+            endDate: dateRange.endDate.toISOString(),
+            items: selectedItems,
+          }
+        );
+
+        setAvailability(response.data);
+        onAvailabilityChange(response.data);
+      } catch (error) {
+        console.error("Error checking availability:", error);
+        setError("An error occurred while checking availability.");
+        setAvailability(null);
+        onAvailabilityChange({
+          isAvailable: false,
+          message: "Error checking availability",
+        });
+      }
+    };
+
+    checkAvailability();
+  }, [dateRange, selectedItems, facilityId, onAvailabilityChange]);
+
   const handleStartDateChange = (date: dayjs.Dayjs | null) => {
     if (date && dateRange.endDate && date.isAfter(dateRange.endDate)) {
       setError("Start date cannot be after end date.");
@@ -67,45 +111,13 @@ const BookingDatePicker = ({
     onDateChange({ startDate: dateRange.startDate, endDate: date });
   };
 
-  const handleCheckAvailability = async () => {
-    if (!dateRange.startDate || !dateRange.endDate) {
-      setError("Please select both start and end dates.");
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        "http://localhost:5162/api/Reservation/checkAvailability",
-        {
-          facilityId, // Use facilityId prop
-          startDate: dateRange.startDate.toISOString(),
-          endDate: dateRange.endDate.toISOString(),
-          items: selectedItems, // Use selectedItems prop
-        }
-      );
-
-      setIsAvailable(response.data.isAvailable);
-      onAvailabilityChange(response.data.isAvailable); // Notify parent
-      if (response.data.isAvailable) {
-        setError(null);
-        alert("Facility is available for the selected dates.");
-      }
-    } catch (error) {
-      console.error("Error checking availability:", error);
-      setError(
-        "An error occurred while checking availability. Please try again later."
-      );
-      setIsAvailable(false);
-      onAvailabilityChange(false); // Notify parent
-    }
-  };
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
-        {required && (
+        {/* Only show date selection prompt if required AND dates are missing */}
+        {required && (!dateRange.startDate || !dateRange.endDate) && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Please select booking dates
+            Date selection is required for rooms and daily packages
           </Alert>
         )}
 
@@ -155,16 +167,6 @@ const BookingDatePicker = ({
                 <MenuItem value="private">Private</MenuItem>
               </Select>
             </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              onClick={handleCheckAvailability}
-            >
-              Check Availability
-            </Button>
           </Grid>
         </Grid>
       </Box>

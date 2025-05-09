@@ -60,11 +60,9 @@ export interface BookingItemDto {
 }
 
 export interface AvailabilityResponseDto {
-  details: Array<{
-    itemName: string;
-    isAvailable: boolean;
-    message: string;
-  }>;
+  isAvailable: boolean; 
+  message: string;      
 }
+
 
 

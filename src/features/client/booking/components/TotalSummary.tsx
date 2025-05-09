@@ -24,8 +24,8 @@ const TotalSummary = ({
   requiresDates,
 }: TotalSummaryProps) => {
   const calculateTotal = useCallback(async () => {
+    // Don't attempt to calculate if we're missing required dates
     if (requiresDates && (!dateRange.startDate || !dateRange.endDate)) {
-      console.error("Start date and end date are required.");
       return;
     }
 

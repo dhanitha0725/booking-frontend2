@@ -6,7 +6,6 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Alert,
   Checkbox,
   TextField,
   Box,
@@ -17,6 +16,7 @@ import {
   RoomDto,
   BookingItemDto,
 } from "../../../../types/selectedFacility";
+import dayjs from "dayjs";
 
 interface SelectionTableProps {
   packages: PackagesDto[];
@@ -28,14 +28,19 @@ interface SelectionTableProps {
   ) => void;
   requiresDates: boolean;
   selectedItems: BookingItemDto[];
+  isAvailable: boolean;
+  availabilityMessage?: string;
+  dateRange: { startDate: dayjs.Dayjs | null; endDate: dayjs.Dayjs | null };
 }
 
 const SelectionTable = ({
   packages,
   rooms,
   onSelectionChange,
-  requiresDates,
   selectedItems,
+  isAvailable,
+  availabilityMessage,
+  dateRange,
 }: SelectionTableProps) => {
   const hasPackages = packages.length > 0;
   const hasRooms = rooms.length > 0;
@@ -47,6 +52,7 @@ const SelectionTable = ({
     );
   };
 
+  // Handle package selection (quantity is always 1 or 0)
   const handlePackageSelection = (packageId: number, isSelected: boolean) => {
     onSelectionChange("package", packageId, isSelected ? 1 : 0);
   };
@@ -57,6 +63,50 @@ const SelectionTable = ({
       (item) => item.type === "room" && item.itemId === roomId
     );
     return item ? item.quantity : 0;
+  };
+
+  // Check if a specific package requires dates
+  const checkIfPackageRequiresDates = (packageId: number) => {
+    return (
+      packages.find((pkg) => pkg.packageId === packageId)?.requiresDates ||
+      false
+    );
+  };
+
+  // Check if dates are missing
+  const areDatesMissing = !dateRange.startDate || !dateRange.endDate;
+
+  // Determine if we should show unavailability message for an item
+  const getAvailabilityMessage = (
+    isItemSelected: boolean,
+    itemType: string,
+    itemId: number
+  ) => {
+    if (!isItemSelected) return null;
+
+    if (!isAvailable) {
+      // If the API returned a specific message, use it
+      if (availabilityMessage) {
+        return availabilityMessage;
+      }
+
+      // For rooms, always show date selection message if dates are missing
+      if (itemType === "room" && areDatesMissing) {
+        return "Please select both start and end dates";
+      }
+
+      // For packages, check if this specific package requires dates
+      if (itemType === "package") {
+        const packageRequiresDates = checkIfPackageRequiresDates(itemId);
+        if (packageRequiresDates && areDatesMissing) {
+          return "Please select both start and end dates";
+        }
+      }
+
+      // Default unavailability message
+      return "Currently unavailable";
+    }
+    return null;
   };
 
   return (
@@ -79,30 +129,58 @@ const SelectionTable = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {packages.map((pkg) => (
-                  <TableRow key={pkg.packageId}>
-                    <TableCell>
-                      <Checkbox
-                        checked={isPackageSelected(pkg.packageId)}
-                        onChange={(e) =>
-                          handlePackageSelection(
-                            pkg.packageId,
-                            e.target.checked
-                          )
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>{pkg.packageName}</TableCell>
-                    <TableCell>{pkg.duration}</TableCell>
-                    {["public", "corporate", "private"].map((sector) => (
-                      <TableCell key={sector}>
-                        Rs.{" "}
-                        {pkg.pricing.find((price) => price.sector === sector)
-                          ?.price || "N/A"}
+                {packages.map((pkg) => {
+                  const isPkgSelected = isPackageSelected(pkg.packageId);
+                  const itemMessage = getAvailabilityMessage(
+                    isPkgSelected,
+                    "package",
+                    pkg.packageId
+                  );
+                  const isUnavailable = isPkgSelected && !isAvailable;
+
+                  return (
+                    <TableRow
+                      key={pkg.packageId}
+                      sx={
+                        isUnavailable
+                          ? { backgroundColor: "rgba(211, 47, 47, 0.04)" }
+                          : {}
+                      }
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={isPkgSelected}
+                          onChange={(e) =>
+                            handlePackageSelection(
+                              pkg.packageId,
+                              e.target.checked
+                            )
+                          }
+                        />
                       </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
+                      <TableCell>
+                        {pkg.packageName}
+                        {itemMessage && (
+                          <Typography
+                            variant="caption"
+                            color="error"
+                            display="block"
+                          >
+                            {itemMessage}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>{pkg.duration}</TableCell>
+                      {["public", "corporate", "private"].map((sector) => (
+                        <TableCell key={sector}>
+                          Rs.{" "}
+                          {pkg.pricing.find((price) => price.sector === sector)
+                            ?.price || "N/A"}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -128,35 +206,62 @@ const SelectionTable = ({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rooms.map((room) => (
-                  <TableRow key={room.roomTypeId}>
-                    <TableCell>{room.roomType}</TableCell>
-                    {["public", "corporate", "private"].map((sector) => {
-                      const price =
-                        (room.roomPricing || []).find(
-                          (price) => price.sector === sector
-                        )?.price || "N/A";
+                {rooms.map((room) => {
+                  const roomQty = getRoomQuantity(room.roomTypeId);
+                  const isRoomSelected = roomQty > 0;
+                  const itemMessage = getAvailabilityMessage(
+                    isRoomSelected,
+                    "room",
+                    room.roomTypeId
+                  );
 
-                      return <TableCell key={sector}>Rs. {price}</TableCell>;
-                    })}
-                    <TableCell>
-                      <TextField
-                        type="number"
-                        inputProps={{ min: 0 }}
-                        value={getRoomQuantity(room.roomTypeId)}
-                        onChange={(e) =>
-                          onSelectionChange(
-                            "room",
-                            room.roomTypeId,
-                            Math.max(0, parseInt(e.target.value) || 0)
-                          )
-                        }
-                        size="small"
-                        sx={{ width: 80 }}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                  return (
+                    <TableRow
+                      key={room.roomTypeId}
+                      sx={
+                        isRoomSelected && !isAvailable
+                          ? { backgroundColor: "rgba(211, 47, 47, 0.04)" }
+                          : {}
+                      }
+                    >
+                      <TableCell>
+                        {room.roomType}
+                        {itemMessage && (
+                          <Typography
+                            variant="caption"
+                            color="error"
+                            display="block"
+                          >
+                            {itemMessage}
+                          </Typography>
+                        )}
+                      </TableCell>
+                      {["public", "corporate", "private"].map((sector) => {
+                        const price =
+                          (room.roomPricing || []).find(
+                            (price) => price.sector === sector
+                          )?.price || "N/A";
+                        return <TableCell key={sector}>Rs. {price}</TableCell>;
+                      })}
+                      <TableCell>
+                        <TextField
+                          type="number"
+                          inputProps={{ min: 0 }}
+                          value={roomQty}
+                          onChange={(e) =>
+                            onSelectionChange(
+                              "room",
+                              room.roomTypeId,
+                              Math.max(0, parseInt(e.target.value) || 0)
+                            )
+                          }
+                          size="small"
+                          sx={{ width: 80 }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -165,14 +270,8 @@ const SelectionTable = ({
 
       {!hasPackages && !hasRooms && (
         <Typography variant="h6" sx={{ p: 2, color: "red" }}>
-          Currently this facility can not be booked. Please check back later.
+          Currently this facility cannot be booked. Please check back later.
         </Typography>
-      )}
-
-      {requiresDates && (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          Date selection is required for rooms and daily packages
-        </Alert>
       )}
     </Box>
   );
