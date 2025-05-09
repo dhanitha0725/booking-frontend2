@@ -16,11 +16,12 @@ import {
 import UserForm from "../features/client/ReservationUserInfo/components/UserForm";
 import DocumentUpload from "../features/client/ReservationUserInfo/components/DocumentUpload";
 import ReservationSummary from "../features/client/ReservationUserInfo/components/ReservationSummary";
-import axios from "axios";
+import api from "../services/api";
 import { TempReservation, UserInfo } from "../types/reservationData";
 import dayjs from "dayjs";
 import { userFormValidation } from "../validations/userFormValidation";
 import { z } from "zod";
+import axios from "axios";
 
 const steps = ["Booking Details", "User Information", "Confirmation"];
 
@@ -85,6 +86,7 @@ const UserInfoPage = () => {
 
       // Prepare reservation payload for all customer types
       const reservationPayload = {
+        facilityId: tempReservation.facilityId, // Include facilityId from tempReservation
         startDate: dayjs(tempReservation.startDate).toISOString(),
         endDate: dayjs(tempReservation.endDate).toISOString(),
         total: tempReservation.total,
@@ -102,9 +104,9 @@ const UserInfoPage = () => {
         JSON.stringify(reservationPayload, null, 2)
       );
 
-      // Create reservation for all customer types
-      const createRes = await axios.post(
-        "http://localhost:5162/api/Reservation/createReservation",
+      // Create reservation using the API service instead of direct axios call
+      const createRes = await api.post(
+        "/Reservation/createReservation",
         reservationPayload
       );
 
@@ -112,7 +114,7 @@ const UserInfoPage = () => {
         throw new Error(createRes.data.error || "Failed to create reservation");
       }
 
-      const reservationId = createRes.data.value.reservationId; //db generated id from response
+      const reservationId = createRes.data.value.reservationId; // db generated id from response
       console.log("Reservation ID:", reservationId);
       console.log("Reservation created successfully:", createRes.data.value);
 
@@ -129,11 +131,10 @@ const UserInfoPage = () => {
 
           console.log("Uploading Documents for Reservation ID:", reservationId);
 
-          await axios.post(
-            "http://localhost:5162/api/Reservation/uploadDocument",
-            formDataUpload,
-            { headers: { "Content-Type": "multipart/form-data" } }
-          );
+          // Use API service for document upload
+          await api.post("/Reservation/uploadDocument", formDataUpload, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
         }
 
         // Clear local storage and navigate to confirmation
