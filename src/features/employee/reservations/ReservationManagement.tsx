@@ -6,16 +6,20 @@ import {
   Alert,
   Divider,
   Paper,
+  Button,
+  CircularProgress,
 } from "@mui/material";
 import axios, { AxiosError } from "axios";
 import api from "../../../services/api";
 import ReservationTable from "./ReservationTable";
 import { Reservation } from "../../../types/ReservationDetails";
+import AddReservationDialog from "./AddReservationDialog";
 
 const ReservationManagement: React.FC = () => {
   // State for storing reservation data retrieved from the API
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [openDialog, setOpenDialog] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -27,37 +31,35 @@ const ReservationManagement: React.FC = () => {
   });
 
   // Fetch reservations data for the table
-  useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(
-          "http://localhost:5162/api/Reservation/reservation-data"
-        );
-        setReservations(response.data);
-      } catch (error) {
-        console.error("Error fetching reservations:", error);
+  const fetchReservations = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/Reservation/reservation-data");
+      setReservations(response.data);
+    } catch (error) {
+      console.error("Error fetching reservations:", error);
 
-        // Extract error message from the backend response
-        let errorMessage = "Failed to load reservations";
-        if (axios.isAxiosError(error)) {
-          const axiosError = error as AxiosError<{ error: string }>;
-          if (axiosError.response?.data?.error) {
-            errorMessage = axiosError.response.data.error;
-          }
+      // Extract error message from the backend response
+      let errorMessage = "Failed to load reservations";
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError<{ error: string }>;
+        if (axiosError.response?.data?.error) {
+          errorMessage = axiosError.response.data.error;
         }
-
-        // Show error notification
-        setSnackbar({
-          open: true,
-          message: errorMessage,
-          severity: "error",
-        });
-      } finally {
-        setLoading(false);
       }
-    };
 
+      // Show error notification
+      setSnackbar({
+        open: true,
+        message: errorMessage,
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchReservations();
   }, []);
 
@@ -85,9 +87,7 @@ const ReservationManagement: React.FC = () => {
   const handleCancelReservation = async (reservationId: number) => {
     try {
       // Call the API to cancel the reservation
-      await api.put(
-        `http://localhost:5162/api/Reservation/cancel/${reservationId}`
-      );
+      await api.put(`/Reservation/cancel/${reservationId}`);
 
       // Update the local state to reflect the cancellation
       setReservations((prevReservations) =>
@@ -125,6 +125,16 @@ const ReservationManagement: React.FC = () => {
     }
   };
 
+  // Handle reservation creation
+  const handleReservationCreated = (reservationId: number) => {
+    setSnackbar({
+      open: true,
+      message: `Reservation #${reservationId} has been created successfully`,
+      severity: "success",
+    });
+    fetchReservations(); // Refresh the list
+  };
+
   // Close the snackbar notification
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
@@ -132,15 +142,11 @@ const ReservationManagement: React.FC = () => {
 
   return (
     <Box sx={{ width: "100%" }}>
-      {/* Header section with title */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          mb: 2,
-        }}
-      >
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Typography variant="h5">Reservation Management</Typography>
+        <Button variant="contained" onClick={() => setOpenDialog(true)}>
+          Add Reservation
+        </Button>
       </Box>
 
       <Divider sx={{ my: 2 }} />
@@ -156,7 +162,7 @@ const ReservationManagement: React.FC = () => {
             height: "200px",
           }}
         >
-          <Typography variant="body1">Loading reservations...</Typography>
+          <CircularProgress />
         </Paper>
       ) : reservations.length === 0 ? (
         <Paper
@@ -177,6 +183,13 @@ const ReservationManagement: React.FC = () => {
           onCancel={handleCancelReservation}
         />
       )}
+
+      {/* Add Reservation Dialog */}
+      <AddReservationDialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        onReservationCreated={handleReservationCreated}
+      />
 
       {/* Feedback notification */}
       <Snackbar
