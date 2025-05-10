@@ -5,7 +5,7 @@ export type CustomerType = "corporate" | "public" | "private";
 
 // Facility interface
 export interface Facility {
-  facilityId: number;
+  facilityID: number;
   facilityName: string;
 }
 

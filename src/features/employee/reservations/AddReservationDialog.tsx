@@ -15,9 +15,9 @@ import axios from "axios";
 import dayjs from "dayjs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import api from "../../../services/api";
 import { UserInfo } from "../../../types/reservationData";
 import { userFormValidation } from "../../../validations/userFormValidation";
+import employeeReservationService from "../../../services/employeeReservationService";
 
 // Import step components
 import FacilitySelectionStep from "./steps/FacilitySelectionStep";
@@ -137,6 +137,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
             setTotal={setTotal}
             loading={loading}
             error={error}
+            facilityId={selectedFacilityId}
           />
         );
       case 3:
@@ -151,7 +152,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         return (
           <ReviewStep
             facilityName={
-              facilities.find((f) => f.facilityId === selectedFacilityId)
+              facilities.find((f) => f.facilityID === selectedFacilityId)
                 ?.facilityName
             }
             dateRange={dateRange}
@@ -236,11 +237,14 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
     useEffect(() => {
       const fetchFacilities = async () => {
         if (!open) return;
+
         setLoadingFacilities(true);
         setError(null);
+
         try {
-          const response = await api.get("/Facility/available-facilities");
-          setFacilities(response.data);
+          const facilitiesData =
+            await employeeReservationService.getFacilityNames();
+          setFacilities(facilitiesData);
         } catch (error) {
           console.error("Error fetching facilities:", error);
           setError("Failed to load facilities. Please try again.");
@@ -248,6 +252,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
           setLoadingFacilities(false);
         }
       };
+
       fetchFacilities();
     }, [open]);
 
@@ -255,17 +260,22 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
     useEffect(() => {
       const fetchFacilityDetails = async () => {
         if (!selectedFacilityId) return;
+
         setLoading(true);
         setError(null);
+
         try {
-          const response = await api.get(`/Facility/${selectedFacilityId}`);
-          setFacilityData(response.data);
+          const facilityDetails =
+            await employeeReservationService.getFacilityDetails(
+              selectedFacilityId
+            );
+          setFacilityData(facilityDetails);
 
           const hasRooms =
-            response.data.rooms && response.data.rooms.length > 0;
+            facilityDetails.rooms && facilityDetails.rooms.length > 0;
           const hasDateDependentPackages =
-            response.data.packages &&
-            response.data.packages.some((pkg: any) => pkg.requiresDates);
+            facilityDetails.packages &&
+            facilityDetails.packages.some((pkg: any) => pkg.requiresDates);
 
           setRequiresDates(hasRooms || hasDateDependentPackages);
         } catch (error) {
@@ -276,6 +286,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
           setLoading(false);
         }
       };
+
       fetchFacilityDetails();
     }, [selectedFacilityId]);
   }
@@ -371,6 +382,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
   async function handleCreateReservation() {
     setLoading(true);
     setError(null);
+
     try {
       if (!selectedFacilityId || selectedItems.length === 0) {
         setError("Missing required reservation data.");
@@ -391,16 +403,16 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         userDetails: userFormMethods.getValues(),
       };
 
-      const response = await api.post(
-        "/Reservation/createReservation",
-        reservationData
-      );
+      const response =
+        await employeeReservationService.createEmployeeReservation(
+          reservationData
+        );
 
-      if (response.data.isSuccess) {
-        onReservationCreated(response.data.value.reservationId);
+      if (response.isSuccess) {
+        onReservationCreated(response.value?.reservationId as number);
         onClose();
       } else {
-        setError(response.data.error || "Failed to create reservation.");
+        setError(response.error || "Failed to create reservation.");
       }
     } catch (error) {
       console.error("Error creating reservation:", error);

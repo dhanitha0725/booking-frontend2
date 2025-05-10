@@ -42,7 +42,7 @@ const FacilitySelectionStep: React.FC<FacilitySelectionStepProps> = ({
           label="Select Facility"
         >
           {facilities.map((facility) => (
-            <MenuItem key={facility.facilityId} value={facility.facilityId}>
+            <MenuItem key={facility.facilityID} value={facility.facilityID}>
               {facility.facilityName}
             </MenuItem>
           ))}
