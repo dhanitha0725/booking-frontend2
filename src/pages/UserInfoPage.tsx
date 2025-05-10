@@ -43,7 +43,7 @@ const UserInfoPage = () => {
   const [bankTransferDocuments, setBankTransferDocuments] = useState<File[]>(
     []
   );
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("online");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Online");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -64,9 +64,9 @@ const UserInfoPage = () => {
   useEffect(() => {
     if (
       tempReservation?.customerType !== "private" &&
-      paymentMethod === "bank"
+      paymentMethod === "Bank"
     ) {
-      setPaymentMethod("online");
+      setPaymentMethod("Online");
     }
   }, [tempReservation?.customerType, paymentMethod]);
 
@@ -91,7 +91,7 @@ const UserInfoPage = () => {
         );
       }
 
-      if (paymentMethod === "bank" && bankTransferDocuments.length === 0) {
+      if (paymentMethod === "Bank" && bankTransferDocuments.length === 0) {
         throw new Error("Please upload bank transfer receipt.");
       }
 
@@ -113,7 +113,7 @@ const UserInfoPage = () => {
       localStorage.removeItem("currentReservation");
 
       // Handle navigation based on payment method
-      if (paymentMethod === "online") {
+      if (paymentMethod === "Online") {
         // For online payment, navigate to payment page
         navigate("/paymentInfo", {
           state: {
@@ -132,7 +132,7 @@ const UserInfoPage = () => {
           state: {
             reservationId: result.reservationId,
             status:
-              paymentMethod === "bank"
+              paymentMethod === "Bank"
                 ? "PendingPaymentVerification"
                 : "PendingPayment",
             paymentMethod: paymentMethod,
@@ -194,8 +194,6 @@ const UserInfoPage = () => {
               <DocumentUpload
                 documents={documents}
                 onDocumentsChange={setDocuments}
-                title="Approval Documents"
-                helperText="Upload documents required for reservation approval"
               />
               <Divider sx={{ my: 3 }} />
             </>

@@ -17,7 +17,7 @@ import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import DocumentUpload from "./DocumentUpload";
 
-export type PaymentMethod = "online" | "bank" | "cash";
+export type PaymentMethod = "Online" | "Bank" | "Cash";
 
 interface PaymentMethodSelectionProps {
   selectedMethod: PaymentMethod;
@@ -27,7 +27,6 @@ interface PaymentMethodSelectionProps {
   customerType: "corporate" | "public" | "private";
 }
 
-// Reusable styled Paper component to reduce repetition
 const StyledPaper = ({
   selected,
   children,
@@ -72,9 +71,9 @@ const PaymentMethodSelection = ({
           value={selectedMethod}
           onChange={(e) => onMethodChange(e.target.value as PaymentMethod)}
         >
-          <StyledPaper selected={selectedMethod === "online"}>
+          <StyledPaper selected={selectedMethod === "Online"}>
             <FormControlLabel
-              value="online"
+              value="Online"
               control={<Radio />}
               label={
                 <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -85,7 +84,7 @@ const PaymentMethodSelection = ({
                 </Box>
               }
             />
-            {selectedMethod === "online" && (
+            {selectedMethod === "Online" && (
               <Typography
                 variant="body2"
                 sx={{ mt: 1, ml: 4, color: "text.secondary" }}
@@ -97,9 +96,9 @@ const PaymentMethodSelection = ({
           </StyledPaper>
 
           {showBankTransfer && (
-            <StyledPaper selected={selectedMethod === "bank"}>
+            <StyledPaper selected={selectedMethod === "Bank"}>
               <FormControlLabel
-                value="bank"
+                value="Bank"
                 control={<Radio />}
                 label={
                   <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -108,7 +107,7 @@ const PaymentMethodSelection = ({
                   </Box>
                 }
               />
-              {selectedMethod === "bank" && (
+              {selectedMethod === "Bank" && (
                 <Box sx={{ ml: 4, mt: 1 }}>
                   <Typography
                     variant="body2"
@@ -150,9 +149,9 @@ const PaymentMethodSelection = ({
             </StyledPaper>
           )}
 
-          <StyledPaper selected={selectedMethod === "cash"}>
+          <StyledPaper selected={selectedMethod === "Cash"}>
             <FormControlLabel
-              value="cash"
+              value="Cash"
               control={<Radio />}
               label={
                 <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -161,7 +160,7 @@ const PaymentMethodSelection = ({
                 </Box>
               }
             />
-            {selectedMethod === "cash" && (
+            {selectedMethod === "Cash" && (
               <Box sx={{ ml: 4, mt: 1 }}>
                 <Alert severity="warning" sx={{ mb: 2 }}>
                   If payment is not confirmed within two days, your reservation

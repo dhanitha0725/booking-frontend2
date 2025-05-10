@@ -23,7 +23,7 @@ const steps = ["Booking Details", "User Information", "Confirmation"];
 interface ConfirmationState {
   reservationId: number;
   status: string;
-  paymentMethod?: "online" | "bank" | "cash";
+  paymentMethod?: "Online" | "Bank" | "Cash";
 }
 
 const ConfirmationPage = () => {
@@ -46,7 +46,7 @@ const ConfirmationPage = () => {
 
   const renderPaymentMethodMessage = () => {
     switch (confirmationState.paymentMethod) {
-      case "bank":
+      case "Bank":
         return (
           <Box
             sx={{
@@ -73,7 +73,7 @@ const ConfirmationPage = () => {
           </Box>
         );
 
-      case "cash":
+      case "Cash":
         return (
           <Box
             sx={{
@@ -142,18 +142,15 @@ const ConfirmationPage = () => {
             Next Steps:
           </Typography>
 
-          {confirmationState.paymentMethod === "bank" && (
+          {confirmationState.paymentMethod === "Bank" && (
             <ul>
               <li>Your bank transfer receipt is being reviewed</li>
-              <li>Payment verification will be completed within 24-48 hours</li>
+              <li>Payment verification will be completed within 24 hours</li>
               <li>You'll receive an email confirmation once verified</li>
-              <li>
-                Check your reservation status anytime in "My Reservations"
-              </li>
             </ul>
           )}
 
-          {confirmationState.paymentMethod === "cash" && (
+          {confirmationState.paymentMethod === "Cash" && (
             <ul>
               <li>Visit our office to make your cash payment</li>
               <li>Payment must be completed within 2 days</li>

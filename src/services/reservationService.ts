@@ -1,17 +1,15 @@
 import api from './api';
 import { UserInfo, BookingItemDto } from '../types/reservationData';
 import dayjs from 'dayjs';
+import axios from 'axios';
 
-/**
- * Service for handling reservation-related API operations
- */
 export interface CreateReservationPayload {
   facilityId: number;
   startDate: string;
   endDate: string;
   total: number;
   customerType: string;
-  paymentMethod?: string;
+  paymentMethod: string; 
   items: {
     itemId: number;
     quantity: number;
@@ -31,14 +29,21 @@ interface CreateReservationResponse {
   error?: string;
   value: {
     reservationId: number;
-    // Add other fields that the API returns
   };
 }
 
 interface UploadDocumentResponse {
   isSuccess: boolean;
   error?: string;
-  value?: any;
+  value?: {
+    documentId: number;
+  };
+}
+
+ //DocumentType enum matching the backend DocumentType enum
+export enum DocumentType {
+  ApprovalDocument = "ApprovalDocument",
+  BankReceipt = "BankReceipt",
 }
 
 /**
@@ -50,30 +55,79 @@ export const createReservation = async (
   payload: CreateReservationPayload
 ): Promise<CreateReservationResponse> => {
   try {
-    const response = await api.post('/Reservation/createReservation', payload);
+    // Log the payload to debug
+    console.log('Sending reservation payload:', JSON.stringify(payload, null, 2));
+    
+    // Ensure payload structure matches exactly what the backend expects
+    const formattedPayload = {
+      facilityId: payload.facilityId,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
+      total: payload.total,
+      customerType: payload.customerType,
+      paymentMethod: payload.paymentMethod || '',
+      items: payload.items.map(item => ({
+        itemId: item.itemId,
+        quantity: item.quantity,
+        type: item.type
+      })),
+      userDetails: {
+        firstName: payload.userDetails.firstName,
+        lastName: payload.userDetails.lastName,
+        email: payload.userDetails.email,
+        phoneNumber: payload.userDetails.phoneNumber || '',
+        organizationName: payload.userDetails.organizationName || ''
+      }
+    };
+    
+    const response = await api.post('/Reservation/createReservation', formattedPayload);
     return response.data;
   } catch (error) {
     // Re-throw with more context if needed
     console.error('Error creating reservation:', error);
+    if (axios.isAxiosError(error)) {
+      console.error('Response data:', error.response?.data);
+    }
     throw error;
   }
 };
 
 /**
- * Uploads a document associated with a reservation
- * @param reservationId - ID of the reservation
- * @param documentType - Type of document (e.g., "ApprovalDocument", "PaymentReceipt")
- * @param file - The file to upload
+ * Uploads a document associated with either a reservation or a payment
+ * @param documentData - Document data including file and type
+ * @param reservationId - for reservation documents
+ * @param paymentId - for bank receipt documents
  * @returns Promise with upload result
  */
-export const uploadDocument = async (
-  reservationId: number,
-  documentType: string,
-  file: File
-): Promise<UploadDocumentResponse> => {
+export const uploadDocument = async ({
+  file,
+  documentType,
+  reservationId,
+  paymentId
+}: {
+  file: File;
+  documentType: DocumentType;
+  reservationId?: number;
+  paymentId?: string;
+}): Promise<UploadDocumentResponse> => {
   try {
+    // Validate at least one ID is provided
+    if (!reservationId && !paymentId) {
+      throw new Error("Either reservationId or paymentId must be provided");
+    }
+    
     const formData = new FormData();
-    formData.append('ReservationId', reservationId.toString());
+    
+    // Add appropriate ID based on document type
+    if (reservationId) {
+      formData.append('ReservationId', reservationId.toString());
+    }
+    
+    if (paymentId) {
+      formData.append('PaymentId', paymentId);
+    }
+    
+    // Add document info
     formData.append('Document.DocumentType', documentType);
     formData.append('Document.File', file);
 
@@ -132,8 +186,8 @@ export const createReservationWithDocuments = async ({
     endDate: endDate.toISOString(),
     total,
     customerType,
-    // Only include payment method for bank and cash payments
-    ...(paymentMethod !== "online" && { paymentMethod }),
+    // Always include payment method (empty string if online)
+    paymentMethod: paymentMethod === "online" ? "" : paymentMethod,
     items: items.map((item) => ({
       itemId: item.itemId,
       quantity: item.quantity,
@@ -147,7 +201,6 @@ export const createReservationWithDocuments = async ({
       organizationName: userDetails.organizationName || "",
     },
   };
-
   // Create the reservation
   const createRes = await createReservation(reservationPayload);
   
@@ -160,28 +213,47 @@ export const createReservationWithDocuments = async ({
   // Upload approval documents for public/corporate customers
   if ((customerType === "public" || customerType === "corporate") && 
       approvalDocuments && approvalDocuments.length > 0) {
-    await uploadDocument(
-      reservationId,
-      "ApprovalDocument",
-      approvalDocuments[0]
-    );
+    await uploadDocument({
+      file: approvalDocuments[0],
+      documentType: DocumentType.ApprovalDocument,
+      reservationId: reservationId
+    });
   }
 
   // Upload bank transfer receipt if applicable
   if (paymentMethod === "bank" && 
       bankTransferDocuments && bankTransferDocuments.length > 0) {
-    await uploadDocument(
-      reservationId,
-      "PaymentReceipt",
-      bankTransferDocuments[0]
-    );
+    await uploadDocument({
+      file: bankTransferDocuments[0],
+      documentType: DocumentType.BankReceipt,
+      reservationId: reservationId
+    });
   }
 
   return { reservationId, isSuccess: true };
+};
+
+/**
+ * Uploads a payment receipt document
+ * @param paymentId - ID of the payment
+ * @param file - The receipt file to upload
+ * @returns Promise with upload result
+ */
+export const uploadPaymentReceipt = async (
+  paymentId: string,
+  file: File
+): Promise<UploadDocumentResponse> => {
+  return uploadDocument({
+    file,
+    documentType: DocumentType.BankReceipt,
+    paymentId
+  });
 };
 
 export default {
   createReservation,
   uploadDocument,
   createReservationWithDocuments,
+  uploadPaymentReceipt,
+  DocumentType
 };
