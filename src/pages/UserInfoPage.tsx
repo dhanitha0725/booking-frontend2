@@ -19,12 +19,12 @@ import ReservationSummary from "../features/client/ReservationUserInfo/component
 import PaymentMethodSelection, {
   PaymentMethod,
 } from "../features/client/ReservationUserInfo/components/PaymentMethodSelection";
-import api from "../services/api";
 import { TempReservation, UserInfo } from "../types/reservationData";
 import dayjs from "dayjs";
 import { userFormValidation } from "../validations/userFormValidation";
 import { z } from "zod";
 import axios from "axios";
+import reservationService from "../services/reservationService";
 
 const steps = ["Booking Details", "User Information", "Confirmation"];
 
@@ -49,7 +49,6 @@ const UserInfoPage = () => {
   const navigate = useNavigate();
 
   // check if the user has a reservation in local storage
-  // if not, redirect to the facilities page
   useEffect(() => {
     const temp = localStorage.getItem("currentReservation");
     if (!temp) navigate("/facilities");
@@ -60,6 +59,16 @@ const UserInfoPage = () => {
       setTempReservation(parsedReservation);
     }
   }, [navigate]);
+
+  // handle payment method for non private customers
+  useEffect(() => {
+    if (
+      tempReservation?.customerType !== "private" &&
+      paymentMethod === "bank"
+    ) {
+      setPaymentMethod("online");
+    }
+  }, [tempReservation?.customerType, paymentMethod]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,76 +95,19 @@ const UserInfoPage = () => {
         throw new Error("Please upload bank transfer receipt.");
       }
 
-      // Basic user details
-      const basicUserDetails = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phoneNumber: formData.phoneNumber || "",
-        organizationName: formData.organizationName || "",
-      };
-
-      // Prepare reservation payload
-      const reservationPayload = {
+      // Use the reservation service to create reservation and upload documents
+      const result = await reservationService.createReservationWithDocuments({
         facilityId: tempReservation.facilityId,
-        startDate: dayjs(tempReservation.startDate).toISOString(),
-        endDate: dayjs(tempReservation.endDate).toISOString(),
+        startDate: dayjs(tempReservation.startDate),
+        endDate: dayjs(tempReservation.endDate),
         total: tempReservation.total,
         customerType: tempReservation.customerType,
-        paymentMethod: paymentMethod,
-        items: tempReservation.selectedItems.map((item) => ({
-          itemId: item.itemId,
-          quantity: item.quantity,
-          type: item.type,
-        })),
-        userDetails: basicUserDetails,
-      };
-
-      console.log(
-        "Sending Reservation Payload: ",
-        JSON.stringify(reservationPayload, null, 2)
-      );
-
-      // Create reservation
-      const createRes = await api.post(
-        "/Reservation/createReservation",
-        reservationPayload
-      );
-
-      if (!createRes.data.isSuccess) {
-        throw new Error(createRes.data.error || "Failed to create reservation");
-      }
-
-      const reservationId = createRes.data.value.reservationId;
-      console.log("Reservation ID:", reservationId);
-
-      // Upload approval documents for public/corporate customers
-      if (
-        (tempReservation.customerType === "public" ||
-          tempReservation.customerType === "corporate") &&
-        documents.length > 0
-      ) {
-        const formDataUpload = new FormData();
-        formDataUpload.append("ReservationId", reservationId.toString());
-        formDataUpload.append("Document.DocumentType", "ApprovalDocument");
-        formDataUpload.append("Document.File", documents[0]);
-
-        await api.post("/Reservation/uploadDocument", formDataUpload, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-      }
-
-      // Upload bank transfer receipt if payment method is bank transfer
-      if (paymentMethod === "bank" && bankTransferDocuments.length > 0) {
-        const bankFormData = new FormData();
-        bankFormData.append("ReservationId", reservationId.toString());
-        bankFormData.append("Document.DocumentType", "PaymentReceipt");
-        bankFormData.append("Document.File", bankTransferDocuments[0]);
-
-        await api.post("/Reservation/uploadDocument", bankFormData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-      }
+        paymentMethod,
+        items: tempReservation.selectedItems,
+        userDetails: formData,
+        approvalDocuments: documents,
+        bankTransferDocuments: bankTransferDocuments,
+      });
 
       // Clear local storage
       localStorage.removeItem("currentReservation");
@@ -165,9 +117,9 @@ const UserInfoPage = () => {
         // For online payment, navigate to payment page
         navigate("/paymentInfo", {
           state: {
-            reservationId: reservationId,
+            reservationId: result.reservationId,
             total: tempReservation.total,
-            userDetails: basicUserDetails,
+            userDetails: formData,
             items: tempReservation.selectedItems,
             startDate: dayjs(tempReservation.startDate).toISOString(),
             endDate: dayjs(tempReservation.endDate).toISOString(),
@@ -178,7 +130,7 @@ const UserInfoPage = () => {
         // For bank transfer or cash payment, navigate to confirmation page
         navigate("/confirmation", {
           state: {
-            reservationId: reservationId,
+            reservationId: result.reservationId,
             status:
               paymentMethod === "bank"
                 ? "PendingPaymentVerification"
@@ -255,6 +207,7 @@ const UserInfoPage = () => {
             onMethodChange={setPaymentMethod}
             bankTransferDocuments={bankTransferDocuments}
             onBankTransferDocumentsChange={setBankTransferDocuments}
+            customerType={tempReservation.customerType}
           />
 
           {error && (

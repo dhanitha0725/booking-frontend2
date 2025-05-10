@@ -156,9 +156,7 @@ const ConfirmationPage = () => {
           {confirmationState.paymentMethod === "cash" && (
             <ul>
               <li>Visit our office to make your cash payment</li>
-              <li>Bring your reservation ID and a valid ID</li>
               <li>Payment must be completed within 2 days</li>
-              <li>You'll receive a receipt upon payment</li>
             </ul>
           )}
 
