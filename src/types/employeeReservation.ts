@@ -51,3 +51,9 @@ export interface DateRangeType {
   startDate: Dayjs | null;
   endDate: Dayjs | null;
 }
+
+export interface PaymentInfo {
+  paymentReceived: boolean;
+  paymentMethod: string | null;
+  amountPaid: number | null;
+}

@@ -31,6 +31,7 @@ import {
   Facility,
   FacilityData,
   BookingItemDto,
+  PaymentInfo,
 } from "../../../types/employeeReservation";
 
 // Dialog props
@@ -72,6 +73,12 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Add state for payment info
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
+    paymentReceived: false,
+    paymentMethod: "Cash",
+    amountPaid: null,
+  });
 
   // Form validation for user info
   const userFormMethods = useForm<UserInfo>({
@@ -161,6 +168,8 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
             selectedItems={selectedItems}
             userDetails={userFormMethods.getValues()}
             error={error}
+            paymentInfo={paymentInfo}
+            onPaymentInfoChange={setPaymentInfo}
           />
         );
       default:
@@ -401,6 +410,14 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
           type: item.type,
         })),
         userDetails: userFormMethods.getValues(),
+        // Add payment information
+        payment: {
+          paymentReceived: paymentInfo.paymentReceived,
+          method: paymentInfo.paymentReceived
+            ? paymentInfo.paymentMethod
+            : null,
+          amount: paymentInfo.paymentReceived ? paymentInfo.amountPaid : null,
+        },
       };
 
       const response =
