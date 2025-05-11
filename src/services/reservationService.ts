@@ -10,6 +10,7 @@ export interface CreateReservationPayload {
   total: number;
   customerType: string;
   paymentMethod: string; 
+  isPaymentReceived: boolean;
   items: {
     itemId: number;
     quantity: number;
@@ -193,6 +194,7 @@ export const createReservationWithDocuments = async ({
       quantity: item.quantity,
       type: item.type,
     })),
+    isPaymentReceived: false,
     userDetails: {
       firstName: userDetails.firstName,
       lastName: userDetails.lastName,

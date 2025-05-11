@@ -7,12 +7,6 @@ import {
   Alert,
   FormControlLabel,
   Checkbox,
-  TextField,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  SelectChangeEvent,
 } from "@mui/material";
 import { Dayjs } from "dayjs";
 import { UserInfo } from "../../../../types/reservationData";
@@ -37,8 +31,6 @@ interface ReviewStepProps {
   onPaymentInfoChange: (paymentInfo: PaymentInfo) => void;
 }
 
-const paymentMethods = ["Cash"];
-
 const ReviewStep: React.FC<ReviewStepProps> = ({
   facilityName,
   dateRange,
@@ -57,27 +49,9 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
     onPaymentInfoChange({
       ...paymentInfo,
       paymentReceived: event.target.checked,
-      // Reset payment method to Cash when toggling payment received
-      paymentMethod: event.target.checked ? "Cash" : null,
+      // Always set method to Cash, but only set amount if payment received
+      paymentMethod: "Cash",
       amountPaid: event.target.checked ? total : null,
-    });
-  };
-
-  // Handle payment method change
-  const handlePaymentMethodChange = (event: SelectChangeEvent) => {
-    onPaymentInfoChange({
-      ...paymentInfo,
-      paymentMethod: event.target.value,
-    });
-  };
-
-  // Handle amount paid change
-  const handleAmountPaidChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    onPaymentInfoChange({
-      ...paymentInfo,
-      amountPaid: parseFloat(event.target.value) || 0,
     });
   };
 
@@ -173,7 +147,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
 
       <Divider sx={{ my: 3 }} />
 
-      {/* Payment Information Section */}
+      {/* Payment Information Section - simplified */}
       <Typography variant="h6" gutterBottom>
         Payment Information
       </Typography>
@@ -186,44 +160,9 @@ const ReviewStep: React.FC<ReviewStepProps> = ({
               color="primary"
             />
           }
-          label="Payment Received"
+          label={`Payment Received (Rs. ${total.toFixed(2)})`}
         />
       </Box>
-
-      {paymentInfo.paymentReceived && (
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel id="payment-method-label">Payment Method</InputLabel>
-              <Select
-                labelId="payment-method-label"
-                value={paymentInfo.paymentMethod || ""}
-                onChange={handlePaymentMethodChange}
-                label="Payment Method"
-              >
-                {paymentMethods.map((method) => (
-                  <MenuItem key={method} value={method}>
-                    {method}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Amount Paid"
-              type="number"
-              fullWidth
-              value={paymentInfo.amountPaid || ""}
-              onChange={handleAmountPaidChange}
-              InputProps={{
-                startAdornment: <Typography sx={{ mr: 0.5 }}>Rs.</Typography>,
-              }}
-              placeholder="Enter amount"
-            />
-          </Grid>
-        </Grid>
-      )}
     </Box>
   );
 };

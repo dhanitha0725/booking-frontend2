@@ -53,6 +53,8 @@ export const createEmployeeReservation = async (data: {
   endDate?: string;
   total: number;
   customerType: CustomerType;
+  paymentMethod: string;
+  isPaymentReceived: boolean;
   items: {
     itemId: number;
     quantity: number;

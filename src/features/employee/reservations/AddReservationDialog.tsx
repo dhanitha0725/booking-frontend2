@@ -5,7 +5,6 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Typography,
   CircularProgress,
   Stepper,
   Step,
@@ -33,6 +32,7 @@ import {
   BookingItemDto,
   PaymentInfo,
 } from "../../../types/employeeReservation";
+import { PackagesDto } from "../../../types/selectedFacility";
 
 // Dialog props
 interface AddReservationDialogProps {
@@ -179,9 +179,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        <Typography variant="h6">Add New Reservation</Typography>
-      </DialogTitle>
+      <DialogTitle>Add New Reservation</DialogTitle>
       <DialogContent dividers>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
           {steps.map((label) => (
@@ -284,7 +282,9 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
             facilityDetails.rooms && facilityDetails.rooms.length > 0;
           const hasDateDependentPackages =
             facilityDetails.packages &&
-            facilityDetails.packages.some((pkg: any) => pkg.requiresDates);
+            facilityDetails.packages.some(
+              (pkg: PackagesDto) => pkg.requiresDates
+            );
 
           setRequiresDates(hasRooms || hasDateDependentPackages);
         } catch (error) {
@@ -404,20 +404,14 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         endDate: dateRange.endDate?.toISOString(),
         total,
         customerType,
+        paymentMethod: "Cash",
+        isPaymentReceived: paymentInfo.paymentReceived, //come from checkbox result in review step
         items: selectedItems.map((item) => ({
           itemId: item.itemId,
           quantity: item.quantity,
           type: item.type,
         })),
         userDetails: userFormMethods.getValues(),
-        // Add payment information
-        payment: {
-          paymentReceived: paymentInfo.paymentReceived,
-          method: paymentInfo.paymentReceived
-            ? paymentInfo.paymentMethod
-            : null,
-          amount: paymentInfo.paymentReceived ? paymentInfo.amountPaid : null,
-        },
       };
 
       const response =

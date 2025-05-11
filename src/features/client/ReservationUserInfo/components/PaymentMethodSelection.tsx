@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Box,
   FormControl,
@@ -8,7 +7,6 @@ import {
   Typography,
   Paper,
   Alert,
-  TextField,
   Divider,
   Theme,
 } from "@mui/material";
@@ -56,7 +54,6 @@ const PaymentMethodSelection = ({
   onBankTransferDocumentsChange,
   customerType,
 }: PaymentMethodSelectionProps) => {
-  const [note, setNote] = useState("");
   const showBankTransfer = customerType === "private";
 
   return (
@@ -171,17 +168,6 @@ const PaymentMethodSelection = ({
                   reservation will be temporarily held until payment is
                   received.
                 </Typography>
-                <TextField
-                  fullWidth
-                  multiline
-                  rows={2}
-                  variant="outlined"
-                  margin="normal"
-                  label="Additional Notes (Optional)"
-                  placeholder="Any specific instructions regarding your cash payment"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
               </Box>
             )}
           </StyledPaper>
