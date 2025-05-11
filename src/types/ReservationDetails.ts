@@ -56,6 +56,13 @@ export interface PaymentDetails {
   status: string;
 }
 
+// Add this if not already present
+export interface DocumentDetails {
+  documentId: number;
+  documentType: "ApprovalDocument" | "BankReceipt";
+  url: string;
+}
+
 // Complete reservation details for the full view
 export interface FullReservationDetails {
   reservationId: number;
@@ -70,6 +77,7 @@ export interface FullReservationDetails {
   payments: PaymentDetails[];
   reservedPackages: ReservedPackage[];
   reservedRooms: ReservedRoom[];
+  documents?: DocumentDetails[];
 }
 
 // Props for the FullReservationInfo component

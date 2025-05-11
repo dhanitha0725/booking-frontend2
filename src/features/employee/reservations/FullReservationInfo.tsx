@@ -30,10 +30,8 @@ import {
   BookedItem,
 } from "../../../types/ReservationDetails";
 import useReservationDetails from "../../../hooks/useReservationDetails";
+import DocumentViewer from "../../../components/shared/DocumentViewer";
 
-// fixes: start and end date format
-
-// Utility component for displaying fields
 const DetailField: React.FC<{
   label: string;
   value: string | number | React.ReactNode;
@@ -46,7 +44,6 @@ const DetailField: React.FC<{
   </Box>
 );
 
-// Reservation Details Section
 const ReservationDetailsSection: React.FC<{
   reservation: FullReservationDetails;
 }> = ({ reservation }) => {
@@ -124,7 +121,6 @@ const ReservationDetailsSection: React.FC<{
   );
 };
 
-// Booked Items Section
 const BookedItemsSection: React.FC<{
   reservedPackages: FullReservationDetails["reservedPackages"];
   reservedRooms: FullReservationDetails["reservedRooms"];
@@ -204,7 +200,6 @@ const BookedItemsSection: React.FC<{
   );
 };
 
-// User Details Section
 const UserDetailsSection: React.FC<{
   user?: ReservationUser;
   userType: UserType;
@@ -271,7 +266,6 @@ const UserDetailsSection: React.FC<{
   );
 };
 
-// Payment Details Section
 const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
   payments = [],
 }) => {
@@ -339,13 +333,29 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
   );
 };
 
-// Main Component
+const DocumentsSection: React.FC<{
+  documents: FullReservationDetails["documents"];
+}> = ({ documents = [] }) => {
+  if (!documents?.length) {
+    return null;
+  }
+
+  return (
+    <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
+      <DocumentViewer
+        documents={documents}
+        groupByType={true}
+        title="Documents"
+      />
+    </Paper>
+  );
+};
+
 const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
   open,
   onClose,
   reservationId,
 }) => {
-  // Use the custom hook
   const { reservation, loading, error } = useReservationDetails(
     reservationId,
     open
@@ -378,6 +388,9 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
               userType={reservation.userType}
             />
             <PaymentDetailsSection payments={reservation.payments} />
+            {reservation.documents && reservation.documents.length > 0 && (
+              <DocumentsSection documents={reservation.documents} />
+            )}
           </>
         ) : (
           <Typography>No reservation details available</Typography>
