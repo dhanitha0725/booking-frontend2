@@ -30,6 +30,7 @@ interface CreateReservationResponse {
   error?: string;
   value: {
     reservationId: number;
+    paymentId?: string; 
   };
 }
 
@@ -180,6 +181,9 @@ export const createReservationWithDocuments = async ({
   approvalDocuments?: File[];
   bankTransferDocuments?: File[];
 }): Promise<{ reservationId: number; isSuccess: boolean }> => {
+  // Normalize payment method for consistency
+  const normalizedPaymentMethod = paymentMethod.toLowerCase();
+  
   // Prepare reservation payload
   const reservationPayload: CreateReservationPayload = {
     facilityId,
@@ -189,12 +193,12 @@ export const createReservationWithDocuments = async ({
     customerType,
     // Always include payment method (empty string if online)
     paymentMethod: paymentMethod === "online" ? "" : paymentMethod,
+    isPaymentReceived: false,
     items: items.map((item) => ({
       itemId: item.itemId,
       quantity: item.quantity,
       type: item.type,
     })),
-    isPaymentReceived: false,
     userDetails: {
       firstName: userDetails.firstName,
       lastName: userDetails.lastName,
@@ -203,7 +207,9 @@ export const createReservationWithDocuments = async ({
       organizationName: userDetails.organizationName || "",
     },
   };
-  // Create the reservation
+  
+  // Step 1: Create the reservation
+  console.log('Creating reservation...');
   const createRes = await createReservation(reservationPayload);
   
   if (!createRes.isSuccess) {
@@ -211,28 +217,50 @@ export const createReservationWithDocuments = async ({
   }
 
   const reservationId = createRes.value.reservationId;
+  // Get the payment ID from the response if available
+  const paymentId = createRes.value.paymentId;
+  
+  console.log(`Reservation created successfully with ID: ${reservationId}${paymentId ? `, Payment ID: ${paymentId}` : ''}`);
 
-  // Upload approval documents for public/corporate customers
-  if ((customerType === "public" || customerType === "corporate") && 
-      approvalDocuments && approvalDocuments.length > 0) {
-    await uploadDocument({
-      file: approvalDocuments[0],
-      documentType: DocumentType.ApprovalDocument,
-      reservationId: reservationId
-    });
+  try {
+    // Step 2: Upload approval documents for public/corporate customers
+    if ((customerType === "public" || customerType === "corporate") && 
+        approvalDocuments && approvalDocuments.length > 0) {
+      console.log(`Uploading approval document for reservation ${reservationId}`);
+      await uploadDocument({
+        file: approvalDocuments[0],
+        documentType: DocumentType.ApprovalDocument,
+        reservationId: reservationId
+      });
+    }
+
+    // Step 3: For bank transfers, upload receipt with payment ID if available
+    if (normalizedPaymentMethod === "bank" && 
+        bankTransferDocuments && bankTransferDocuments.length > 0) {
+      
+      if (paymentId) {
+        console.log(`Uploading bank receipt document with payment ID: ${paymentId}`);
+        await uploadDocument({
+          file: bankTransferDocuments[0],
+          documentType: DocumentType.BankReceipt,
+          paymentId: paymentId
+        });
+      } else {
+        console.error("No payment ID returned for bank transfer. Attempting to upload with reservation ID instead.");
+        await uploadDocument({
+          file: bankTransferDocuments[0],
+          documentType: DocumentType.BankReceipt,
+          reservationId: reservationId
+        });
+      }
+    }
+
+    return { reservationId, isSuccess: true };
+  } catch (error) {
+    console.error("Error uploading documents:", error);
+    // Document upload failure shouldn't fail the entire reservation creation
+    return { reservationId, isSuccess: true };
   }
-
-  // Upload bank transfer receipt if applicable
-  if (paymentMethod === "bank" && 
-      bankTransferDocuments && bankTransferDocuments.length > 0) {
-    await uploadDocument({
-      file: bankTransferDocuments[0],
-      documentType: DocumentType.BankReceipt,
-      reservationId: reservationId
-    });
-  }
-
-  return { reservationId, isSuccess: true };
 };
 
 /**
