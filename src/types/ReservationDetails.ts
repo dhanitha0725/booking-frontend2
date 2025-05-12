@@ -62,6 +62,7 @@ export interface DocumentDetails {
   documentId: number;
   documentType: "ApprovalDocument" | "BankReceipt";
   url: string;
+  status?: string; 
 }
 
 // Complete reservation details for the full view

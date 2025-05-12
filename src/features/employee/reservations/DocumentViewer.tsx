@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,28 +9,45 @@ import {
   CardActions,
   IconButton,
   Tooltip,
+  Chip,
+  Divider,
+  Alert,
 } from "@mui/material";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DownloadIcon from "@mui/icons-material/Download";
 import DescriptionIcon from "@mui/icons-material/Description";
 import ReceiptIcon from "@mui/icons-material/Receipt";
-import { DocumentDetails } from "../../types/ReservationDetails";
+import DocumentApproval from "./DocumentApproval";
+import { DocumentDetails } from "../../../types/ReservationDetails";
 
 interface DocumentViewerProps {
   documents: DocumentDetails[];
   groupByType?: boolean;
   title?: string;
+  allowApproval?: boolean;
+  paymentStatus?: string;
+  onDocumentStatusChanged?: () => void;
 }
 
-export const DocumentViewer: React.FC<DocumentViewerProps> = ({
+const DocumentViewer: React.FC<DocumentViewerProps> = ({
   documents = [],
   groupByType = true,
   title = "Documents",
+  allowApproval = false,
+  paymentStatus = "",
+  onDocumentStatusChanged,
 }) => {
+  const [alertInfo, setAlertInfo] = useState<{
+    message: string;
+    severity: "success" | "error";
+    documentId?: number;
+  } | null>(null);
+
   if (!documents.length) {
     return null;
   }
 
+  // Group documents by type if requested
   const approvalDocs = groupByType
     ? documents.filter((doc) => doc.documentType === "ApprovalDocument")
     : [];
@@ -38,16 +55,19 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     ? documents.filter((doc) => doc.documentType === "BankReceipt")
     : [];
 
+  // Get file extension
   const getFileExtension = (url: string) => {
     const parts = url.split(".");
     return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "unknown";
   };
 
+  // Check if document is an image
   const isImage = (url: string) => {
     const ext = getFileExtension(url);
     return ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(ext);
   };
 
+  // Get document icon based on type
   const getDocumentIcon = (docType: string) => {
     if (docType === "ApprovalDocument") {
       return <DescriptionIcon color="primary" />;
@@ -57,9 +77,61 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     return <DescriptionIcon />;
   };
 
+  // Handle error and success
+  const handleError = (errorMessage: string, docId: number) => {
+    setAlertInfo({
+      message: errorMessage,
+      severity: "error",
+      documentId: docId,
+    });
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setAlertInfo(null);
+    }, 5000);
+  };
+
+  const handleSuccess = (successMessage: string, docId: number) => {
+    setAlertInfo({
+      message: successMessage,
+      severity: "success",
+      documentId: docId,
+    });
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setAlertInfo(null);
+    }, 5000);
+
+    if (onDocumentStatusChanged) {
+      onDocumentStatusChanged();
+    }
+  };
+
+  // Check if approval should be shown
+  const showApproval = (doc: DocumentDetails): boolean => {
+    // Don't show approval if already processed
+    if (doc.status?.includes("Approved") || doc.status?.includes("Rejected")) {
+      return false;
+    }
+
+    // Don't show for bank receipts if payment is completed
+    if (
+      doc.documentType === "BankReceipt" &&
+      paymentStatus.toLowerCase() === "completed"
+    ) {
+      return false;
+    }
+
+    return allowApproval;
+  };
+
+  // Function to render a document card
   const renderDocumentCard = (doc: DocumentDetails) => {
     const isPdf = getFileExtension(doc.url) === "pdf";
     const isImg = isImage(doc.url);
+
+    // Base URL for documents
     const baseUrl =
       "https://rmsblobsfiletorage.blob.core.windows.net/rmscontainer/";
     const fullUrl = doc.url.startsWith("http")
@@ -99,10 +171,39 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               ? "Approval Document"
               : "Bank Receipt"}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" display="block">
             ID: {doc.documentId}
           </Typography>
+
+          {doc.status && (
+            <Chip
+              label={doc.status}
+              size="small"
+              color={
+                doc.status.toLowerCase().includes("approved")
+                  ? "success"
+                  : doc.status.toLowerCase().includes("reject")
+                    ? "error"
+                    : "default"
+              }
+              sx={{ mt: 1 }}
+            />
+          )}
+
+          {/* Show alert for this specific document */}
+          {alertInfo && alertInfo.documentId === doc.documentId && (
+            <Alert
+              severity={alertInfo.severity}
+              sx={{ mt: 1, fontSize: "0.75rem", py: 0 }}
+              onClose={() => setAlertInfo(null)}
+            >
+              {alertInfo.message}
+            </Alert>
+          )}
         </CardContent>
+
+        <Divider />
+
         <CardActions disableSpacing>
           <Tooltip title="Open in new tab">
             <IconButton
@@ -120,6 +221,18 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             </IconButton>
           </Tooltip>
         </CardActions>
+
+        {showApproval(doc) && (
+          <Box p={1} pt={0}>
+            <DocumentApproval
+              documentId={doc.documentId}
+              documentType={doc.documentType}
+              onError={(message) => handleError(message, doc.documentId)}
+              onSuccess={(message) => handleSuccess(message, doc.documentId)}
+              onApproved={onDocumentStatusChanged}
+            />
+          </Box>
+        )}
       </Card>
     );
   };

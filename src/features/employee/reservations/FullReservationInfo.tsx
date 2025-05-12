@@ -30,7 +30,7 @@ import {
   BookedItem,
 } from "../../../types/ReservationDetails";
 import useReservationDetails from "../../../hooks/useReservationDetails";
-import DocumentViewer from "../../../components/shared/DocumentViewer";
+import DocumentViewer from "./DocumentViewer";
 
 const DetailField: React.FC<{
   label: string;
@@ -63,7 +63,7 @@ const ReservationDetailsSection: React.FC<{
     PendingPayment: "info",
     PendingPaymentVerification: "warning",
     Approved: "success",
-    Completed: "primary",
+    Completed: "success",
     Cancelled: "error",
     Confirmed: "success",
     Expired: "error",
@@ -347,10 +347,15 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
 
 const DocumentsSection: React.FC<{
   documents: FullReservationDetails["documents"];
-}> = ({ documents = [] }) => {
+  payments?: PaymentDetails[];
+}> = ({ documents = [], payments = [] }) => {
   if (!documents?.length) {
     return null;
   }
+
+  // Get payment status if available
+  const paymentStatus =
+    payments && payments.length > 0 ? payments[0].status : "";
 
   return (
     <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
@@ -358,6 +363,8 @@ const DocumentsSection: React.FC<{
         documents={documents}
         groupByType={true}
         title="Documents"
+        allowApproval={true}
+        paymentStatus={paymentStatus}
       />
     </Paper>
   );
@@ -368,6 +375,7 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
   onClose,
   reservationId,
 }) => {
+  // Use the custom hook without refresh feature
   const { reservation, loading, error } = useReservationDetails(
     reservationId,
     open
@@ -401,7 +409,10 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
             />
             <PaymentDetailsSection payments={reservation.payments} />
             {reservation.documents && reservation.documents.length > 0 && (
-              <DocumentsSection documents={reservation.documents} />
+              <DocumentsSection
+                documents={reservation.documents}
+                payments={reservation.payments}
+              />
             )}
           </>
         ) : (

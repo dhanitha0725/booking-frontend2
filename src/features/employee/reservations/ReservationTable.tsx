@@ -78,11 +78,14 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
       case "PendingPayment":
         color = "info";
         break;
+      case "PendingPaymentVerification":
+        color = "warning";
+        break;
       case "Approved":
         color = "success";
         break;
       case "Completed":
-        color = "primary";
+        color = "success";
         break;
       case "Cancelled":
         color = "error";
