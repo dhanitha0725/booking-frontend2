@@ -61,12 +61,15 @@ const ReservationDetailsSection: React.FC<{
   > = {
     PendingApproval: "warning",
     PendingPayment: "info",
+    PendingPaymentVerification: "warning",
     Approved: "success",
     Completed: "primary",
     Cancelled: "error",
     Confirmed: "success",
     Expired: "error",
   };
+
+  // Rest of the component remains unchanged
   const renderStatusChip = (status: string) =>
     status ? (
       <Chip
@@ -271,7 +274,10 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
 }) => {
   const formatDate = (dateString: string) =>
     dateString ? format(new Date(dateString), "MMM dd, yyyy HH:mm") : "N/A";
-  const formatCurrency = (amount: number) => `LKR ${amount.toFixed(2)}`;
+
+  // Updated to handle null values
+  const formatCurrency = (amount: number | null) =>
+    amount !== null ? `LKR ${amount.toFixed(2)}` : "Not Paid";
 
   return (
     <Paper elevation={0} sx={{ p: 2, bgcolor: "#f5f5f5" }}>
@@ -281,7 +287,7 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
       {payments.length > 0 ? (
         payments.map((payment, index) => (
           <Box
-            key={payment.orderID}
+            key={index} // Changed from payment.orderID since it can be null
             sx={{
               mb: 2,
               pb: 2,
@@ -291,7 +297,11 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
           >
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <DetailField label="Order ID" value={payment.orderID} />
+                {payment.orderID ? (
+                  <DetailField label="Order ID" value={payment.orderID} />
+                ) : (
+                  <DetailField label="Order ID" value="Not Available" />
+                )}
                 <DetailField
                   label="Amount Paid"
                   value={formatCurrency(payment.amountPaid)}
@@ -318,7 +328,9 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
                     color={
                       payment.status.toLowerCase() === "completed"
                         ? "success"
-                        : "warning"
+                        : payment.status.toLowerCase() === "pending"
+                          ? "warning"
+                          : "default"
                     }
                   />
                 </Box>

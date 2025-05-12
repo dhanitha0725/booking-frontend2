@@ -6,6 +6,7 @@
 export type ReservationStatus =
   | "PendingApproval"
   | "PendingPayment"
+  | "PendingPaymentVerification"
   | "Approved"
   | "Completed"
   | "Cancelled"
