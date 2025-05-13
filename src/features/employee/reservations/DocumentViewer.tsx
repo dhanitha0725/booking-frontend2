@@ -26,7 +26,10 @@ interface DocumentViewerProps {
   title?: string;
   allowApproval?: boolean;
   paymentStatus?: string;
+  reservationStatus?: string;
   onDocumentStatusChanged?: () => void;
+  onError?: (message: string) => void;
+  onSuccess?: (message: string) => void;
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
@@ -35,6 +38,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   title = "Documents",
   allowApproval = false,
   paymentStatus = "",
+  reservationStatus = "",
   onDocumentStatusChanged,
 }) => {
   const [alertInfo, setAlertInfo] = useState<{
@@ -108,9 +112,9 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
     }
   };
 
-  // Check if approval should be shown
+  // Function to check if approval buttons should be shown
   const showApproval = (doc: DocumentDetails): boolean => {
-    // Don't show approval if already processed
+    // Don't show approval if document is already processed
     if (doc.status?.includes("Approved") || doc.status?.includes("Rejected")) {
       return false;
     }
@@ -120,6 +124,11 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
       doc.documentType === "BankReceipt" &&
       paymentStatus.toLowerCase() === "completed"
     ) {
+      return false;
+    }
+
+    // Don't show approval buttons if reservation is in a final state
+    if (["Completed", "Cancelled", "Expired"].includes(reservationStatus)) {
       return false;
     }
 

@@ -73,10 +73,19 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
       ) {
         payload.amountPaid = amount;
       }
+      console.log("Document approval payload:", {
+        documentId: payload.documentId,
+        documentType: payload.documentType,
+        isApproved: payload.isApproved,
+        amountPaid: payload.amountPaid ?? null,
+      });
 
       const response = await approveDocument(payload);
 
       if (response.isSuccess) {
+        // Log successful response
+        console.log("Document approval successful response:", response);
+
         setIsProcessed(true);
         if (onSuccess) {
           onSuccess(
@@ -89,6 +98,9 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
           onApproved();
         }
       } else {
+        // Log error response
+        console.error("Document approval failed response:", response);
+
         if (onError) {
           onError(response.error || "Failed to process document");
         }

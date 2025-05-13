@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Snackbar, // Add Snackbar import
 } from "@mui/material";
 import { format } from "date-fns";
 import {
@@ -345,10 +346,20 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
   );
 };
 
+// Update the DocumentsSection component to receive notification handlers as props
 const DocumentsSection: React.FC<{
   documents: FullReservationDetails["documents"];
   payments?: PaymentDetails[];
-}> = ({ documents = [], payments = [] }) => {
+  reservationStatus: string; // Add this line
+  onError: (message: string) => void;
+  onSuccess: (message: string) => void;
+}> = ({
+  documents = [],
+  payments = [],
+  reservationStatus = "",
+  onError,
+  onSuccess,
+}) => {
   if (!documents?.length) {
     return null;
   }
@@ -365,6 +376,9 @@ const DocumentsSection: React.FC<{
         title="Documents"
         allowApproval={true}
         paymentStatus={paymentStatus}
+        reservationStatus={reservationStatus} // Add this line
+        onError={onError}
+        onSuccess={onSuccess}
       />
     </Paper>
   );
@@ -380,6 +394,34 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
     reservationId,
     open
   );
+
+  // Add state for centralized notifications
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info" | "warning";
+  }>({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+
+  // Handle document approval/rejection notifications
+  const handleDocumentNotification = (
+    message: string,
+    severity: "success" | "error"
+  ) => {
+    setNotification({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  // Handle closing the notification
+  const handleCloseNotification = () => {
+    setNotification((prev) => ({ ...prev, open: false }));
+  };
 
   if (!open) return null;
 
@@ -412,6 +454,13 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
               <DocumentsSection
                 documents={reservation.documents}
                 payments={reservation.payments}
+                reservationStatus={reservation.status} // Add this line
+                onError={(message) =>
+                  handleDocumentNotification(message, "error")
+                }
+                onSuccess={(message) =>
+                  handleDocumentNotification(message, "success")
+                }
               />
             )}
           </>
@@ -422,6 +471,23 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
+
+      {/* Centralized notification system */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={5000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };
