@@ -18,7 +18,7 @@ import axios from "axios";
 import api from "../../../services/api";
 import { Reservation } from "../../../types/ReservationDetails";
 import ReservationTable from "../reservations/ReservationTable";
-import StatCard from "./StatCard";
+import StatCard from "../../../components/StatCard";
 
 const EmployeeDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);

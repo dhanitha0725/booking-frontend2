@@ -84,7 +84,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       case "employee":
         return "/employee/dashboard";
       case "accountant":
-        return "/admin/reports";
+        return "/accountant/dashboard"; // Update this to point to the correct default route
       case "customer":
         return "/home";
       default:
@@ -128,6 +128,14 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         "/employee/notifications",
       ];
 
+      // Define accountant routes
+      const accountantRoutes = [
+        "/accountant/dashboard",
+        "/accountant/payments",
+        "/accountant/invoice",
+        "/accountant/reports",
+      ];
+
       const currentPath = window.location.pathname;
 
       // Determine if redirection is needed
@@ -140,7 +148,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           user.role.toLowerCase() !== "accountant") || // Non-admin/accountant on admin route
         (currentPath.startsWith("/employee") &&
           !employeeRoutes.includes(currentPath) &&
-          user.role.toLowerCase() !== "employee"); // Non-employee on employee route
+          user.role.toLowerCase() !== "employee") || // Non-employee on employee route
+        (currentPath.startsWith("/accountant") &&
+          !accountantRoutes.includes(currentPath) &&
+          user.role.toLowerCase() !== "accountant"); // Add check for accountant routes
 
       if (shouldRedirect) {
         navigate(getDefaultRoute(user.role));

@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import AdminLayout from "../layouts/AdminLayout";
 import MainLayout from "../layouts/MainLayout";
 import EmployeeLayout from "../layouts/EmployeeLayout";
+import AccountLayout from "../layouts/AccountLayout";
 
 //pages
 import SignUp from "../pages/SignUp";
@@ -25,6 +26,8 @@ import FacilityManagement from "../features/admin/facilities/FacilityManagement"
 import CustomerManagement from "../features/admin/customers/CustomerManagement";
 import EmployeeDashboard from "../features/employee/dashboard/EmployeeDashboard";
 import ReservationManagement from "../features/employee/reservations/ReservationManagement";
+import AccountDashboard from "../features/accountant/dashboard/AccountDashboard";
+import PaymentManagement from "../features/accountant/payments/PaymentManagement";
 
 const Router: React.FC = () => {
   return (
@@ -78,6 +81,15 @@ const Router: React.FC = () => {
             path="reservation-management"
             element={<ReservationManagement />}
           />
+        </Route>
+      </Route>
+
+      {/* protected accountant routes */}
+      <Route element={<ProtectedRoute allowedRoles={["accountant"]} />}>
+        <Route path="/accountant" element={<AccountLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AccountDashboard />} />
+          <Route path="payments" element={<PaymentManagement />} />
         </Route>
       </Route>
 
