@@ -28,6 +28,7 @@ import EmployeeDashboard from "../features/employee/dashboard/EmployeeDashboard"
 import ReservationManagement from "../features/employee/reservations/ReservationManagement";
 import AccountDashboard from "../features/accountant/dashboard/AccountDashboard";
 import PaymentManagement from "../features/accountant/payments/PaymentManagement";
+import ReportManagement from "../features/accountant/reports/ReportManagement";
 
 const Router: React.FC = () => {
   return (
@@ -90,6 +91,8 @@ const Router: React.FC = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AccountDashboard />} />
           <Route path="payments" element={<PaymentManagement />} />
+          <Route path="invoice" element={<PaymentManagement />} />
+          <Route path="reports" element={<ReportManagement />} />
         </Route>
       </Route>
 
