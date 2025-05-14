@@ -4,7 +4,6 @@ import TableChartIcon from "@mui/icons-material/TableChart";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import { ReportType, ReportTypeOption } from "../../../types/report";
 
-// Define report types
 const reportTypes: ReportTypeOption[] = [
   {
     value: "revenue",
@@ -15,21 +14,6 @@ const reportTypes: ReportTypeOption[] = [
     value: "bookings",
     label: "Booking Statistics",
     icon: <TableChartIcon color="info" />,
-  },
-  {
-    value: "facilities",
-    label: "Facility Usage",
-    icon: <TableChartIcon color="success" />,
-  },
-  {
-    value: "customers",
-    label: "Customer Analytics",
-    icon: <BarChartIcon color="warning" />,
-  },
-  {
-    value: "payments",
-    label: "Payment Transactions",
-    icon: <TableChartIcon color="error" />,
   },
 ];
 

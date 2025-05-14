@@ -7,7 +7,6 @@ import {
   Select,
   MenuItem,
   Button,
-  Stack,
   Divider,
   Card,
   CardContent,
@@ -20,17 +19,14 @@ import {
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
-import DownloadIcon from "@mui/icons-material/Download";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import api from "../../../services/api";
 import PDFGenerator from "../../../utils/PDFGenerator";
 import {
   Facility,
   FinancialReportItem,
+  ReservationReportItem,
   ReportType,
-  ExportFormat,
-  ExportFormatOption,
 } from "../../../types/report";
 
 // Constants
@@ -45,31 +41,18 @@ const MenuProps = {
   },
 };
 
-// Define export formats
-const exportFormats: ExportFormatOption[] = [
-  { value: "pdf", label: "PDF", icon: <PictureAsPdfIcon /> },
-  {
-    value: "excel",
-    label: "Excel",
-    icon: <InsertDriveFileIcon color="success" />,
-  },
-  { value: "csv", label: "CSV", icon: <InsertDriveFileIcon /> },
-];
-
 interface ReportConfigurationCardProps {
   reportType: ReportType;
   startDate: Dayjs | null;
   endDate: Dayjs | null;
-  exportFormat: ExportFormat;
   isGenerating: boolean;
   onStartDateChange: (date: Dayjs | null) => void;
   onEndDateChange: (date: Dayjs | null) => void;
-  onExportFormatChange: (format: ExportFormat) => void;
   onGenerateReport: (
-    data: FinancialReportItem[],
-    format: string,
+    data: FinancialReportItem[] | ReservationReportItem[],
     startDate: string,
-    endDate: string
+    endDate: string,
+    reportType: ReportType
   ) => void;
   onError: (message: string) => void;
   setIsGenerating: (isGenerating: boolean) => void;
@@ -79,11 +62,9 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
   reportType,
   startDate,
   endDate,
-  exportFormat,
   isGenerating,
   onStartDateChange,
   onEndDateChange,
-  onExportFormatChange,
   onGenerateReport,
   onError,
   setIsGenerating,
@@ -125,10 +106,7 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
   const getReportTypeLabel = (value: ReportType): string => {
     const reportLabels: Record<ReportType, string> = {
       revenue: "Revenue Report",
-      bookings: "Booking Statistics",
-      facilities: "Facility Usage",
-      customers: "Customer Analytics",
-      payments: "Payment Transactions",
+      bookings: "Reservation Report",
     };
     return reportLabels[value] || "";
   };
@@ -151,38 +129,47 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
       // Format dates for API
       const formattedStartDate = startDate.format("YYYY-MM-DD");
       const formattedEndDate = endDate.format("YYYY-MM-DD");
-      const url = `/report/financial-report?startDate=${formattedStartDate}&endDate=${formattedEndDate}${
+
+      // Construct base URL based on report type
+      const endpoint =
+        reportType === "bookings" ? "reservation-report" : "financial-report";
+
+      // Build URL with parameters
+      const url = `/report/${endpoint}?startDate=${formattedStartDate}&endDate=${formattedEndDate}${
         !selectAllFacilities && selectedFacilityIds.length > 0
           ? selectedFacilityIds.map((id) => `&facilityIds=${id}`).join("")
           : ""
       }`;
 
-      console.log("Requesting financial report with URL:", url);
+      console.log(`Requesting ${reportType} report with URL:`, url);
       const response = await api.get(url);
 
-      const financialReportData = response.data;
+      const reportData = response.data;
 
-      // Generate and download the report based on selected format
-      if (exportFormat === "pdf") {
-        PDFGenerator.generateFinancialReport(
-          financialReportData,
+      // Generate PDF report
+      if (reportType === "bookings") {
+        PDFGenerator.generateReservationReport(
+          reportData,
           formattedStartDate,
           formattedEndDate
         );
-      } else if (exportFormat === "excel" || exportFormat === "csv") {
-        // In a real implementation, you would generate Excel/CSV files here
-        console.log("Would generate Excel/CSV with data:", financialReportData);
+      } else {
+        PDFGenerator.generateFinancialReport(
+          reportData,
+          formattedStartDate,
+          formattedEndDate
+        );
       }
 
       // Notify parent component about the successful report generation
       onGenerateReport(
-        financialReportData,
-        exportFormat,
+        reportData,
         formattedStartDate,
-        formattedEndDate
+        formattedEndDate,
+        reportType
       );
     } catch (error) {
-      console.error("Error generating financial report:", error);
+      console.error(`Error generating ${reportType} report:`, error);
       onError("An error occurred while generating the report");
     } finally {
       setIsGenerating(false);
@@ -226,74 +213,50 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
           </Grid>
 
           {/* Facility Selection */}
-          {reportType === "revenue" && (
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel id="facility-select-label">
-                  Select Facilities
-                </InputLabel>
-                <Select
-                  labelId="facility-select-label"
-                  multiple
-                  value={selectAllFacilities ? [-1] : selectedFacilityIds}
-                  onChange={handleFacilityChange}
-                  input={<OutlinedInput label="Select Facilities" />}
-                  renderValue={() => {
-                    if (selectAllFacilities) return "All Facilities";
-
-                    return selectedFacilityIds
-                      .map(
-                        (id) =>
-                          facilities.find((f) => f.facilityID === id)
-                            ?.facilityName || ""
-                      )
-                      .join(", ");
-                  }}
-                  MenuProps={MenuProps}
-                >
-                  <MenuItem value={-1}>
-                    <Checkbox checked={selectAllFacilities} />
-                    <ListItemText primary="All Facilities" />
-                  </MenuItem>
-
-                  {facilities.map((facility) => (
-                    <MenuItem
-                      key={facility.facilityID}
-                      value={facility.facilityID}
-                    >
-                      <Checkbox
-                        checked={
-                          selectedFacilityIds.indexOf(facility.facilityID) > -1
-                        }
-                      />
-                      <ListItemText primary={facility.facilityName} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-          )}
-
-          {/* Export Format */}
           <Grid item xs={12}>
-            <Typography variant="subtitle2" gutterBottom>
-              Export Format
-            </Typography>
-            <Stack direction="row" spacing={1}>
-              {exportFormats.map((format) => (
-                <Button
-                  key={format.value}
-                  variant={
-                    exportFormat === format.value ? "contained" : "outlined"
-                  }
-                  startIcon={format.icon}
-                  onClick={() => onExportFormatChange(format.value)}
-                  sx={{ minWidth: "100px" }}
-                >
-                  {format.label}
-                </Button>
-              ))}
-            </Stack>
+            <FormControl fullWidth>
+              <InputLabel id="facility-select-label">
+                Select Facilities
+              </InputLabel>
+              <Select
+                labelId="facility-select-label"
+                multiple
+                value={selectAllFacilities ? [-1] : selectedFacilityIds}
+                onChange={handleFacilityChange}
+                input={<OutlinedInput label="Select Facilities" />}
+                renderValue={() => {
+                  if (selectAllFacilities) return "All Facilities";
+
+                  return selectedFacilityIds
+                    .map(
+                      (id) =>
+                        facilities.find((f) => f.facilityID === id)
+                          ?.facilityName || ""
+                    )
+                    .join(", ");
+                }}
+                MenuProps={MenuProps}
+              >
+                <MenuItem value={-1}>
+                  <Checkbox checked={selectAllFacilities} />
+                  <ListItemText primary="All Facilities" />
+                </MenuItem>
+
+                {facilities.map((facility) => (
+                  <MenuItem
+                    key={facility.facilityID}
+                    value={facility.facilityID}
+                  >
+                    <Checkbox
+                      checked={
+                        selectedFacilityIds.indexOf(facility.facilityID) > -1
+                      }
+                    />
+                    <ListItemText primary={facility.facilityName} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
       </CardContent>
@@ -306,11 +269,11 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
         <Button
           variant="contained"
           color="primary"
-          startIcon={<DownloadIcon />}
+          startIcon={<PictureAsPdfIcon />}
           onClick={handleGenerateReport}
           disabled={isGenerating || !startDate || !endDate}
         >
-          {isGenerating ? "Generating..." : "Generate & Export Report"}
+          {isGenerating ? "Generating..." : "Generate PDF Report"}
         </Button>
       </CardActions>
     </Card>

@@ -9,15 +9,16 @@ import ReportConfigurationCard from "./ReportConfigurationCard";
 import RecentReportsCard from "./RecentReportsCard";
 import {
   FinancialReportItem,
+  ReservationReportItem,
   ReportType,
-  ExportFormat,
 } from "../../../types/report";
 
-// Add this type for jsPDF-autotable
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
+// Interface for report data in recent reports
+interface ReportData {
+  title: string;
+  date: string;
+  data?: any[];
+  reportType: ReportType;
 }
 
 const ReportManagement: React.FC = () => {
@@ -27,20 +28,12 @@ const ReportManagement: React.FC = () => {
   );
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [exportFormat, setExportFormat] = useState<ExportFormat>("pdf");
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
     type: "success" | "error" | "info";
   }>({ open: false, message: "", type: "info" });
-  const [recentReports, setRecentReports] = useState<
-    {
-      title: string;
-      date: string;
-      format: string;
-      data?: FinancialReportItem[];
-    }[]
-  >([]);
+  const [recentReports, setRecentReports] = useState<ReportData[]>([]);
 
   const showNotification = (
     message: string,
@@ -58,21 +51,29 @@ const ReportManagement: React.FC = () => {
   };
 
   const handleReportGenerated = (
-    reportData: FinancialReportItem[],
-    reportFormat: string,
+    reportData: FinancialReportItem[] | ReservationReportItem[],
     startDateStr: string,
-    endDateStr: string
+    endDateStr: string,
+    type: ReportType
   ) => {
-    const newReport = {
-      title: `Financial Report - ${startDateStr} to ${endDateStr}`,
+    // Create report title based on type
+    const reportTitle =
+      type === "bookings"
+        ? `Reservation Report - ${startDateStr} to ${endDateStr}`
+        : `Financial Report - ${startDateStr} to ${endDateStr}`;
+
+    const newReport: ReportData = {
+      title: reportTitle,
       date: new Date().toLocaleDateString(),
-      format: reportFormat.toUpperCase(),
       data: reportData,
+      reportType: type,
     };
 
     setRecentReports((prev) => [newReport, ...prev].slice(0, 5));
+
+    const reportTypeName = type === "bookings" ? "reservation" : "financial";
     showNotification(
-      `Financial report has been generated and exported as ${reportFormat.toUpperCase()}`,
+      `${reportTypeName.charAt(0).toUpperCase() + reportTypeName.slice(1)} report has been generated`,
       "success"
     );
   };
@@ -84,8 +85,8 @@ const ReportManagement: React.FC = () => {
           Report Management
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph>
-          Generate and export various reports for financial analysis and
-          business insights.
+          Generate and export reports for financial analysis and reservation
+          statistics.
         </Typography>
 
         <Grid container spacing={3}>
@@ -103,11 +104,9 @@ const ReportManagement: React.FC = () => {
               reportType={reportType}
               startDate={startDate}
               endDate={endDate}
-              exportFormat={exportFormat}
               isGenerating={isGenerating}
               onStartDateChange={setStartDate}
               onEndDateChange={setEndDate}
-              onExportFormatChange={setExportFormat}
               onGenerateReport={handleReportGenerated}
               onError={(message) => showNotification(message, "error")}
               setIsGenerating={setIsGenerating}

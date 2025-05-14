@@ -3,13 +3,13 @@ import { Typography, Box, Paper, Stack, Button } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArticleIcon from "@mui/icons-material/Article";
 import PDFGenerator from "../../../utils/PDFGenerator";
-import { FinancialReportItem } from "../../../types/report";
+import { ReportType } from "../../../types/report";
 
 interface RecentReport {
   title: string;
   date: string;
-  format: string;
-  data?: FinancialReportItem[];
+  data?: any[];
+  reportType: ReportType;
 }
 
 interface RecentReportsCardProps {
@@ -26,14 +26,10 @@ const RecentReportsCard: React.FC<RecentReportsCardProps> = ({
       const startDate = startEndDates[0] || "";
       const endDate = startEndDates[1] || "";
 
-      if (report.format === "PDF") {
+      if (report.reportType === "bookings") {
+        PDFGenerator.generateReservationReport(report.data, startDate, endDate);
+      } else {
         PDFGenerator.generateFinancialReport(report.data, startDate, endDate);
-      } else if (report.format === "EXCEL") {
-        // Handle Excel download
-        console.log("Excel download not implemented yet");
-      } else if (report.format === "CSV") {
-        // Handle CSV download
-        console.log("CSV download not implemented yet");
       }
     }
   };
@@ -60,7 +56,7 @@ const RecentReportsCard: React.FC<RecentReportsCardProps> = ({
                         {report.title}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Generated on {report.date} • {report.format}
+                        Generated on {report.date} • PDF
                       </Typography>
                     </Box>
                   </Box>
@@ -70,7 +66,7 @@ const RecentReportsCard: React.FC<RecentReportsCardProps> = ({
                     variant="outlined"
                     onClick={() => handleDownload(report)}
                   >
-                    Download
+                    Download PDF
                   </Button>
                 </Stack>
               </Paper>

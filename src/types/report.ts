@@ -1,5 +1,5 @@
-export type ReportType = "revenue" | "bookings" | "facilities" | "customers" | "payments";
-export type ExportFormat = "pdf" | "excel" | "csv";
+export type ReportType = "revenue" | "bookings"; 
+export type ExportFormat = "pdf";
 
 export interface Facility {
   facilityID: number;
@@ -13,14 +13,15 @@ export interface FinancialReportItem {
   totalRevenue: number;
 }
 
-export interface ReportTypeOption {
-  value: ReportType;
-  label: string;
-  icon: React.ReactNode;
+export interface ReservationReportItem {
+  facilityId: number;
+  facilityName: string;
+  totalReservations: number;
+  totalCompletedReservations: number;
 }
 
-export interface ExportFormatOption {
-  value: ExportFormat;
+export interface ReportTypeOption {
+  value: ReportType;
   label: string;
   icon: React.ReactNode;
 }
