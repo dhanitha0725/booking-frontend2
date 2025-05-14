@@ -3,12 +3,16 @@ import { Typography, Box, Paper, Stack, Button } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import ArticleIcon from "@mui/icons-material/Article";
 import PDFGenerator from "../../../utils/PDFGenerator";
-import { ReportType } from "../../../types/report";
+import {
+  ReportType,
+  FinancialReportItem,
+  ReservationReportItem,
+} from "../../../types/report";
 
 interface RecentReport {
   title: string;
   date: string;
-  data?: any[];
+  data?: FinancialReportItem[] | ReservationReportItem[];
   reportType: ReportType;
 }
 
@@ -27,9 +31,17 @@ const RecentReportsCard: React.FC<RecentReportsCardProps> = ({
       const endDate = startEndDates[1] || "";
 
       if (report.reportType === "bookings") {
-        PDFGenerator.generateReservationReport(report.data, startDate, endDate);
+        PDFGenerator.generateReservationReport(
+          report.data as ReservationReportItem[],
+          startDate,
+          endDate
+        );
       } else {
-        PDFGenerator.generateFinancialReport(report.data, startDate, endDate);
+        PDFGenerator.generateFinancialReport(
+          report.data as FinancialReportItem[],
+          startDate,
+          endDate
+        );
       }
     }
   };

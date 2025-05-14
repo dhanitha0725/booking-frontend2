@@ -17,7 +17,7 @@ import {
 interface ReportData {
   title: string;
   date: string;
-  data?: any[];
+  data?: FinancialReportItem[] | ReservationReportItem[];
   reportType: ReportType;
 }
 
