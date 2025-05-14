@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable'; // Import autotable correctly
+import { FinancialReportItem } from "../types/report";
 
 // No need for the declare module section since we import autoTable directly
 

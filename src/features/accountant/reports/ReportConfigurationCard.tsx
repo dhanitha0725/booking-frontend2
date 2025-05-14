@@ -151,31 +151,14 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
       // Format dates for API
       const formattedStartDate = startDate.format("YYYY-MM-DD");
       const formattedEndDate = endDate.format("YYYY-MM-DD");
+      const url = `/report/financial-report?startDate=${formattedStartDate}&endDate=${formattedEndDate}${
+        !selectAllFacilities && selectedFacilityIds.length > 0
+          ? selectedFacilityIds.map((id) => `&facilityIds=${id}`).join("")
+          : ""
+      }`;
 
-      let response;
-
-      // If "All Facilities" is selected or no specific facilities are selected
-      if (selectAllFacilities || selectedFacilityIds.length === 0) {
-        response = await api.get(
-          `/report/financial-report?startDate=${formattedStartDate}&endDate=${formattedEndDate}`
-        );
-      } else if (selectedFacilityIds.length === 1) {
-        // If only one facility is selected
-        response = await api.get(
-          `/report/financial-report?startDate=${formattedStartDate}&endDate=${formattedEndDate}&facilityId=${selectedFacilityIds[0]}`
-        );
-      } else {
-        // If multiple facilities are selected, we'll need to make multiple requests and combine the data
-        const requests = selectedFacilityIds.map((id) =>
-          api.get(
-            `/report/financial-report?startDate=${formattedStartDate}&endDate=${formattedEndDate}&facilityId=${id}`
-          )
-        );
-
-        const responses = await Promise.all(requests);
-        const combinedData = responses.flatMap((res) => res.data);
-        response = { data: combinedData };
-      }
+      console.log("Requesting financial report with URL:", url);
+      const response = await api.get(url);
 
       const financialReportData = response.data;
 
@@ -255,7 +238,7 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
                   value={selectAllFacilities ? [-1] : selectedFacilityIds}
                   onChange={handleFacilityChange}
                   input={<OutlinedInput label="Select Facilities" />}
-                  renderValue={(selected) => {
+                  renderValue={() => {
                     if (selectAllFacilities) return "All Facilities";
 
                     return selectedFacilityIds
