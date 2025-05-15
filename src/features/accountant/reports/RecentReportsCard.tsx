@@ -30,7 +30,7 @@ const RecentReportsCard: React.FC<RecentReportsCardProps> = ({
       const startDate = startEndDates[0] || "";
       const endDate = startEndDates[1] || "";
 
-      if (report.reportType === "bookings") {
+      if (report.reportType === "reservation") {
         PDFGenerator.generateReservationReport(
           report.data as ReservationReportItem[],
           startDate,

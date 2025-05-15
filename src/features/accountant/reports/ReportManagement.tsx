@@ -22,7 +22,7 @@ interface ReportData {
 }
 
 const ReportManagement: React.FC = () => {
-  const [reportType, setReportType] = useState<ReportType>("revenue");
+  const [reportType, setReportType] = useState<ReportType>("financial");
   const [startDate, setStartDate] = useState<Dayjs | null>(
     dayjs().subtract(30, "day")
   );
@@ -58,7 +58,7 @@ const ReportManagement: React.FC = () => {
   ) => {
     // Create report title based on type
     const reportTitle =
-      type === "bookings"
+      type === "reservation"
         ? `Reservation Report - ${startDateStr} to ${endDateStr}`
         : `Financial Report - ${startDateStr} to ${endDateStr}`;
 
@@ -71,7 +71,7 @@ const ReportManagement: React.FC = () => {
 
     setRecentReports((prev) => [newReport, ...prev].slice(0, 5));
 
-    const reportTypeName = type === "bookings" ? "reservation" : "financial";
+    const reportTypeName = type === "reservation" ? "reservation" : "financial";
     showNotification(
       `${reportTypeName.charAt(0).toUpperCase() + reportTypeName.slice(1)} report has been generated`,
       "success"

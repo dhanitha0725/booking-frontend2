@@ -6,13 +6,13 @@ import { ReportType, ReportTypeOption } from "../../../types/report";
 
 const reportTypes: ReportTypeOption[] = [
   {
-    value: "revenue",
-    label: "Revenue Report",
+    value: "financial",
+    label: "Financial Report",
     icon: <BarChartIcon color="primary" />,
   },
   {
-    value: "bookings",
-    label: "Booking Statistics",
+    value: "reservation",
+    label: "Reservation Report",
     icon: <TableChartIcon color="info" />,
   },
 ];

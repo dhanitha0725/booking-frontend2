@@ -1,4 +1,4 @@
-export type ReportType = "revenue" | "bookings"; 
+export type ReportType = "financial" | "reservation"; 
 export type ExportFormat = "pdf";
 
 export interface Facility {

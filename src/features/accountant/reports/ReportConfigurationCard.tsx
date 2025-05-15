@@ -105,8 +105,8 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
   // Get report type label
   const getReportTypeLabel = (value: ReportType): string => {
     const reportLabels: Record<ReportType, string> = {
-      revenue: "Revenue Report",
-      bookings: "Reservation Report",
+      financial: "Financial Report",
+      reservation: "Reservation Report",
     };
     return reportLabels[value] || "";
   };
@@ -132,7 +132,9 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
 
       // Construct base URL based on report type
       const endpoint =
-        reportType === "bookings" ? "reservation-report" : "financial-report";
+        reportType === "reservation"
+          ? "reservation-report"
+          : "financial-report";
 
       // Build URL with parameters
       const url = `/report/${endpoint}?startDate=${formattedStartDate}&endDate=${formattedEndDate}${
@@ -147,7 +149,7 @@ const ReportConfigurationCard: React.FC<ReportConfigurationCardProps> = ({
       const reportData = response.data;
 
       // Generate PDF report
-      if (reportType === "bookings") {
+      if (reportType === "reservation") {
         PDFGenerator.generateReservationReport(
           reportData,
           formattedStartDate,
