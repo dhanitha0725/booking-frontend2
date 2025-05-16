@@ -63,6 +63,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingFacilityTypes, setLoadingFacilityTypes] = useState(false);
+  const [openTypeDialog, setOpenTypeDialog] = useState(false);
 
   const {
     control,
@@ -224,7 +225,18 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
                 margin="dense"
                 error={!!errors.facilityTypeId}
               >
-                <InputLabel>Facility Type</InputLabel>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <InputLabel sx={{ background: "white", px: 1 }}>
+                    Facility Type
+                  </InputLabel>
+                  <Button
+                    size="small"
+                    onClick={() => setOpenTypeDialog(true)}
+                    sx={{ ml: "auto", mb: -1 }}
+                  >
+                    Add New Type
+                  </Button>
+                </Box>
                 <Select
                   {...field}
                   value={field.value || ""}

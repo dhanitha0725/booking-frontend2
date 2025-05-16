@@ -12,7 +12,9 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
+  Stack,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import api from "../../../services/api";
 import { AdminFacilityDetails } from "../../../types/adminFacilityDetails";
 import FacilityTable from "./FacilityTable";
@@ -20,6 +22,7 @@ import AddFacilityDialog from "./AddFacilityDialog";
 import FullFacilityInfo from "./FullFacilityInfo";
 import { AddFacilityFormData } from "../../../validations/addFacilityValidation";
 import axios, { AxiosError } from "axios";
+import FacilityTypeDialog from "./FacilityTypeDialog";
 
 const FacilityManagement: React.FC = () => {
   // store all facilities data retrieved from the backend
@@ -49,6 +52,8 @@ const FacilityManagement: React.FC = () => {
     message: "",
     severity: "success",
   });
+
+  const [openTypeDialog, setOpenTypeDialog] = useState(false);
 
   // Fetch facilities from the API
   const fetchFacilities = async () => {
@@ -171,13 +176,38 @@ const FacilityManagement: React.FC = () => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   };
 
+  // Handle successful facility type addition
+  const handleFacilityTypeSuccess = (typeName: string) => {
+    setSnackbar({
+      open: true,
+      message: `Facility type "${typeName}" added successfully`,
+      severity: "success",
+    });
+
+    // Refresh facility types if needed in your application
+    // This might involve refetching data in AddFacilityDialog
+  };
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Typography variant="h5">Facility Management</Typography>
-        <Button variant="contained" onClick={() => setOpenDialog(true)}>
-          Add Facility
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenTypeDialog(true)}
+          >
+            Add Facility Type
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenDialog(true)}
+          >
+            Add Facility
+          </Button>
+        </Stack>
       </Box>
 
       <Divider sx={{ my: 2 }} />
@@ -193,6 +223,12 @@ const FacilityManagement: React.FC = () => {
         onClose={() => setOpenDialog(false)}
         onSubmitSuccess={handleAddFacilitySuccess}
         onSubmitError={handleAddFacilityError}
+      />
+
+      <FacilityTypeDialog
+        open={openTypeDialog}
+        onClose={() => setOpenTypeDialog(false)}
+        onSuccess={handleFacilityTypeSuccess}
       />
 
       <FullFacilityInfo
