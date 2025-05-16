@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Typography, Container, Grid, Alert, Snackbar } from "@mui/material";
+import { Typography, Grid, Alert, Snackbar, Box, Divider } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import dayjs, { Dayjs } from "dayjs";
@@ -80,14 +80,24 @@ const ReportManagement: React.FC = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" gutterBottom>
-          Report Management
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
+      <Box sx={{ width: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
+          <Typography variant="h5">Report Management</Typography>
+        </Box>
+
+        <Typography variant="body1" color="text.secondary">
           Generate and export reports for financial analysis and reservation
           statistics.
         </Typography>
+
+        <Divider sx={{ my: 2 }} />
 
         <Grid container spacing={3}>
           {/* Report Selection Card */}
@@ -124,6 +134,7 @@ const ReportManagement: React.FC = () => {
           open={notification.open}
           autoHideDuration={6000}
           onClose={handleCloseNotification}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
           <Alert
             onClose={handleCloseNotification}
@@ -133,7 +144,7 @@ const ReportManagement: React.FC = () => {
             {notification.message}
           </Alert>
         </Snackbar>
-      </Container>
+      </Box>
     </LocalizationProvider>
   );
 };

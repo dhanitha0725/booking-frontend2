@@ -29,6 +29,7 @@ import ReservationManagement from "../features/employee/reservations/Reservation
 import AccountDashboard from "../features/accountant/dashboard/AccountDashboard";
 import PaymentManagement from "../features/accountant/payments/PaymentManagement";
 import ReportManagement from "../features/accountant/reports/ReportManagement";
+import PriceManagement from "../features/accountant/pricing/PriceManagement";
 
 const Router: React.FC = () => {
   return (
@@ -92,6 +93,7 @@ const Router: React.FC = () => {
           <Route path="dashboard" element={<AccountDashboard />} />
           <Route path="payments" element={<PaymentManagement />} />
           <Route path="invoice" element={<PaymentManagement />} />
+          <Route path="pricing" element={<PriceManagement />} />
           <Route path="reports" element={<ReportManagement />} />
         </Route>
       </Route>

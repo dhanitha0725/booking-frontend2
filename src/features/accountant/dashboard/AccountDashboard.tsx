@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Container,
   Grid,
   Typography,
   Paper,
@@ -10,6 +9,7 @@ import {
   Alert,
   Tab,
   Tabs,
+  Divider,
 } from "@mui/material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import MoneyIcon from "@mui/icons-material/Money";
@@ -169,13 +169,23 @@ const AccountDashboard: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" gutterBottom fontWeight="medium">
-        Accountant Dashboard
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" mb={4}>
+    <Box sx={{ width: "100%" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography variant="h5">Accountant Dashboard</Typography>
+      </Box>
+
+      <Typography variant="subtitle1" color="text.secondary">
         Financial overview for the last 30 days
       </Typography>
+
+      <Divider sx={{ my: 2 }} />
 
       {loading ? (
         <Box
@@ -272,7 +282,7 @@ const AccountDashboard: React.FC = () => {
           </Paper>
         </>
       )}
-    </Container>
+    </Box>
   );
 };
 
