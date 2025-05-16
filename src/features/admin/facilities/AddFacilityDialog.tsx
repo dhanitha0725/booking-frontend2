@@ -5,29 +5,25 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  FormHelperText,
-  Box,
-  IconButton,
-  Typography,
   CircularProgress,
-  Alert,
+  Typography,
+  Box,
+  LinearProgress,
 } from "@mui/material";
-import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   addFacilitySchema,
   AddFacilityFormData,
 } from "../../../validations/addFacilityValidation";
 import api from "../../../services/api";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
 import { ApiFacility } from "../../../types/addFacilityDetails";
 import { AxiosError } from "axios";
+import { FacilityType } from "../../../types/facilityTypes";
+import { validateImageFiles } from "../../../validations/imageValidation";
+import FacilityTypeDialog from "./FacilityTypeDialog";
+import FacilityForm from "./FacilityForm";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 // backend error response
 interface BackendError {
@@ -35,10 +31,6 @@ interface BackendError {
   error?: {
     message?: string;
   };
-}
-interface FacilityType {
-  typeName: string;
-  facilityTypeId: number;
 }
 
 interface AddFacilityDialogProps {
@@ -48,7 +40,13 @@ interface AddFacilityDialogProps {
   onSubmitError: (errorMessage: string) => void;
 }
 
-const statuses = ["Active", "Inactive", "Maintenance"];
+// Add a state type to track different phases of the submission process
+type SubmissionState =
+  | "idle"
+  | "submitting"
+  | "uploading"
+  | "success"
+  | "error";
 
 const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
   open,
@@ -60,17 +58,17 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     []
   );
   const [facilityTypes, setFacilityTypes] = useState<FacilityType[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [submissionState, setSubmissionState] =
+    useState<SubmissionState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [loadingFacilityTypes, setLoadingFacilityTypes] = useState(false);
   const [openTypeDialog, setOpenTypeDialog] = useState(false);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [newFacilityId, setNewFacilityId] = useState<number | null>(null);
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<AddFacilityFormData>({
+  const methods = useForm<AddFacilityFormData>({
     resolver: zodResolver(addFacilitySchema),
     defaultValues: {
       facilityName: "",
@@ -86,10 +84,15 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
   // Reset form when the dialog opens or closes
   useEffect(() => {
     if (!open) {
-      reset();
+      methods.reset();
       setError(null);
+      setImageFiles([]);
+      setImageError(null);
+      setSubmissionState("idle");
+      setUploadProgress(0);
+      setNewFacilityId(null);
     } else {
-      reset({
+      methods.reset({
         facilityName: "",
         location: "",
         description: "",
@@ -99,7 +102,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
         parentFacilityId: undefined,
       });
     }
-  }, [open, reset]);
+  }, [open, methods]);
 
   // Fetch facility types from API
   useEffect(() => {
@@ -107,7 +110,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
       setLoadingFacilityTypes(true);
       try {
         const response = await api.get<FacilityType[]>(
-          "http://localhost:5162/api/Facility/facility-types"
+          "/Facility/facility-types"
         );
         setFacilityTypes(response.data);
       } catch (error) {
@@ -128,7 +131,6 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     const fetchFacilities = async () => {
       try {
         const response = await api.get<ApiFacility[]>("/Facility/admin");
-        // validate sub facility does not have parent facility itself
         const facilityOptions = response.data.map((f: ApiFacility) => ({
           id: f.facilityId,
           name: f.facilityName,
@@ -142,8 +144,76 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     if (open) fetchFacilities();
   }, [open]);
 
+  // Upload images after facility is created with progress tracking
+  const uploadFacilityImages = async (facilityId: number): Promise<boolean> => {
+    if (imageFiles.length === 0) return true;
+
+    try {
+      setSubmissionState("uploading");
+      setUploadProgress(0);
+
+      const formData = new FormData();
+
+      // Add files to the FormData with the correct field name that backend expects
+      imageFiles.forEach((file) => {
+        formData.append("Files", file);
+      });
+
+      // Debug what we're sending
+      console.log("Uploading images for facility:", facilityId);
+      console.log("Number of files being uploaded:", imageFiles.length);
+
+      const response = await api.post(
+        `/Facility/${facilityId}/images`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setUploadProgress(percentCompleted);
+            }
+          },
+        }
+      );
+
+      console.log("Image upload successful:", response.data);
+      setSubmissionState("success");
+      return true;
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      const err = error as AxiosError<BackendError>;
+
+      // Enhanced error logging for diagnosing issues
+      if (err.response) {
+        console.error("Error response status:", err.response.status);
+        console.error("Error response data:", err.response.data);
+      }
+
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error?.message ||
+        "Failed to upload facility images.";
+
+      setError(`Facility created but images failed to upload: ${errorMessage}`);
+      setSubmissionState("error");
+      return false;
+    }
+  };
+
   const onSubmit: SubmitHandler<AddFacilityFormData> = async (data) => {
-    setLoading(true);
+    // Validate images first
+    const result = validateImageFiles(imageFiles);
+    if (!result.success) {
+      setImageError(result.error.errors[0]?.message || "Invalid image files");
+      return;
+    }
+
+    setSubmissionState("submitting");
     setError(null);
 
     try {
@@ -160,16 +230,50 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
           : null,
       };
 
-      // Debug log the payload
-      console.log("Facility payload being sent:", payload);
+      // Debug log to see what we're sending
+      console.log("Sending facility payload:", payload);
 
-      // send facility data to the backend
-      const response = await api.post(
-        "http://localhost:5162/api/Facility/add-facility",
-        payload
-      );
+      // Send facility data to the backend
+      const response = await api.post("/Facility/add-facility", payload);
 
-      onSubmitSuccess(data, response.data?.facilityId);
+      console.log("Facility creation response:", response.data);
+
+      // Extract facility ID from the response - check different possible formats
+      let facilityId = null;
+      if (response.data) {
+        // Check for both possible property names
+        if (response.data.facilityId) {
+          facilityId = response.data.facilityId;
+        } else if (response.data.facility) {
+          facilityId = response.data.facility;
+        } else if (typeof response.data === "number") {
+          // In case the API just returns the ID directly
+          facilityId = response.data;
+        }
+      }
+
+      // Store the facility ID for reference
+      if (facilityId) {
+        console.log("Facility created with ID:", facilityId);
+        setNewFacilityId(facilityId);
+
+        // If we got a facility ID back, upload the images
+        if (imageFiles.length > 0) {
+          await uploadFacilityImages(facilityId);
+        } else {
+          setSubmissionState("success");
+        }
+
+        // Call the success callback only when everything is done
+        // Note: We don't use submissionState here because it might not be updated yet
+        if (submissionState !== "error") {
+          onSubmitSuccess(data, facilityId);
+        }
+      } else {
+        throw new Error(
+          `No facility ID found in response: ${JSON.stringify(response.data)}`
+        );
+      }
     } catch (error) {
       console.error("Error adding facility:", error);
 
@@ -178,244 +282,187 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
       const errorMessage =
         err.response?.data?.message ||
         err.response?.data?.error?.message ||
-        "Failed to add facility. Please try again.";
+        (error instanceof Error
+          ? error.message
+          : "Failed to add facility. Please try again.");
 
       setError(errorMessage);
+      setSubmissionState("error");
 
       // Pass the error message to the parent component
       onSubmitError(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
+  // Close the dialog only when we're done with everything or on error
+  const handleClose = () => {
+    if (submissionState !== "submitting" && submissionState !== "uploading") {
+      onClose();
+    }
+  };
+
+  // Close on success after showing success state briefly
+  useEffect(() => {
+    if (submissionState === "success") {
+      const timer = setTimeout(() => {
+        if (newFacilityId) {
+          const formData = methods.getValues();
+          onSubmitSuccess(formData, newFacilityId);
+          onClose();
+        }
+      }, 1500); // Delay closure to show success state
+
+      return () => clearTimeout(timer);
+    }
+  }, [submissionState, newFacilityId, methods, onSubmitSuccess, onClose]);
+
+  // Handle facility type dialog
+  const handleAddFacilityType = () => {
+    setOpenTypeDialog(true);
+  };
+
+  const handleFacilityTypeSuccess = () => {
+    setOpenTypeDialog(false);
+    // Refresh facility types
+    const fetchFacilityTypes = async () => {
+      try {
+        const response = await api.get<FacilityType[]>(
+          "/Facility/facility-types"
+        );
+        setFacilityTypes(response.data);
+      } catch (error) {
+        console.error("Error refreshing facility types:", error);
+      }
+    };
+    fetchFacilityTypes();
+  };
+
+  // Is the form in a processing state?
+  const isProcessing =
+    submissionState === "submitting" || submissionState === "uploading";
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogTitle>Add New Facility</DialogTitle>
-        <DialogContent dividers>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Controller
-            name="facilityName"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                autoFocus
-                margin="dense"
-                label="Facility Name"
-                fullWidth
-                error={!!errors.facilityName}
-                helperText={errors.facilityName?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="facilityTypeId"
-            control={control}
-            render={({ field }) => (
-              <FormControl
-                fullWidth
-                margin="dense"
-                error={!!errors.facilityTypeId}
+    <>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        {submissionState === "uploading" ? (
+          // Upload in progress view
+          <Box sx={{ p: 4, textAlign: "center" }}>
+            <DialogTitle>Uploading Facility Images</DialogTitle>
+            <DialogContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  my: 3,
+                }}
               >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <InputLabel sx={{ background: "white", px: 1 }}>
-                    Facility Type
-                  </InputLabel>
-                  <Button
-                    size="small"
-                    onClick={() => setOpenTypeDialog(true)}
-                    sx={{ ml: "auto", mb: -1 }}
-                  >
-                    Add New Type
-                  </Button>
-                </Box>
-                <Select
-                  {...field}
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  label="Facility Type"
-                  disabled={loadingFacilityTypes}
-                >
-                  {loadingFacilityTypes ? (
-                    <MenuItem value="" disabled>
-                      Loading facility types...
-                    </MenuItem>
-                  ) : (
-                    facilityTypes.map((type) => (
-                      <MenuItem
-                        key={`facility-type-${type.facilityTypeId}`}
-                        value={type.facilityTypeId}
-                      >
-                        {type.typeName}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-                <FormHelperText>
-                  {errors.facilityTypeId?.message}
-                </FormHelperText>
-              </FormControl>
-            )}
-          />
-
-          <Controller
-            name="location"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                margin="dense"
-                label="Location"
-                fullWidth
-                error={!!errors.location}
-                helperText={errors.location?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="description"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                margin="dense"
-                label="Description"
-                fullWidth
-                multiline
-                rows={3}
-                error={!!errors.description}
-                helperText={errors.description?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="status"
-            control={control}
-            render={({ field }) => (
-              <FormControl fullWidth margin="dense" error={!!errors.status}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  {...field}
-                  label="Status"
-                  value={field.value || "Active"}
-                >
-                  {statuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.status && (
-                  <FormHelperText>{errors.status.message}</FormHelperText>
-                )}
-              </FormControl>
-            )}
-          />
-
-          <Controller
-            name="parentFacilityId"
-            control={control}
-            render={({ field }) => (
-              <FormControl fullWidth margin="dense">
-                <InputLabel>Parent Facility (Optional)</InputLabel>
-                <Select
-                  value={
-                    field.value === null || field.value === undefined
-                      ? ""
-                      : String(field.value)
-                  }
-                  onChange={(e) => {
-                    const value =
-                      e.target.value === "" ? null : Number(e.target.value);
-                    field.onChange(value);
-                  }}
-                  label="Parent Facility"
-                >
-                  <MenuItem value="">None</MenuItem>
-                  {facilities.map((facility) => (
-                    <MenuItem key={facility.id} value={String(facility.id)}>
-                      {facility.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-          />
-
-          <Controller
-            name="attributes"
-            control={control}
-            render={({ field }) => (
-              <Box sx={{ mt: 2, border: 1, p: 2, borderRadius: 1 }}>
-                <Typography variant="subtitle1">Attributes</Typography>
-                {field.value?.map((attr, index) => (
-                  // Add a predictable unique key using the index
-                  <Box
-                    key={`attribute-${index}`}
-                    sx={{ display: "flex", gap: 1, my: 1 }}
-                  >
-                    <TextField
-                      value={attr}
-                      onChange={(e) => {
-                        const newAttrs = [...field.value];
-                        newAttrs[index] = e.target.value;
-                        field.onChange(newAttrs);
-                      }}
-                      fullWidth
-                      placeholder={`Attribute ${index + 1}`}
-                      error={!!errors.attributes?.[index]}
-                      helperText={errors.attributes?.[index]?.message}
-                    />
-                    <IconButton
-                      onClick={() =>
-                        field.onChange(
-                          field.value.filter((_, i) => i !== index)
-                        )
-                      }
-                      disabled={field.value.length <= 1}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                ))}
-                <Button
-                  startIcon={<AddIcon />}
-                  onClick={() => field.onChange([...field.value, ""])}
-                  fullWidth
+                <CircularProgress size={60} thickness={4} />
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                  Please wait while we upload your images
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
                   sx={{ mt: 1 }}
                 >
-                  Add Attribute
-                </Button>
+                  This may take a few moments depending on the file sizes
+                </Typography>
+                <Box sx={{ width: "100%", mt: 4 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={uploadProgress}
+                    sx={{ height: 10, borderRadius: 2 }}
+                  />
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 1, textAlign: "center" }}
+                  >
+                    {uploadProgress}% Complete
+                  </Typography>
+                </Box>
               </Box>
-            )}
-          />
-        </DialogContent>
+            </DialogContent>
+          </Box>
+        ) : submissionState === "success" ? (
+          // Success view
+          <Box sx={{ p: 4, textAlign: "center" }}>
+            <DialogTitle>Success!</DialogTitle>
+            <DialogContent>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  my: 3,
+                }}
+              >
+                <CheckCircleIcon color="success" sx={{ fontSize: 60 }} />
+                <Typography variant="h6" sx={{ mt: 2 }}>
+                  Facility created successfully
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 1 }}
+                >
+                  All images were uploaded successfully
+                </Typography>
+              </Box>
+            </DialogContent>
+          </Box>
+        ) : (
+          // Normal form view
+          <FormProvider {...methods}>
+            <form onSubmit={methods.handleSubmit(onSubmit)}>
+              <DialogTitle>Add New Facility</DialogTitle>
+              <DialogContent dividers>
+                <FacilityForm
+                  facilityTypes={facilityTypes}
+                  facilities={facilities}
+                  loadingFacilityTypes={loadingFacilityTypes}
+                  error={error}
+                  imageFiles={imageFiles}
+                  setImageFiles={setImageFiles}
+                  imageError={imageError}
+                  setImageError={setImageError}
+                  onAddFacilityType={handleAddFacilityType}
+                />
+              </DialogContent>
 
-        <DialogActions>
-          <Button onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={loading}
-            startIcon={loading && <CircularProgress size={20} />}
-          >
-            {loading ? "Adding..." : "Add"}
-          </Button>
-        </DialogActions>
-      </form>
-    </Dialog>
+              <DialogActions>
+                <Button
+                  onClick={handleClose}
+                  disabled={isProcessing}
+                  aria-label="Cancel"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isProcessing}
+                  startIcon={isProcessing && <CircularProgress size={20} />}
+                  aria-label="Add facility"
+                >
+                  {submissionState === "submitting"
+                    ? "Creating Facility..."
+                    : "Add Facility"}
+                </Button>
+              </DialogActions>
+            </form>
+          </FormProvider>
+        )}
+      </Dialog>
+
+      {/* Facility Type Dialog */}
+      <FacilityTypeDialog
+        open={openTypeDialog}
+        onClose={() => setOpenTypeDialog(false)}
+        onSuccess={handleFacilityTypeSuccess}
+      />
+    </>
   );
 };
 

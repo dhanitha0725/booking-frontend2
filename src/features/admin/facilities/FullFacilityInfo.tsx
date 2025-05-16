@@ -59,18 +59,8 @@ const FullFacilityInfo: React.FC<FullFacilityInfoProps> = ({
       setError(null);
 
       try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          throw new Error("Authentication token not found");
-        }
-
         const response = await api.get(
-          `http://localhost:5162/api/Facility/${facilityId}/full-facility-details`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          `/Facility/${facilityId}/full-facility-details`
         );
 
         if (response.data) {
@@ -209,24 +199,29 @@ const FullFacilityInfo: React.FC<FullFacilityInfoProps> = ({
               </>
             )}
 
-            {facility.childFacilities.length > 0 && (
-              <>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>
-                  Child Facilities
-                </Typography>
-                <List dense>
-                  {facility.childFacilities.map((childFacility) => (
-                    <ListItem key={childFacility.facilityID}>
-                      <ListItemText
-                        primary={childFacility.facilityName}
-                        secondary={`Type: ${childFacility.facilityType} | Status: ${childFacility.status}`}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              </>
-            )}
+            {facility.childFacilities &&
+              facility.childFacilities.length > 0 && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom>
+                    Child Facilities
+                  </Typography>
+                  <List dense>
+                    {facility.childFacilities.map((childFacility) => (
+                      <ListItem key={childFacility.childrenFacilityId}>
+                        <ListItemText
+                          primary={childFacility.name}
+                          secondary={
+                            childFacility.type
+                              ? `Type: ${childFacility.type}`
+                              : null
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </>
+              )}
 
             {facility.images && facility.images.length > 0 && (
               <>
@@ -244,15 +239,18 @@ const FullFacilityInfo: React.FC<FullFacilityInfoProps> = ({
                           height: 200,
                           objectFit: "cover",
                           borderRadius: 1,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                         }}
-                        src={image.url}
-                        alt={image.caption || `Facility image ${index + 1}`}
+                        src={typeof image === "string" ? image : image.url}
+                        alt={`Facility image ${index + 1}`}
+                        onError={(
+                          e: React.SyntheticEvent<HTMLImageElement>
+                        ) => {
+                          e.currentTarget.src =
+                            "https://via.placeholder.com/400x200?text=Image+Not+Available";
+                          e.currentTarget.alt = "Image not available";
+                        }}
                       />
-                      {image.caption && (
-                        <Typography variant="caption">
-                          {image.caption}
-                        </Typography>
-                      )}
                     </Grid>
                   ))}
                 </Grid>

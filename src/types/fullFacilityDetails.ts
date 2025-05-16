@@ -1,8 +1,7 @@
 export interface ChildFacility {
-  facilityID: number;
-  facilityName: string;
-  facilityType: string;
-  status: string;
+  childrenFacilityId: number;
+  name: string;
+  type: string;
 }
 
 export interface FacilityImage {
@@ -20,7 +19,7 @@ export interface FullFacilityDetails {
   createdDate: string;
   attributes: string[];
   childFacilities: ChildFacility[];
-  images: FacilityImage[];
+  images: Array<string | FacilityImage>; 
 }
 
 export interface FullFacilityInfoProps {
