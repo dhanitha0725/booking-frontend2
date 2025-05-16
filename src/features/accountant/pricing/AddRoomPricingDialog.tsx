@@ -19,10 +19,13 @@ import {
 } from "@mui/material";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import api from "../../../services/api";
 import { AxiosError } from "axios";
 import { RoomType } from "../../../types/roomTypes";
+import {
+  roomPricingSchema,
+  RoomPricingFormData,
+} from "../../../validations/pricingValidation";
 
 // Backend error response interface
 interface BackendError {
@@ -40,17 +43,6 @@ interface AddRoomPricingDialogProps {
   facilities: { id: number; name: string }[];
 }
 
-// Validation schema for room pricing form
-const roomPricingSchema = z.object({
-  facilityId: z.number().min(1, "Please select a facility"),
-  roomTypeId: z.number().min(1, "Please select a room type"),
-  publicPrice: z.number().min(0, "Price cannot be negative"),
-  corporatePrice: z.number().min(0, "Price cannot be negative"),
-  privatePrice: z.number().min(0, "Price cannot be negative"),
-});
-
-type RoomPricingFormData = z.infer<typeof roomPricingSchema>;
-
 const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
   open,
   onClose,
@@ -66,7 +58,6 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<RoomPricingFormData>({
     resolver: zodResolver(roomPricingSchema),
@@ -78,8 +69,6 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
       privatePrice: 0,
     },
   });
-
-  const selectedFacilityId = watch("facilityId");
 
   // Reset form when dialog is opened or closed
   useEffect(() => {
@@ -114,7 +103,7 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
     };
 
     fetchRoomTypes();
-  }, [open]); // Only dependency is dialog open state
+  }, [open]);
 
   const onSubmit: SubmitHandler<RoomPricingFormData> = async (data) => {
     setLoading(true);
@@ -123,15 +112,17 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
     try {
       // Format payload according to API requirements
       const payload = {
+        facilityId: data.facilityId,
         roomTypeId: data.roomTypeId,
         pricings: {
           public: data.publicPrice,
-          corporate: data.corporatePrice,
           private: data.privatePrice,
+          corporate: data.corporatePrice,
         },
       };
 
-      await api.post(`/Facility/${data.facilityId}/room-pricing`, payload);
+      // Use the correct API endpoint for setting room pricing
+      await api.post("/facilities/rooms/set-room-pricing", payload);
       onSuccess();
       reset();
     } catch (error) {
@@ -267,8 +258,22 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
                     type="number"
                     label="Public Price"
                     fullWidth
+                    onFocus={() => {
+                      if (field.value === 0) {
+                        field.onChange("");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        field.onChange(0);
+                      }
+                    }}
                     value={field.value}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : Number(e.target.value);
+                      field.onChange(value);
+                    }}
                     error={!!errors.publicPrice}
                     helperText={errors.publicPrice?.message}
                     InputProps={{
@@ -291,8 +296,22 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
                     type="number"
                     label="Corporate Price"
                     fullWidth
+                    onFocus={() => {
+                      if (field.value === 0) {
+                        field.onChange("");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        field.onChange(0);
+                      }
+                    }}
                     value={field.value}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : Number(e.target.value);
+                      field.onChange(value);
+                    }}
                     error={!!errors.corporatePrice}
                     helperText={errors.corporatePrice?.message}
                     InputProps={{
@@ -315,8 +334,22 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
                     type="number"
                     label="Private Price"
                     fullWidth
+                    onFocus={() => {
+                      if (field.value === 0) {
+                        field.onChange("");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        field.onChange(0);
+                      }
+                    }}
                     value={field.value}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : Number(e.target.value);
+                      field.onChange(value);
+                    }}
                     error={!!errors.privatePrice}
                     helperText={errors.privatePrice?.message}
                     InputProps={{

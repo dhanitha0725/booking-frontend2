@@ -19,12 +19,16 @@ import {
 } from "@mui/material";
 import { useForm, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import api from "../../../services/api";
 import { AxiosError } from "axios";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
+import {
+  packageSchema,
+  PackageFormData,
+  formatTimeToString,
+} from "../../../validations/pricingValidation";
 
 // Backend error response interface
 interface BackendError {
@@ -41,21 +45,6 @@ interface AddPackageDialogProps {
   onSuccess: () => void;
   facilities: { id: number; name: string }[];
 }
-
-// Validation schema for package form
-const packageSchema = z.object({
-  facilityId: z.number().min(1, "Please select a facility"),
-  packageName: z
-    .string()
-    .min(3, "Package name must be at least 3 characters")
-    .max(100),
-  duration: z.instanceof(dayjs as unknown as typeof Dayjs).optional(),
-  publicPrice: z.number().min(0, "Price cannot be negative"),
-  corporatePrice: z.number().min(0, "Price cannot be negative"),
-  privatePrice: z.number().min(0, "Price cannot be negative"),
-});
-
-type PackageFormData = z.infer<typeof packageSchema>;
 
 const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
   open,
@@ -90,15 +79,6 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
       setError(null);
     }
   }, [open, reset]);
-
-  // Format time
-  const formatTimeToString = (timeValue: Dayjs | null | undefined): string => {
-    if (!timeValue) return "01:00:00"; // Default to 1 hour
-
-    const hours = timeValue.hour();
-    // Always set minutes to 00
-    return `${hours.toString().padStart(2, "0")}:00:00`;
-  };
 
   const onSubmit: SubmitHandler<PackageFormData> = async (data) => {
     setLoading(true);
@@ -145,6 +125,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
     }
   };
 
+  // Rest of the component remains unchanged
   return (
     <Dialog
       open={open}
@@ -152,6 +133,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
       maxWidth="md"
       fullWidth
     >
+      {/* Dialog content remains unchanged */}
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogTitle>Add New Package</DialogTitle>
 
