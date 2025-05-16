@@ -4,21 +4,10 @@ import {
   useMaterialReactTable,
   type MRT_ColumnDef,
 } from "material-react-table";
-import { Box, Chip, IconButton, Tooltip } from "@mui/material";
+import { Box, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-
-// Define the Package interface based on your requirements
-export interface Package {
-  packageId: number;
-  packageName: string;
-  duration: string;
-  publicPrice: number;
-  privatePrice: number;
-  corporatePrice: number;
-  facilityId: number;
-  facilityName: string;
-}
+import { Package } from "../../../types/packageTypes";
 
 interface PackageTableProps {
   packages: Package[];
@@ -31,15 +20,6 @@ const PackageTable: React.FC<PackageTableProps> = ({
   onUpdate,
   onDelete,
 }) => {
-  // Format currency values
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "LKR",
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
   // Material React Table columns
   const columns = useMemo<MRT_ColumnDef<Package>[]>(
     () => [
@@ -57,32 +37,26 @@ const PackageTable: React.FC<PackageTableProps> = ({
         accessorKey: "publicPrice",
         header: "Public Price",
         size: 150,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
       },
       {
         accessorKey: "privatePrice",
         header: "Private Price",
         size: 150,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
       },
       {
         accessorKey: "corporatePrice",
         header: "Corporate Price",
         size: 150,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
       },
       {
         accessorKey: "facilityName",
         header: "Facility",
         size: 200,
-        Cell: ({ cell }) => (
-          <Chip
-            label={cell.getValue<string>() || "N/A"}
-            color="primary"
-            variant="outlined"
-            size="small"
-          />
-        ),
+
+        Cell: ({ cell }) => cell.getValue<string>() || "N/A",
       },
       {
         id: "actions",

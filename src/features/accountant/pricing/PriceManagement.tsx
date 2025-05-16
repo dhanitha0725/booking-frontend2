@@ -12,16 +12,26 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import api from "../../../services/api";
-import PackageTable, { Package } from "./PackageTable";
-import RoomPricingTable, { RoomPricing } from "./RoomPricingTable";
+import PackageTable from "./PackageTable";
+import RoomPricingTable from "./RoomPricingTable";
 import AddPackageDialog from "./AddPackageDialog";
 import AddRoomPricingDialog from "./AddRoomPricingDialog";
+import { Package, PackageResponse } from "../../../types/packageTypes";
+import {
+  RoomPricing,
+  RoomPricingResponse,
+} from "../../../types/roomPricingTypes";
 
 // Custom tab panel component
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+interface Facility {
+  facilityID: number;
+  facilityName: string;
 }
 
 const TabPanel = (props: TabPanelProps) => {
@@ -47,14 +57,14 @@ const PriceManagement: React.FC = () => {
 
   // State for data
   const [packages, setPackages] = useState<Package[]>([]);
-  const [roomPricings, setRoomPricings] = useState<RoomPricing[]>([]);
+  const [roomPricings, setRoomPricing] = useState<RoomPricing[]>([]);
   const [facilities, setFacilities] = useState<{ id: number; name: string }[]>(
     []
   );
 
   // State for loading
   const [loadingPackages, setLoadingPackages] = useState(false);
-  const [loadingRoomPricings, setLoadingRoomPricings] = useState(false);
+  const [loadingRoomPricings, setLoadingRoomPricing] = useState(false);
 
   // State for dialog controls
   const [openPackageDialog, setOpenPackageDialog] = useState(false);
@@ -81,8 +91,8 @@ const PriceManagement: React.FC = () => {
     const fetchFacilities = async () => {
       try {
         const response = await api.get("/Facility/facility-names");
-        const facilityData = response.data.map((facility: any) => ({
-          id: facility.facilityID,
+        const facilityData = response.data.map((facility: Facility) => ({
+          id: facility.facilityID, // Changed from facilityId to facilityID
           name: facility.facilityName,
         }));
         setFacilities(facilityData);
@@ -99,34 +109,88 @@ const PriceManagement: React.FC = () => {
   const fetchPackages = async () => {
     setLoadingPackages(true);
     try {
-      const response = await api.get("/Package/packages");
-      setPackages(response.data);
+      const response = await api.get("/Package/packages-details");
+
+      // Check if response has the expected structure with "value" property
+      if (response.data && response.data.value) {
+        // Transform the response to match the Package interface
+        const transformedPackages: Package[] = response.data.value.map(
+          (pkg: PackageResponse) => ({
+            packageId: pkg.packageId,
+            packageName: pkg.packageName,
+            duration: pkg.duration,
+            facilityId: pkg.facilityId || 0,
+            facilityName: pkg.facilityName,
+            // Access the pricing data from the nested pricings object
+            publicPrice: pkg.pricings.public || 0,
+            privatePrice: pkg.pricings.private || 0,
+            corporatePrice: pkg.pricings.corporate || 0,
+          })
+        );
+
+        setPackages(transformedPackages);
+      } else {
+        // Handle unexpected response structure
+        console.error("Unexpected response structure:", response.data);
+        showSnackbar("Failed to parse packages data", "error");
+        setPackages([]);
+      }
     } catch (error) {
       console.error("Error fetching packages:", error);
       showSnackbar("Failed to load packages", "error");
+      setPackages([]);
     } finally {
       setLoadingPackages(false);
     }
   };
 
-  // Fetch room pricings
-  const fetchRoomPricings = async () => {
-    setLoadingRoomPricings(true);
+  // Fetch room pricing
+  const fetchRoomPricing = async () => {
+    setLoadingRoomPricing(true);
     try {
-      const response = await api.get("/Facility/room-pricings");
-      setRoomPricings(response.data);
+      const response = await api.get("/facilities/rooms/get-room-pricing");
+
+      // Check if response has the expected structure with "roomPricing" property
+      if (response.data && response.data.roomPricing) {
+        // Transform the response to match the RoomPricing interface
+        const transformedRoomPricings: RoomPricing[] = response.data.roomPricing
+          .filter(
+            (item: RoomPricingResponse) =>
+              item.pricings && Object.keys(item.pricings).length > 0
+          ) // Filter out items with empty pricing
+          .map((item: RoomPricingResponse) => ({
+            pricingId: item.roomTypeId, // Using roomTypeId as pricingId since it's not in the response
+            roomTypeId: item.roomTypeId,
+            roomTypeName: item.roomTypeName,
+            // Removed facilityId as it's not needed
+            facilityName: item.facilityName,
+            totalRooms: item.totalRooms,
+            // Access the pricing data from the nested pricing object
+            publicPrice: item.pricings.public || 0,
+            privatePrice: item.pricings.private || 0,
+            corporatePrice: item.pricings.corporate || 0,
+          }));
+
+        setRoomPricing(transformedRoomPricings);
+      } else {
+        // Handle unexpected response structure
+        console.error("Unexpected response structure:", response.data);
+        showSnackbar("Failed to parse room pricing data", "error");
+        setRoomPricing([]);
+      }
     } catch (error) {
       console.error("Error fetching room pricing:", error);
       showSnackbar("Failed to load room pricing", "error");
+      setRoomPricing([]);
     } finally {
-      setLoadingRoomPricings(false);
+      setLoadingRoomPricing(false);
     }
   };
 
   // Load data on component mount
   useEffect(() => {
     fetchPackages();
-    fetchRoomPricings();
+    fetchRoomPricing();
   }, []);
 
   // Helper function to display snackbar notifications
@@ -177,7 +241,7 @@ const PriceManagement: React.FC = () => {
     try {
       await api.delete(`/Facility/room-pricings/${pricingId}`);
       showSnackbar("Room pricing deleted successfully", "success");
-      fetchRoomPricings(); // Refresh data
+      fetchRoomPricing(); // Refresh data
     } catch (error) {
       console.error("Error deleting room pricing:", error);
       showSnackbar("Failed to delete room pricing", "error");
@@ -195,7 +259,7 @@ const PriceManagement: React.FC = () => {
   const handleRoomPricingSuccess = () => {
     setOpenRoomPricingDialog(false);
     showSnackbar("Room pricing added successfully", "success");
-    fetchRoomPricings(); // Refresh room pricings data
+    fetchRoomPricing(); // Refresh room pricings data
   };
 
   return (

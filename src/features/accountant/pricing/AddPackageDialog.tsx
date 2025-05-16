@@ -22,6 +22,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import api from "../../../services/api";
 import { AxiosError } from "axios";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 // Backend error response interface
 interface BackendError {
@@ -46,7 +49,7 @@ const packageSchema = z.object({
     .string()
     .min(3, "Package name must be at least 3 characters")
     .max(100),
-  duration: z.string().min(1, "Duration is required"),
+  duration: z.instanceof(dayjs as unknown as typeof Dayjs).optional(),
   publicPrice: z.number().min(0, "Price cannot be negative"),
   corporatePrice: z.number().min(0, "Price cannot be negative"),
   privatePrice: z.number().min(0, "Price cannot be negative"),
@@ -73,7 +76,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
     defaultValues: {
       facilityId: 0,
       packageName: "",
-      duration: "",
+      duration: dayjs().hour(1).minute(0).second(0), // Default to 1 hour
       publicPrice: 0,
       corporatePrice: 0,
       privatePrice: 0,
@@ -88,15 +91,26 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
     }
   }, [open, reset]);
 
+  // Format time
+  const formatTimeToString = (timeValue: Dayjs | null | undefined): string => {
+    if (!timeValue) return "01:00:00"; // Default to 1 hour
+
+    const hours = timeValue.hour();
+    // Always set minutes to 00
+    return `${hours.toString().padStart(2, "0")}:00:00`;
+  };
+
   const onSubmit: SubmitHandler<PackageFormData> = async (data) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Format payload according to API requirements
+      // Convert the dayjs duration to the expected string format
+      const durationString = formatTimeToString(data.duration);
+
       const payload = {
         packageName: data.packageName,
-        duration: data.duration,
+        duration: durationString,
         pricings: {
           public: data.publicPrice,
           corporate: data.corporatePrice,
@@ -104,6 +118,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
         },
       };
 
+      console.log("Adding package:", payload);
       await api.post(`/Package/${data.facilityId}/packages`, payload);
       onSuccess();
       reset();
@@ -199,23 +214,42 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
             </Grid>
 
             <Grid item xs={12} sm={4}>
-              <Controller
-                name="duration"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Duration"
-                    fullWidth
-                    error={!!errors.duration}
-                    helperText={
-                      errors.duration?.message ||
-                      "e.g., 2 hours, 1 day, 3 nights"
-                    }
-                    placeholder="e.g., 2:00:00 for 2 hours"
-                  />
-                )}
-              />
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Duration (hours)
+              </Typography>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Controller
+                  name="duration"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <Select
+                        value={field.value ? field.value.hour() : 1}
+                        onChange={(e) => {
+                          const hours = Number(e.target.value);
+                          field.onChange(
+                            dayjs().hour(hours).minute(0).second(0)
+                          );
+                        }}
+                        displayEmpty
+                        sx={{ width: "100%" }}
+                      >
+                        {[...Array(24)].map((_, i) => {
+                          const hours = i + 1; // 1 to 24 hours
+                          return (
+                            <MenuItem key={hours} value={hours}>
+                              {hours} {hours === 1 ? "hour" : "hours"}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                    </FormControl>
+                  )}
+                />
+              </LocalizationProvider>
+              <Typography variant="caption" color="text.secondary">
+                Select duration in hours (1-24 hours)
+              </Typography>
             </Grid>
 
             <Grid item xs={12}>
@@ -236,8 +270,22 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
                     type="number"
                     label="Public Price"
                     fullWidth
+                    onFocus={() => {
+                      if (field.value === 0) {
+                        field.onChange("");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        field.onChange(0);
+                      }
+                    }}
                     value={field.value}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : Number(e.target.value);
+                      field.onChange(value);
+                    }}
                     error={!!errors.publicPrice}
                     helperText={errors.publicPrice?.message}
                     InputProps={{
@@ -260,8 +308,22 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
                     type="number"
                     label="Corporate Price"
                     fullWidth
+                    onFocus={() => {
+                      if (field.value === 0) {
+                        field.onChange("");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        field.onChange(0);
+                      }
+                    }}
                     value={field.value}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : Number(e.target.value);
+                      field.onChange(value);
+                    }}
                     error={!!errors.corporatePrice}
                     helperText={errors.corporatePrice?.message}
                     InputProps={{
@@ -284,8 +346,22 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
                     type="number"
                     label="Private Price"
                     fullWidth
+                    onFocus={() => {
+                      if (field.value === 0) {
+                        field.onChange("");
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value === "") {
+                        field.onChange(0);
+                      }
+                    }}
                     value={field.value}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => {
+                      const value =
+                        e.target.value === "" ? "" : Number(e.target.value);
+                      field.onChange(value);
+                    }}
                     error={!!errors.privatePrice}
                     helperText={errors.privatePrice?.message}
                     InputProps={{
