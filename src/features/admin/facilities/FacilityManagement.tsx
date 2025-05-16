@@ -23,6 +23,7 @@ import FullFacilityInfo from "./FullFacilityInfo";
 import { AddFacilityFormData } from "../../../validations/addFacilityValidation";
 import axios, { AxiosError } from "axios";
 import FacilityTypeDialog from "./FacilityTypeDialog";
+import AddRoomDialog from "./rooms/AddRoomDialog";
 
 const FacilityManagement: React.FC = () => {
   // store all facilities data retrieved from the backend
@@ -54,6 +55,12 @@ const FacilityManagement: React.FC = () => {
   });
 
   const [openTypeDialog, setOpenTypeDialog] = useState(false);
+
+  // Add this new state
+  const [openRoomDialog, setOpenRoomDialog] = useState(false);
+  const [selectedFacilityForRooms, setSelectedFacilityForRooms] = useState<
+    number | null
+  >(null);
 
   // Fetch facilities from the API
   const fetchFacilities = async () => {
@@ -188,6 +195,31 @@ const FacilityManagement: React.FC = () => {
     // This might involve refetching data in AddFacilityDialog
   };
 
+  // Handle opening the room dialog
+  const handleAddRooms = (facilityId: number) => {
+    setSelectedFacilityForRooms(facilityId);
+    setOpenRoomDialog(true);
+  };
+
+  // Handle room addition success
+  const handleAddRoomsSuccess = (message: string) => {
+    setSnackbar({
+      open: true,
+      message,
+      severity: "success",
+    });
+    // Optional: Refresh the facility details if needed
+  };
+
+  // Handle room addition error
+  const handleAddRoomsError = (errorMessage: string) => {
+    setSnackbar({
+      open: true,
+      message: errorMessage,
+      severity: "error",
+    });
+  };
+
   return (
     <Box sx={{ width: "100%" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
@@ -216,6 +248,7 @@ const FacilityManagement: React.FC = () => {
         facilities={facilities}
         onViewDetails={handleViewDetails}
         onDeleteInitiate={handleDeleteInitiate}
+        onAddRooms={handleAddRooms}
       />
 
       <AddFacilityDialog
@@ -268,6 +301,16 @@ const FacilityManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {selectedFacilityForRooms && (
+        <AddRoomDialog
+          open={openRoomDialog}
+          onClose={() => setOpenRoomDialog(false)}
+          facilityId={selectedFacilityForRooms}
+          onSuccess={handleAddRoomsSuccess}
+          onError={handleAddRoomsError}
+        />
+      )}
 
       <Snackbar
         open={snackbar.open}

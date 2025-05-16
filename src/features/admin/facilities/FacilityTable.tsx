@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Box, Chip, IconButton, Tooltip } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
+import HotelIcon from "@mui/icons-material/Hotel";
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -13,12 +14,14 @@ interface FacilityTableProps {
   facilities: AdminFacilityDetails[];
   onViewDetails: (facilityId: number) => void;
   onDeleteInitiate: (facilityId: number) => void;
+  onAddRooms: (facilityId: number) => void;
 }
 
 const FacilityTable: React.FC<FacilityTableProps> = ({
   facilities,
   onViewDetails,
   onDeleteInitiate,
+  onAddRooms,
 }) => {
   const renderStatusChip = (status: string | undefined | null) => {
     if (!status) {
@@ -62,7 +65,7 @@ const FacilityTable: React.FC<FacilityTableProps> = ({
       {
         id: "actions",
         header: "Actions",
-        size: 140,
+        size: 180,
         Cell: ({ row }) => (
           <Box sx={{ display: "flex", gap: 1 }}>
             <Tooltip title="View Details">
@@ -72,6 +75,15 @@ const FacilityTable: React.FC<FacilityTableProps> = ({
                 onClick={() => onViewDetails(row.original.facilityId)}
               >
                 <VisibilityIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Add Rooms">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => onAddRooms(row.original.facilityId)}
+              >
+                <HotelIcon />
               </IconButton>
             </Tooltip>
             <Tooltip title="Delete">
@@ -87,7 +99,7 @@ const FacilityTable: React.FC<FacilityTableProps> = ({
         ),
       },
     ],
-    [onViewDetails, onDeleteInitiate]
+    [onViewDetails, onDeleteInitiate, onAddRooms]
   );
 
   const table = useMaterialReactTable({
