@@ -203,30 +203,52 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
                 <Controller
                   name="duration"
                   control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth>
-                      <Select
-                        value={field.value ? field.value.hour() : 1}
-                        onChange={(e) => {
-                          const hours = Number(e.target.value);
-                          field.onChange(
-                            dayjs().hour(hours).minute(0).second(0)
-                          );
-                        }}
-                        displayEmpty
-                        sx={{ width: "100%" }}
-                      >
-                        {[...Array(24)].map((_, i) => {
-                          const hours = i + 1; // 1 to 24 hours
-                          return (
-                            <MenuItem key={hours} value={hours}>
-                              {hours} {hours === 1 ? "hour" : "hours"}
-                            </MenuItem>
-                          );
-                        })}
-                      </Select>
-                    </FormControl>
-                  )}
+                  render={({ field }) => {
+                    // Calculate display hour - special case for 24 hours which is stored as day+1 hour 0
+                    // Add null checks using optional chaining operator
+                    const displayHour =
+                      field.value?.date &&
+                      field.value?.hour &&
+                      field.value.date() > 1 &&
+                      field.value.hour() === 0
+                        ? 24
+                        : field.value?.hour?.() || 1;
+
+                    return (
+                      <FormControl fullWidth>
+                        <Select
+                          value={displayHour}
+                          onChange={(e) => {
+                            const hours = Number(e.target.value);
+
+                            // For 24 hours (1 day), create a special representation
+                            if (hours === 24) {
+                              // Use a date offset to represent 24 hours as "next day at midnight"
+                              field.onChange(
+                                dayjs().date(2).hour(0).minute(0).second(0)
+                              );
+                            } else {
+                              // For normal hours, just set the hours directly
+                              field.onChange(
+                                dayjs().date(1).hour(hours).minute(0).second(0)
+                              );
+                            }
+                          }}
+                          displayEmpty
+                          sx={{ width: "100%" }}
+                        >
+                          {[...Array(24)].map((_, i) => {
+                            const hours = i + 1; // 1 to 24 hours
+                            return (
+                              <MenuItem key={hours} value={hours}>
+                                {hours} {hours === 1 ? "hour" : "hours"}
+                              </MenuItem>
+                            );
+                          })}
+                        </Select>
+                      </FormControl>
+                    );
+                  }}
                 />
               </LocalizationProvider>
               <Typography variant="caption" color="text.secondary">

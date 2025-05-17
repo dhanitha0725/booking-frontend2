@@ -24,7 +24,7 @@ import {
   AvailabilityResponseDto,
 } from "../types/selectedFacility";
 import FacilityDetails from "../features/client/booking/components/FacilityDetails";
-import BookingDatePicker from "../features/client/booking/components/BookingDatePicker";
+import BookingDateTimePicker from "../features/client/booking/components/BookingDateTimePicker";
 import SelectionTable from "../features/client/booking/components/SelectionTable";
 import TotalSummary from "../features/client/booking/components/TotalSummary";
 import axios from "axios";
@@ -41,6 +41,19 @@ interface DateRangeType {
 // Helper functions to convert time span to string and hours to numbers
 const convertTimeSpanToString = (timeSpan: string) => {
   if (!timeSpan) return undefined;
+
+  // Check if the time span includes days (format: "d.hh:mm:ss")
+  if (timeSpan.includes(".")) {
+    const [days, timeComponent] = timeSpan.split(".");
+    const [hours] = timeComponent.split(":").map(Number);
+
+    const daysNum = parseInt(days, 10);
+    return `${daysNum} day${daysNum > 1 ? "s" : ""}${
+      hours > 0 ? ` ${hours} hour${hours > 1 ? "s" : ""}` : ""
+    }`;
+  }
+
+  // Standard format "hh:mm:ss"
   const [hours, minutes] = timeSpan.split(":").map(Number);
   if (hours >= 24) {
     const days = Math.floor(hours / 24);
@@ -51,6 +64,7 @@ const convertTimeSpanToString = (timeSpan: string) => {
         : ""
     }`;
   }
+
   const hourString = hours > 0 ? `${hours} hour${hours > 1 ? "s" : ""}` : "";
   const minuteString =
     minutes > 0 ? `${minutes} minute${minutes > 1 ? "s" : ""}` : "";
@@ -59,6 +73,15 @@ const convertTimeSpanToString = (timeSpan: string) => {
 
 const convertHoursToNumbers = (timeSpan: string) => {
   if (!timeSpan) return 0;
+
+  // Check if the time span includes days (format: "d.hh:mm:ss")
+  if (timeSpan.includes(".")) {
+    const [days, timeComponent] = timeSpan.split(".");
+    const [hours] = timeComponent.split(":").map(Number);
+    return parseInt(days, 10) * 24 + hours;
+  }
+
+  // Standard format "hh:mm:ss"
   const [hours] = timeSpan.split(":");
   return parseInt(hours, 10);
 };
@@ -314,7 +337,7 @@ const BookingPage = () => {
       <Typography variant="h6" gutterBottom>
         Select Booking Details
       </Typography>
-      <BookingDatePicker
+      <BookingDateTimePicker
         dateRange={dateRange}
         onDateChange={handleDateChange}
         customerType={customerType}
@@ -323,6 +346,7 @@ const BookingPage = () => {
         facilityId={facility.id}
         selectedItems={selectedItems}
         onAvailabilityChange={handleAvailabilityChange}
+        packages={facility.packages}
       />
       <Divider sx={{ my: 3 }} />
       <SelectionTable
