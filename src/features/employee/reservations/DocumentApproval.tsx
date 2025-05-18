@@ -36,7 +36,6 @@ interface DocumentApprovalProps {
   disabled?: boolean;
 }
 
-// Updated payload structure to match backend requirements
 interface ApprovalPayload {
   documentId: number;
   documentType: string;

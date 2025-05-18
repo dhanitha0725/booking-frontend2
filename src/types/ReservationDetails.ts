@@ -7,6 +7,7 @@ export type ReservationStatus =
   | "PendingApproval"
   | "PendingPayment"
   | "PendingPaymentVerification"
+  | "PendingCashPayment"
   | "Approved"
   | "Completed"
   | "Cancelled"
@@ -50,6 +51,7 @@ export interface ReservedRoom {
 
 // Payment information for a reservation
 export interface PaymentDetails {
+  paymentId: string;
   orderID: string;
   method: string;
   amountPaid: number;

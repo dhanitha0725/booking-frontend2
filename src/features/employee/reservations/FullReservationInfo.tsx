@@ -32,6 +32,7 @@ import {
 } from "../../../types/ReservationDetails";
 import useReservationDetails from "../../../hooks/useReservationDetails";
 import DocumentViewer from "./DocumentViewer";
+import ConfirmCashPayment from "../payments/ConfirmCashPayment";
 
 const DetailField: React.FC<{
   label: string;
@@ -68,6 +69,7 @@ const ReservationDetailsSection: React.FC<{
     Cancelled: "error",
     Confirmed: "success",
     Expired: "error",
+    PendingCashPayment: "secondary",
   };
 
   // Rest of the component remains unchanged
@@ -288,7 +290,7 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
       {payments.length > 0 ? (
         payments.map((payment, index) => (
           <Box
-            key={index} // Changed from payment.orderID since it can be null
+            key={index}
             sx={{
               mb: 2,
               pb: 2,
@@ -298,6 +300,11 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
           >
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
+                {payment.paymentId ? (
+                  <DetailField label="Payment ID" value={payment.paymentId} />
+                ) : (
+                  <DetailField label="Payment ID" value="Not Available" />
+                )}
                 {payment.orderID ? (
                   <DetailField label="Order ID" value={payment.orderID} />
                 ) : (
@@ -343,6 +350,46 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
         <Typography>No payment details available</Typography>
       )}
     </Paper>
+  );
+};
+
+// Add a new component to handle the cash payment confirmation section
+const CashPaymentSection: React.FC<{
+  reservation: FullReservationDetails;
+  onPaymentConfirmed: () => void;
+  onError: (message: string) => void;
+}> = ({ reservation, onPaymentConfirmed, onError }) => {
+  // Only show for reservations with PendingCashPayment status
+  if (reservation.status !== "PendingCashPayment") {
+    return null;
+  }
+
+  // Find payment ID from the payments array
+  const pendingPayment = reservation.payments?.find(
+    (p) =>
+      p.method?.toLowerCase() === "cash" &&
+      p.status?.toLowerCase() !== "completed"
+  );
+
+  if (!pendingPayment || !pendingPayment.paymentId) {
+    return (
+      <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
+        <Alert severity="warning">
+          This reservation requires cash payment, but payment information is
+          missing.
+        </Alert>
+      </Paper>
+    );
+  }
+
+  return (
+    <ConfirmCashPayment
+      paymentId={pendingPayment.paymentId}
+      reservationId={reservation.reservationId}
+      expectedAmount={reservation.total}
+      onSuccess={onPaymentConfirmed}
+      onError={onError}
+    />
   );
 };
 
@@ -451,6 +498,15 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
     setNotification((prev) => ({ ...prev, open: false }));
   };
 
+  // Add a handler for payment confirmation
+  const handlePaymentConfirmed = () => {
+    // Show success notification
+    handleDocumentNotification(
+      "Cash payment confirmed successfully",
+      "success"
+    );
+  };
+
   if (!open) return null;
 
   return (
@@ -478,6 +534,18 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
               userType={reservation.userType}
             />
             <PaymentDetailsSection payments={reservation.payments} />
+
+            {/* Add the Cash Payment confirmation component here */}
+            {reservation.status === "PendingCashPayment" && (
+              <CashPaymentSection
+                reservation={reservation}
+                onPaymentConfirmed={handlePaymentConfirmed}
+                onError={(message) =>
+                  handleDocumentNotification(message, "error")
+                }
+              />
+            )}
+
             {reservation.documents && reservation.documents.length > 0 && (
               <DocumentsSection
                 documents={reservation.documents}

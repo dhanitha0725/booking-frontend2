@@ -81,6 +81,9 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
       case "PendingPaymentVerification":
         color = "warning";
         break;
+      case "PendingCashPayment":
+        color = "secondary";
+        break;
       case "Approved":
         color = "success";
         break;
@@ -167,7 +170,7 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
       {
         accessorKey: "status",
         header: "Status",
-        size: 150,
+        size: 200,
         Cell: ({ cell }) =>
           renderStatusChip(cell.getValue<ReservationStatus>()),
       },
