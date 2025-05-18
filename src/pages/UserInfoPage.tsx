@@ -60,15 +60,12 @@ const UserInfoPage = () => {
     }
   }, [navigate]);
 
-  // handle payment method for non private customers
+  // Set default payment method based on customer type
   useEffect(() => {
-    if (
-      tempReservation?.customerType !== "private" &&
-      paymentMethod === "Bank"
-    ) {
+    if (tempReservation?.customerType !== "private") {
       setPaymentMethod("Online");
     }
-  }, [tempReservation?.customerType, paymentMethod]);
+  }, [tempReservation?.customerType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +88,12 @@ const UserInfoPage = () => {
         );
       }
 
-      if (paymentMethod === "Bank" && bankTransferDocuments.length === 0) {
+      // Only validate bank transfer documents for private customers who chose bank transfer
+      if (
+        tempReservation.customerType === "private" &&
+        paymentMethod === "Bank" &&
+        bankTransferDocuments.length === 0
+      ) {
         throw new Error("Please upload bank transfer receipt.");
       }
 
@@ -112,9 +114,12 @@ const UserInfoPage = () => {
       // Clear local storage
       localStorage.removeItem("currentReservation");
 
-      // Handle navigation based on payment method
-      if (paymentMethod === "Online") {
-        // For online payment, navigate to payment page
+      // Handle navigation based on customer type and payment method
+      if (
+        tempReservation.customerType === "private" &&
+        paymentMethod === "Online"
+      ) {
+        // For private customers with online payment, navigate to payment page
         navigate("/paymentInfo", {
           state: {
             reservationId: result.reservationId,
@@ -127,15 +132,28 @@ const UserInfoPage = () => {
           },
         });
       } else {
-        // For bank transfer or cash payment, navigate to confirmation page
+        // For all other cases (private with bank/cash or public/corporate customers)
+        let status;
+
+        if (tempReservation.customerType === "private") {
+          // For private customers with bank transfer or cash
+          status =
+            paymentMethod === "Bank"
+              ? "PendingPaymentVerification"
+              : "PendingPayment";
+        } else {
+          // For public or corporate customers
+          status = "PendingApproval";
+        }
+
         navigate("/confirmation", {
           state: {
             reservationId: result.reservationId,
-            status:
-              paymentMethod === "Bank"
-                ? "PendingPaymentVerification"
-                : "PendingPayment",
-            paymentMethod: paymentMethod,
+            status: status,
+            paymentMethod:
+              tempReservation.customerType !== "private"
+                ? "Online"
+                : paymentMethod,
           },
         });
       }
@@ -185,6 +203,7 @@ const UserInfoPage = () => {
           />
           <Divider sx={{ my: 3 }} />
 
+          {/* Supporting Documents Section - Only for public or corporate customers */}
           {(tempReservation.customerType === "public" ||
             tempReservation.customerType === "corporate") && (
             <>
@@ -199,14 +218,28 @@ const UserInfoPage = () => {
             </>
           )}
 
-          {/* Payment Method Selection */}
-          <PaymentMethodSelection
-            selectedMethod={paymentMethod}
-            onMethodChange={setPaymentMethod}
-            bankTransferDocuments={bankTransferDocuments}
-            onBankTransferDocumentsChange={setBankTransferDocuments}
-            customerType={tempReservation.customerType}
-          />
+          {/* Payment Method Selection - Only for private customers */}
+          {tempReservation.customerType === "private" && (
+            <>
+              <PaymentMethodSelection
+                selectedMethod={paymentMethod}
+                onMethodChange={setPaymentMethod}
+                bankTransferDocuments={bankTransferDocuments}
+                onBankTransferDocumentsChange={setBankTransferDocuments}
+                customerType={tempReservation.customerType}
+              />
+              <Divider sx={{ my: 3 }} />
+            </>
+          )}
+
+          {/* If not private, show information about payment method */}
+          {tempReservation.customerType !== "private" && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Payment Method
+              </Typography>
+            </Box>
+          )}
 
           {error && (
             <Alert
