@@ -27,6 +27,21 @@ interface DocumentViewerProps {
   allowApproval?: boolean;
   paymentStatus?: string;
   reservationStatus?: string;
+  reservationId: number;
+  reservationDetails: {
+    total: number;
+    userDetails: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      phoneNumber?: string;
+    };
+    items: Array<{
+      itemId: number;
+      quantity: number;
+      type: string;
+    }>;
+  };
   onDocumentStatusChanged?: () => void;
   onError?: (message: string) => void;
   onSuccess?: (message: string) => void;
@@ -39,6 +54,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
   allowApproval = false,
   paymentStatus = "",
   reservationStatus = "",
+  reservationId,
+  reservationDetails,
   onDocumentStatusChanged,
 }) => {
   const [alertInfo, setAlertInfo] = useState<{
@@ -231,11 +248,15 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </Tooltip>
         </CardActions>
 
-        {showApproval(doc) && (
+        {showApproval(doc) && reservationDetails && (
           <Box p={1} pt={0}>
             <DocumentApproval
               documentId={doc.documentId}
               documentType={doc.documentType}
+              reservationId={reservationId}
+              total={reservationDetails.total}
+              userDetails={reservationDetails.userDetails}
+              items={reservationDetails.items}
               onError={(message) => handleError(message, doc.documentId)}
               onSuccess={(message) => handleSuccess(message, doc.documentId)}
               onApproved={onDocumentStatusChanged}

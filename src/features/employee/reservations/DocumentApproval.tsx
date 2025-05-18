@@ -17,22 +17,52 @@ import { approveDocument } from "../../../services/documentService";
 interface DocumentApprovalProps {
   documentId: number;
   documentType: string;
+  reservationId?: number;
+  total?: number;
+  userDetails?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber?: string;
+  };
+  items?: Array<{
+    itemId: number;
+    quantity: number;
+    type: string;
+  }>;
   onApproved?: () => void;
   onError?: (errorMessage: string) => void;
   onSuccess?: (successMessage: string) => void;
   disabled?: boolean;
 }
 
+// Updated payload structure to match backend requirements
 interface ApprovalPayload {
   documentId: number;
   documentType: string;
   isApproved: boolean;
   amountPaid?: number;
+  orderId?: string;
+  amount?: number;
+  currency?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  items?: string;
+  reservationId?: number;
 }
 
 const DocumentApproval: React.FC<DocumentApprovalProps> = ({
   documentId,
   documentType,
+  reservationId = 0,
+  total = 0,
+  userDetails = { firstName: "", lastName: "", email: "" },
+  items = [],
   onApproved,
   onError,
   onSuccess,
@@ -46,7 +76,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
 
   // Handle document approval/rejection
   const handleApproval = async (isApproved: boolean) => {
-    // For bank receipts that are being approved, we need to collect the amount
+    // For bank receipts that are being approved, collect the amount
     if (documentType === "BankReceipt" && isApproved) {
       setOpenAmountDialog(true);
       return;
@@ -59,6 +89,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
     setLoading(true);
 
     try {
+      // Create the base payload
       const payload: ApprovalPayload = {
         documentId,
         documentType,
@@ -73,19 +104,41 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
       ) {
         payload.amountPaid = amount;
       }
-      console.log("Document approval payload:", {
-        documentId: payload.documentId,
-        documentType: payload.documentType,
-        isApproved: payload.isApproved,
-        amountPaid: payload.amountPaid ?? null,
-      });
+
+      // Add payment details for ApprovalDocument approvals using the flattened structure
+      if (documentType === "ApprovalDocument" && isApproved) {
+        const orderId = `RES-${reservationId}-${Date.now()}`;
+
+        // Add all fields directly to the payload as per backend requirements
+        payload.orderId = orderId;
+        payload.amount = total;
+        payload.currency = "LKR";
+        payload.firstName = userDetails.firstName || "N/A";
+        payload.lastName = userDetails.lastName || "N/A";
+        payload.email = userDetails.email;
+        payload.phone = userDetails.phoneNumber || "0000000000";
+        payload.address = "National Institute of Co-Operative Development";
+        payload.city = "Colombo";
+        payload.country = "Sri Lanka";
+
+        // Format items with proper item IDs (avoiding zeros)
+        const formattedItems = items
+          .map((item) => {
+            const id = item.itemId > 0 ? item.itemId : 1; // Use 1 instead of 0 for item IDs
+            return `${item.quantity} × ${item.type} (ID: ${id})`;
+          })
+          .join(", ");
+
+        payload.items = formattedItems || "No items specified";
+        payload.reservationId = reservationId;
+      }
+
+      console.log("Document approval payload:", payload);
 
       const response = await approveDocument(payload);
 
       if (response.isSuccess) {
-        // Log successful response
         console.log("Document approval successful response:", response);
-
         setIsProcessed(true);
         if (onSuccess) {
           onSuccess(
@@ -98,9 +151,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
           onApproved();
         }
       } else {
-        // Log error response
         console.error("Document approval failed response:", response);
-
         if (onError) {
           onError(response.error || "Failed to process document");
         }

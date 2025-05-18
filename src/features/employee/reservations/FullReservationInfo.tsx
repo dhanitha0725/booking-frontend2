@@ -346,17 +346,19 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
   );
 };
 
-// Update the DocumentsSection component to receive notification handlers as props
+// Update the DocumentsSection component to pass reservation details
 const DocumentsSection: React.FC<{
   documents: FullReservationDetails["documents"];
   payments?: PaymentDetails[];
-  reservationStatus: string; // Add this line
+  reservationStatus: string;
+  reservation: FullReservationDetails; // Add full reservation to access details
   onError: (message: string) => void;
   onSuccess: (message: string) => void;
 }> = ({
   documents = [],
   payments = [],
   reservationStatus = "",
+  reservation, // Get the full reservation
   onError,
   onSuccess,
 }) => {
@@ -368,6 +370,29 @@ const DocumentsSection: React.FC<{
   const paymentStatus =
     payments && payments.length > 0 ? payments[0].status : "";
 
+  // Extract the necessary details from reservation
+  const reservationDetails = {
+    total: reservation.total,
+    userDetails: reservation.user,
+    items:
+      reservation.reservedPackages && reservation.reservedRooms
+        ? [
+            ...reservation.reservedPackages.map((pkg) => ({
+              itemId: 0, // This might need adjustment based on your data structure
+              quantity: 1,
+              type: "package",
+              name: pkg.packageName,
+            })),
+            ...reservation.reservedRooms.map((room) => ({
+              itemId: 0, // This might need adjustment based on your data structure
+              quantity: 1,
+              type: "room",
+              name: room.roomType,
+            })),
+          ]
+        : [],
+  };
+
   return (
     <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
       <DocumentViewer
@@ -376,9 +401,12 @@ const DocumentsSection: React.FC<{
         title="Documents"
         allowApproval={true}
         paymentStatus={paymentStatus}
-        reservationStatus={reservationStatus} // Add this line
+        reservationStatus={reservationStatus}
+        reservationId={reservation.reservationId}
+        reservationDetails={reservationDetails} // Pass the extracted details
         onError={onError}
         onSuccess={onSuccess}
+        onDocumentStatusChanged={() => {}}
       />
     </Paper>
   );
@@ -454,7 +482,8 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
               <DocumentsSection
                 documents={reservation.documents}
                 payments={reservation.payments}
-                reservationStatus={reservation.status} // Add this line
+                reservationStatus={reservation.status}
+                reservation={reservation}
                 onError={(message) =>
                   handleDocumentNotification(message, "error")
                 }

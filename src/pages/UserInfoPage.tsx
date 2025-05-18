@@ -25,6 +25,7 @@ import { userFormValidation } from "../validations/userFormValidation";
 import { z } from "zod";
 import axios from "axios";
 import reservationService from "../services/reservationService";
+import { initiatePayment, submitPaymentForm } from "../services/PaymentService";
 
 const steps = ["Booking Details", "User Information", "Confirmation"];
 
@@ -119,18 +120,65 @@ const UserInfoPage = () => {
         tempReservation.customerType === "private" &&
         paymentMethod === "Online"
       ) {
-        // For private customers with online payment, navigate to payment page
-        navigate("/paymentInfo", {
-          state: {
-            reservationId: result.reservationId,
-            total: tempReservation.total,
-            userDetails: formData,
-            items: tempReservation.selectedItems,
-            startDate: dayjs(tempReservation.startDate).toISOString(),
-            endDate: dayjs(tempReservation.endDate).toISOString(),
-            customerType: tempReservation.customerType,
+        // For private customers with online payment, initiate payment directly
+        const paymentData = {
+          ReservationId: result.reservationId,
+          Total: tempReservation.total,
+          UserDetails: {
+            FirstName: formData.firstName,
+            LastName: formData.lastName,
+            Email: formData.email,
+            PhoneNumber: formData.phoneNumber || "",
           },
-        });
+          Items: tempReservation.selectedItems,
+          CustomerType: tempReservation.customerType,
+          StartDate: dayjs(tempReservation.startDate).toISOString(),
+          EndDate: dayjs(tempReservation.endDate).toISOString(),
+        };
+
+        // Store in localStorage for payment gateway to use if needed
+        localStorage.setItem("pendingReservation", JSON.stringify(paymentData));
+
+        // Create and initiate payment request directly
+        try {
+          const paymentRequest = {
+            orderId: `RES-${result.reservationId}-${Date.now()}`,
+            amount: tempReservation.total,
+            currency: "LKR",
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            email: formData.email,
+            phone: formData.phoneNumber || "0000000000",
+            address: "National Institute of Co-Operative Development",
+            city: "Colombo",
+            country: "Sri Lanka",
+            items: tempReservation.selectedItems
+              .map(
+                (item) => `${item.quantity} × ${item.type} (ID: ${item.itemId})`
+              )
+              .join(", "),
+            reservationId: result.reservationId,
+          };
+
+          const paymentResponse = await initiatePayment(paymentRequest);
+
+          // Redirect to PayHere
+          if (paymentResponse && paymentResponse.actionUrl) {
+            submitPaymentForm(paymentResponse);
+          } else {
+            throw new Error("Invalid payment response from server");
+          }
+        } catch (paymentError) {
+          console.error("Payment initiation error:", paymentError);
+          // If payment initiation fails, redirect to confirmation with error status
+          navigate("/confirmation", {
+            state: {
+              reservationId: result.reservationId,
+              status: "Cancelled",
+              paymentMethod: "Online",
+            },
+          });
+        }
       } else {
         // For all other cases (private with bank/cash or public/corporate customers)
         let status;
@@ -230,15 +278,6 @@ const UserInfoPage = () => {
               />
               <Divider sx={{ my: 3 }} />
             </>
-          )}
-
-          {/* If not private, show information about payment method */}
-          {tempReservation.customerType !== "private" && (
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Payment Method
-              </Typography>
-            </Box>
           )}
 
           {error && (

@@ -31,6 +31,7 @@ import PaymentManagement from "../features/accountant/payments/PaymentManagement
 import ReportManagement from "../features/accountant/reports/ReportManagement";
 import PriceManagement from "../features/accountant/pricing/PriceManagement";
 import InvoiceManagement from "../features/accountant/inovices/InvoiceManagement";
+import PaymentInitiationPage from "../pages/PaymentInitiationPage";
 
 const Router: React.FC = () => {
   return (
@@ -48,6 +49,7 @@ const Router: React.FC = () => {
           path="/payment-confirmation"
           element={<PaymentConfirmationPage />}
         />
+        <Route path="/payment-initiate" element={<PaymentInitiationPage />} />
       </Route>
 
       {/* Protected Client Routes */}

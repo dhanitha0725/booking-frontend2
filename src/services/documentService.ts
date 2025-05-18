@@ -6,6 +6,18 @@ interface ApproveDocumentRequest {
   documentType: string;
   isApproved: boolean;
   amountPaid?: number;
+  orderId?: string;
+  amount?: number;
+  currency?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  items?: string;
+  reservationId?: number;
 }
 
 interface ApproveDocumentResponse {
@@ -21,24 +33,28 @@ export const approveDocument = async (
   documentData: ApproveDocumentRequest
 ): Promise<ApproveDocumentResponse> => {
   try {
+    console.log('Sending document approval request:', JSON.stringify(documentData, null, 2));
+    
     const response = await api.post(
-      'http://localhost:5162/api/Reservation/approve-document', 
+      'http://localhost:5162/api/Payments/approve-document', 
       documentData
     );
+    
     return response.data;
   } catch (error) {
     console.error('Error approving/rejecting document:', error);
     
-    // Extract the specific error message from the backend response
     let errorMessage = 'Failed to process document approval/rejection';
     
     if (axios.isAxiosError(error)) {
-      // Handle Axios error responses
+      console.log('Response data:', error.response?.data);
+      
       if (error.response?.data?.message === "Document Not Found") {
         errorMessage = "Document not found. It may have been deleted or already processed.";
       } else if (error.response?.data?.message) {
-        // Use any other specific message from the backend
         errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
       }
     }
     
