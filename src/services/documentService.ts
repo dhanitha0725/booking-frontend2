@@ -33,10 +33,8 @@ export const approveDocument = async (
   documentData: ApproveDocumentRequest
 ): Promise<ApproveDocumentResponse> => {
   try {
-    console.log('Sending document approval request:', JSON.stringify(documentData, null, 2));
-    
     const response = await api.post(
-      'http://localhost:5162/api/Payments/approve-document', 
+      '/Payments/approve-document', 
       documentData
     );
     
@@ -47,7 +45,6 @@ export const approveDocument = async (
     let errorMessage = 'Failed to process document approval/rejection';
     
     if (axios.isAxiosError(error)) {
-      console.log('Response data:', error.response?.data);
       
       if (error.response?.data?.message === "Document Not Found") {
         errorMessage = "Document not found. It may have been deleted or already processed.";

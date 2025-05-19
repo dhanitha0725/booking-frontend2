@@ -35,12 +35,12 @@ interface DocumentApprovalProps {
   onSuccess?: (successMessage: string) => void;
   disabled?: boolean;
 }
-
 interface ApprovalPayload {
   documentId: number;
   documentType: string;
   isApproved: boolean;
   amountPaid?: number;
+  // Payment details fields for ApprovalDocument
   orderId?: string;
   amount?: number;
   currency?: string;
@@ -101,14 +101,20 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
         isApproved &&
         amount !== undefined
       ) {
+        // For bank receipts, only include documentId, documentType, isApproved, and amountPaid
+        // Don't include any other fields that might confuse the API
         payload.amountPaid = amount;
-      }
 
+        // Additional debugging to see what's being sent
+        console.log(
+          "Bank receipt approval payload:",
+          JSON.stringify(payload, null, 2)
+        );
+      }
       // Add payment details for ApprovalDocument approvals using the flattened structure
-      if (documentType === "ApprovalDocument" && isApproved) {
+      else if (documentType === "ApprovalDocument" && isApproved) {
         const orderId = `RES-${reservationId}-${Date.now()}`;
 
-        // Add all fields directly to the payload as per backend requirements
         payload.orderId = orderId;
         payload.amount = total;
         payload.currency = "LKR";
@@ -120,10 +126,10 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
         payload.city = "Colombo";
         payload.country = "Sri Lanka";
 
-        // Format items with proper item IDs (avoiding zeros)
+        // Format items
         const formattedItems = items
           .map((item) => {
-            const id = item.itemId > 0 ? item.itemId : 1; // Use 1 instead of 0 for item IDs
+            const id = item.itemId > 0 ? item.itemId : 1;
             return `${item.quantity} × ${item.type} (ID: ${id})`;
           })
           .join(", ");
@@ -132,12 +138,9 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
         payload.reservationId = reservationId;
       }
 
-      console.log("Document approval payload:", payload);
-
       const response = await approveDocument(payload);
 
       if (response.isSuccess) {
-        console.log("Document approval successful response:", response);
         setIsProcessed(true);
         if (onSuccess) {
           onSuccess(
