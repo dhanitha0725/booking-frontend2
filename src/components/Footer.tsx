@@ -20,7 +20,7 @@ const Footer = () => {
         <Grid container spacing={4}>
           <Grid item xs={12} sm={4}>
             <Typography variant="h6" color="primary" gutterBottom>
-              FacilityBook
+              NICD Bookings
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Making facility booking simple and efficient. Find and book the
@@ -107,7 +107,7 @@ const Footer = () => {
         <Typography variant="body2" color="text.secondary" align="center">
           {"© "}
           {new Date().getFullYear()}
-          {" FacilityBook. All rights reserved."}
+          {" NICD Bookings. All rights reserved."}
         </Typography>
       </Container>
     </Box>

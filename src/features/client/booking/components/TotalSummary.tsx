@@ -1,8 +1,12 @@
 import { useEffect, useCallback } from "react";
 import { Box, Typography } from "@mui/material";
 import axios from "axios";
-import { BookingItemDto } from "../../../../types/selectedFacility";
+import {
+  BookingItemDto,
+  PackagesDto,
+} from "../../../../types/selectedFacility";
 import dayjs from "dayjs";
+import api from "../../../../services/api";
 
 interface TotalSummaryProps {
   total: number;
@@ -12,6 +16,7 @@ interface TotalSummaryProps {
   dateRange: { startDate: dayjs.Dayjs | null; endDate: dayjs.Dayjs | null };
   selectedItems: BookingItemDto[];
   requiresDates: boolean;
+  packages?: PackagesDto[]; // Added packages prop
 }
 
 const TotalSummary = ({
@@ -22,6 +27,7 @@ const TotalSummary = ({
   dateRange,
   selectedItems,
   requiresDates,
+  packages = [], // Default to empty array
 }: TotalSummaryProps) => {
   const calculateTotal = useCallback(async () => {
     // Don't attempt to calculate if we're missing required dates
@@ -29,34 +35,45 @@ const TotalSummary = ({
       return;
     }
 
-    if (
-      dateRange.startDate &&
-      dateRange.endDate &&
-      !dateRange.endDate.isAfter(dateRange.startDate)
-    ) {
-      console.error(
-        "Invalid date range: End date must be after the start date."
-      );
+    // Don't calculate if we don't have a facility or items
+    if (!facilityId || selectedItems.length === 0) {
       return;
     }
 
     try {
+      // Check if there's a one-day package selected and dates are the same
+      const hasDailyPackage = selectedItems.some((item) => {
+        if (item.type !== "package") return false;
+        const pkg = packages.find((p) => p.packageId === item.itemId);
+        // Check if package duration has "day" in it
+        return pkg?.duration?.includes("day") || false;
+      });
+
+      // For daily packages with same-day selection, adjust endDate to next day for backend calculation
+      let adjustedEndDate = dateRange.endDate;
+      if (
+        hasDailyPackage &&
+        dateRange.startDate &&
+        dateRange.endDate &&
+        dateRange.startDate.isSame(dateRange.endDate, "day")
+      ) {
+        // Use next day for calculation only
+        adjustedEndDate = dayjs(dateRange.endDate).add(1, "day");
+      }
+
       const payload = {
         calculateTotalDto: {
           facilityId,
           customerType,
           startDate: dateRange.startDate?.toISOString(),
-          endDate: dateRange.endDate?.toISOString(),
+          endDate: adjustedEndDate?.toISOString(),
           selectedItems,
         },
       };
 
-      console.log("Payload:", payload);
+      console.log("Calculating total with payload:", payload);
 
-      const response = await axios.post(
-        "http://localhost:5162/api/Reservation/calculateTotal",
-        payload
-      );
+      const response = await api.post("/Reservation/calculateTotal", payload);
 
       setTotal(response.data.value.total);
     } catch (error) {
@@ -72,6 +89,7 @@ const TotalSummary = ({
     selectedItems,
     requiresDates,
     setTotal,
+    packages,
   ]);
 
   useEffect(() => {

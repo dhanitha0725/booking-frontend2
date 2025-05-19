@@ -40,7 +40,7 @@ const Header = () => {
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
       <Typography variant="h6" sx={{ my: 2 }}>
-        FacilityBook
+        NICD Bookings
       </Typography>
       <List>
         {navItems.map((item) => (
@@ -82,7 +82,7 @@ const Header = () => {
               textDecoration: "none",
             }}
           >
-            FacilityBook
+            NICD Bookings
           </Typography>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
@@ -108,7 +108,7 @@ const Header = () => {
                 alignItems: "center",
               }}
             >
-              FacilityBook
+              NICD Bookings
             </Typography>
           </Box>
 
