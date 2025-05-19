@@ -14,12 +14,18 @@ import api from "../../../services/api";
 import ReservationTable from "./ReservationTable";
 import { Reservation } from "../../../types/ReservationDetails";
 import AddReservationDialog from "./AddReservationDialog";
+import CancelReservationDialog from "./CancelReservationDialog";
 
 const ReservationManagement: React.FC = () => {
   // State for storing reservation data retrieved from the API
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [openDialog, setOpenDialog] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [reservationToCancel, setReservationToCancel] = useState<number | null>(
+    null
+  );
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -83,16 +89,34 @@ const ReservationManagement: React.FC = () => {
     }
   };
 
-  // Handle reservation cancellation
+  // Show confirmation dialog before cancellation
   const handleCancelReservation = async (reservationId: number) => {
+    // Store the reservation ID to cancel and show confirmation dialog
+    setReservationToCancel(reservationId);
+    setCancelDialogOpen(true);
+  };
+
+  // Close confirmation dialog
+  const handleCloseCancelDialog = () => {
+    setCancelDialogOpen(false);
+    setReservationToCancel(null);
+  };
+
+  // Process the actual cancellation after confirmation
+  const confirmCancelReservation = async () => {
+    if (reservationToCancel === null) return;
+
+    setCancelLoading(true);
     try {
-      // Call the API to cancel the reservation
-      await api.put(`/Reservation/cancel/${reservationId}`);
+      // Call the API to cancel the reservation with the updated endpoint and payload format
+      await api.post(`/Reservation/cancel-reservation`, {
+        reservationId: reservationToCancel,
+      });
 
       // Update the local state to reflect the cancellation
       setReservations((prevReservations) =>
         prevReservations.map((reservation) =>
-          reservation.reservationId === reservationId
+          reservation.reservationId === reservationToCancel
             ? { ...reservation, status: "Cancelled" }
             : reservation
         )
@@ -101,19 +125,27 @@ const ReservationManagement: React.FC = () => {
       // Show success message
       setSnackbar({
         open: true,
-        message: `Reservation #${reservationId} has been cancelled`,
+        message: `Reservation #${reservationToCancel} has been cancelled`,
         severity: "success",
       });
+
+      // Close the dialog
+      setCancelDialogOpen(false);
+      setReservationToCancel(null);
     } catch (error) {
       console.error("Error cancelling reservation:", error);
 
       // Extract error message from the backend response
       let errorMessage = "Failed to cancel reservation";
       if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError<{ error: string }>;
-        if (axiosError.response?.data?.error) {
-          errorMessage = axiosError.response.data.error;
-        }
+        const axiosError = error as AxiosError<{
+          message?: string;
+          error?: string;
+        }>;
+        errorMessage =
+          axiosError.response?.data?.message ||
+          axiosError.response?.data?.error ||
+          "Failed to cancel reservation";
       }
 
       // Show error notification
@@ -122,6 +154,8 @@ const ReservationManagement: React.FC = () => {
         message: errorMessage,
         severity: "error",
       });
+    } finally {
+      setCancelLoading(false);
     }
   };
 
@@ -189,6 +223,15 @@ const ReservationManagement: React.FC = () => {
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         onReservationCreated={handleReservationCreated}
+      />
+
+      {/* Cancel Reservation Confirmation Dialog */}
+      <CancelReservationDialog
+        open={cancelDialogOpen}
+        loading={cancelLoading}
+        reservationId={reservationToCancel}
+        onClose={handleCloseCancelDialog}
+        onConfirm={confirmCancelReservation}
       />
 
       {/* Feedback notification */}

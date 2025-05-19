@@ -512,7 +512,7 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
-        Reservation #{reservation?.reservationId || reservationId}
+        Reservation Id.{reservation?.reservationId || reservationId}
       </DialogTitle>
       <DialogContent dividers>
         {loading ? (

@@ -34,7 +34,10 @@ interface DocumentApprovalProps {
   onError?: (errorMessage: string) => void;
   onSuccess?: (successMessage: string) => void;
   disabled?: boolean;
+  paymentStatus?: string;
+  reservationStatus?: string;
 }
+
 interface ApprovalPayload {
   documentId: number;
   documentType: string;
@@ -66,12 +69,33 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
   onError,
   onSuccess,
   disabled = false,
+  paymentStatus = "",
+  reservationStatus = "",
 }) => {
   const [loading, setLoading] = useState(false);
   const [openAmountDialog, setOpenAmountDialog] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>("");
   const [amountError, setAmountError] = useState<string | null>(null);
   const [isProcessed, setIsProcessed] = useState(false);
+
+  // Check if approval buttons should be hidden based on payment and reservation status
+  const shouldHideButtons = () => {
+    // Hide if payment is completed
+    if (paymentStatus.toLowerCase() === "completed") {
+      return true;
+    }
+
+    // Hide for specific reservation statuses
+    if (
+      ["confirmed", "completed", "cancelled"].includes(
+        reservationStatus.toLowerCase()
+      )
+    ) {
+      return true;
+    }
+
+    return false;
+  };
 
   // Handle document approval/rejection
   const handleApproval = async (isApproved: boolean) => {
@@ -180,6 +204,11 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
     setOpenAmountDialog(false);
     processApproval(true, amount);
   };
+
+  // don't render any buttons if they should be hidden
+  if (shouldHideButtons()) {
+    return null;
+  }
 
   return (
     <>
