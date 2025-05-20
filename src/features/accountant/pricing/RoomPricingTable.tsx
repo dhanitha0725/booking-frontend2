@@ -24,6 +24,12 @@ const RoomPricingTable: React.FC<RoomPricingTableProps> = ({
   const columns = useMemo<MRT_ColumnDef<RoomPricing>[]>(
     () => [
       {
+        accessorKey: "facilityName",
+        header: "Facility",
+        size: 200,
+        Cell: ({ cell }) => cell.getValue<string>() || "N/A",
+      },
+      {
         accessorKey: "roomTypeName",
         header: "Room Type",
         size: 200,
@@ -45,12 +51,6 @@ const RoomPricingTable: React.FC<RoomPricingTableProps> = ({
         header: "Corporate Price",
         size: 150,
         Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
-      },
-      {
-        accessorKey: "facilityName",
-        header: "Facility",
-        size: 200,
-        Cell: ({ cell }) => cell.getValue<string>() || "N/A",
       },
       {
         accessorKey: "totalRooms",

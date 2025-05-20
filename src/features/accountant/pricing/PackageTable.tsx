@@ -24,6 +24,13 @@ const PackageTable: React.FC<PackageTableProps> = ({
   const columns = useMemo<MRT_ColumnDef<Package>[]>(
     () => [
       {
+        accessorKey: "facilityName",
+        header: "Facility",
+        size: 200,
+
+        Cell: ({ cell }) => cell.getValue<string>() || "N/A",
+      },
+      {
         accessorKey: "packageName",
         header: "Package Name",
         size: 200,
@@ -51,13 +58,7 @@ const PackageTable: React.FC<PackageTableProps> = ({
         size: 150,
         Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
       },
-      {
-        accessorKey: "facilityName",
-        header: "Facility",
-        size: 200,
 
-        Cell: ({ cell }) => cell.getValue<string>() || "N/A",
-      },
       {
         id: "actions",
         header: "Actions",

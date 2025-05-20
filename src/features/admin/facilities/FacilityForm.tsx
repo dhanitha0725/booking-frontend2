@@ -52,7 +52,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
   setImageFiles,
   imageError,
   setImageError,
-  onAddFacilityType,
 }) => {
   const {
     control,
@@ -161,14 +160,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
               >
                 Facility Type
               </InputLabel>
-              <Button
-                size="small"
-                onClick={onAddFacilityType}
-                sx={{ ml: "auto", mb: -1 }}
-                aria-label="Add New Facility Type"
-              >
-                Add New Type
-              </Button>
             </Box>
             <Select
               {...field}
