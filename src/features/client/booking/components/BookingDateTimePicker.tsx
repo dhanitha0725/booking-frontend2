@@ -138,44 +138,56 @@ const BookingDateTimePicker = ({
     checkAvailability();
   }, [dateRange, selectedItems, facilityId, onAvailabilityChange]);
 
-  // Update dates when room selection changes
+  // Update dates when room selection changes (only handles setting appropriate time, not auto-filling dates)
   useEffect(() => {
-    if (hasRoomSelected && dateRange.startDate) {
+    if (hasRoomSelected) {
       // Check if the current start date is valid for rooms
       const now = dayjs();
       const todayCutoff = dayjs().startOf("day").hour(8).minute(0).second(0); // 8 AM today
       const isPastCutoff = now.isAfter(todayCutoff);
-      const isToday = dateRange.startDate.isSame(dayjs(), "day");
 
-      // If it's today but past 8 AM, update to tomorrow
-      if (isToday && isPastCutoff) {
-        const tomorrow = dayjs()
-          .add(1, "day")
-          .startOf("day")
-          .hour(8)
-          .minute(0)
-          .second(0);
+      // If start date exists, ensure it has proper time and isn't today if after cutoff
+      if (dateRange.startDate) {
+        const isToday = dateRange.startDate.isSame(dayjs(), "day");
 
-        // Update start date to tomorrow at 8 AM
-        onDateChange({
-          startDate: tomorrow,
-          endDate: dateRange.endDate
-            ? dateRange.endDate.isSame(dateRange.startDate, "day")
-              ? tomorrow.add(1, "day")
-              : dateRange.endDate
-            : null,
-        });
-      } else if (dateRange.startDate) {
-        // Ensure time is set to 8 AM
-        const updatedStartDate = dateRange.startDate
-          .hour(8)
-          .minute(0)
-          .second(0);
+        // If it's today but past 8 AM, update to tomorrow
+        if (isToday && isPastCutoff) {
+          const tomorrow = dayjs()
+            .add(1, "day")
+            .startOf("day")
+            .hour(8)
+            .minute(0)
+            .second(0);
 
-        if (!updatedStartDate.isSame(dateRange.startDate)) {
+          // Update start date to tomorrow at 8 AM
           onDateChange({
-            startDate: updatedStartDate,
+            startDate: tomorrow,
             endDate: dateRange.endDate,
+          });
+        } else {
+          // Ensure time is set to 8 AM
+          const updatedStartDate = dateRange.startDate
+            .hour(8)
+            .minute(0)
+            .second(0);
+
+          if (!updatedStartDate.isSame(dateRange.startDate)) {
+            onDateChange({
+              startDate: updatedStartDate,
+              endDate: dateRange.endDate,
+            });
+          }
+        }
+      }
+
+      // Similarly, if end date exists, ensure it has proper time
+      if (dateRange.endDate) {
+        const updatedEndDate = dateRange.endDate.hour(8).minute(0).second(0);
+
+        if (!updatedEndDate.isSame(dateRange.endDate)) {
+          onDateChange({
+            startDate: dateRange.startDate,
+            endDate: updatedEndDate,
           });
         }
       }
@@ -190,9 +202,19 @@ const BookingDateTimePicker = ({
 
     // If end date exists and needs to be validated
     if (dateRange.endDate) {
-      // For rooms and daily packages, start date must be before or same as end date
+      // For rooms and daily packages, start date must be before end date
       if (requireStrictDateValidation && date.isAfter(dateRange.endDate)) {
         setError("Start date cannot be after end date.");
+        return;
+      }
+
+      // For rooms, if the selected start date would make the end date same-day, adjust end date
+      if (hasRoomSelected && date.isSame(dateRange.endDate, "day")) {
+        const normalizedDate = date.hour(8).minute(0).second(0);
+        onDateChange({
+          startDate: normalizedDate,
+          endDate: normalizedDate.add(1, "day").hour(8).minute(0).second(0),
+        });
         return;
       }
     }
@@ -209,27 +231,11 @@ const BookingDateTimePicker = ({
       normalizedDate = date.hour(0).minute(0).second(0);
     }
 
+    // IMPORTANT: Only update the start date, never auto-fill the end date
     onDateChange({
       startDate: normalizedDate,
-      endDate: dateRange.endDate,
+      endDate: dateRange.endDate, // Keep existing end date, even if null
     });
-
-    // For hourly packages with same-day booking, ensure end date is set to same day if not set
-    if (!dateRange.endDate) {
-      if (!requireStrictDateValidation) {
-        // For hourly packages, same day is fine
-        onDateChange({
-          startDate: normalizedDate,
-          endDate: normalizedDate,
-        });
-      } else if (hasRoomSelected) {
-        // For rooms, automatically set end date to next day at 8 AM
-        onDateChange({
-          startDate: normalizedDate,
-          endDate: normalizedDate.add(1, "day"),
-        });
-      }
-    }
   };
 
   const handleEndDateChange = (date: dayjs.Dayjs | null) => {
@@ -240,11 +246,25 @@ const BookingDateTimePicker = ({
 
     // If start date exists and needs to be validated
     if (dateRange.startDate) {
+      // For rooms, end date must be after start date (not same day)
+      if (hasRoomSelected && date.isSame(dateRange.startDate, "day")) {
+        setError(
+          "For room bookings, check-out date must be at least one day after check-in date."
+        );
+        return;
+      }
       // For rooms and daily packages, end date must be after or same as start date
-      if (requireStrictDateValidation && date.isBefore(dateRange.startDate)) {
+      else if (
+        requireStrictDateValidation &&
+        date.isBefore(dateRange.startDate)
+      ) {
         setError("End date cannot be before start date.");
         return;
       }
+    } else {
+      // If trying to set end date without a start date
+      setError("Please select a start date first.");
+      return;
     }
 
     setError(null);
@@ -282,6 +302,39 @@ const BookingDateTimePicker = ({
     return false;
   };
 
+  // For room bookings, calculate the minimum allowed end date (next day from start date)
+  const getMinEndDate = () => {
+    if (hasRoomSelected && dateRange.startDate) {
+      // Room bookings require at least one night, so minimum end date is next day
+      return dateRange.startDate.add(1, "day");
+    }
+    return dateRange.startDate || minAllowedDate;
+  };
+
+  // Validate the date range selection
+  const validateDateSelection = () => {
+    if (!dateRange.startDate) {
+      return "Please select a start date";
+    }
+
+    if (!dateRange.endDate) {
+      return "Please select an end date";
+    }
+
+    if (
+      requireStrictDateValidation &&
+      !dateRange.endDate.isAfter(dateRange.startDate, "day")
+    ) {
+      if (hasRoomSelected) {
+        return "For room bookings, check-out date must be at least one day after check-in date.";
+      } else {
+        return "For daily packages, end date must be after start date.";
+      }
+    }
+
+    return null;
+  };
+
   // Provide a description message to the user based on the selection
   const getDescriptionMessage = () => {
     if (hasRoomSelected) {
@@ -290,9 +343,9 @@ const BookingDateTimePicker = ({
       const isPastCutoff = now.isAfter(todayCutoff);
 
       if (isPastCutoff) {
-        return "For room bookings, check-in time is 8:00 AM. Since it's after 8 AM today, you can only book from tomorrow.";
+        return "For room bookings, check-in time is 8:00 AM. Since it's after 8 AM today, you can only book from tomorrow. Room bookings require at least one night stay.";
       }
-      return "For room bookings, check-in and check-out time is set to 8:00 AM.";
+      return "For room bookings, check-in and check-out time is set to 8:00 AM. Room bookings require at least one night stay.";
     }
 
     if (hasDailyPackageSelected) {
@@ -306,7 +359,31 @@ const BookingDateTimePicker = ({
     return null;
   };
 
+  // Calculate the number of nights selected for room bookings
+  const calculateDuration = () => {
+    if (!dateRange.startDate || !dateRange.endDate) return null;
+
+    if (hasRoomSelected) {
+      const nights = dateRange.endDate.diff(dateRange.startDate, "day");
+      return `${nights} night${nights !== 1 ? "s" : ""}`;
+    }
+
+    // For daily packages, even same-day selection counts as 1 day
+    if (
+      hasDailyPackageSelected &&
+      dateRange.startDate.isSame(dateRange.endDate, "day")
+    ) {
+      return "1 day";
+    }
+
+    // For normal date ranges
+    const days = dateRange.endDate.diff(dateRange.startDate, "day");
+    return `${days + 1} day${days > 0 ? "s" : ""}`;
+  };
+
   const descriptionMessage = getDescriptionMessage();
+  const durationText = calculateDuration();
+  const validationError = validateDateSelection();
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -349,9 +426,29 @@ const BookingDateTimePicker = ({
               value={dateRange.endDate}
               onChange={handleEndDateChange}
               disablePast
-              minDate={dateRange.startDate || minAllowedDate}
+              minDate={getMinEndDate()}
+              shouldDisableDate={
+                hasRoomSelected
+                  ? (date) =>
+                      shouldDisableDate(date) ||
+                      (dateRange.startDate
+                        ? date.isSame(dateRange.startDate, "day")
+                        : false)
+                  : shouldDisableDate
+              }
               slotProps={{
-                textField: { fullWidth: true, variant: "outlined" },
+                textField: {
+                  fullWidth: true,
+                  variant: "outlined",
+                  error:
+                    !!validationError &&
+                    !!dateRange.startDate &&
+                    !dateRange.endDate,
+                  helperText:
+                    dateRange.startDate && !dateRange.endDate
+                      ? "Please select an end date"
+                      : "",
+                },
               }}
             />
           </Grid>
@@ -381,6 +478,7 @@ const BookingDateTimePicker = ({
                 {hasRoomSelected ? ` at 8:00 AM` : ""} -{" "}
                 {dateRange.endDate.format("MMM DD, YYYY")}
                 {hasRoomSelected ? ` at 8:00 AM` : ""}
+                {durationText && ` (${durationText})`}
               </Typography>
             </Grid>
           )}
