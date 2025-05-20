@@ -19,7 +19,6 @@ import {
 } from "@mui/icons-material";
 import StatCard from "../../../components/StatCard";
 import api from "../../../services/api";
-import CustomerTypeChart from "./charts/CustomerTypeChart";
 import FacilityUsageChart from "./charts/FacilityUsageChart";
 import ReservationTrendChart from "./charts/ReservationTrendChart";
 
@@ -35,6 +34,13 @@ interface ReservationStats {
 interface DailyCount {
   date: string;
   count: number;
+}
+
+// Add this interface to the existing interfaces
+interface FacilityCount {
+  facilityId: number;
+  facilityName: string;
+  reservationCount: number;
 }
 
 interface TabPanelProps {
@@ -69,10 +75,12 @@ const AccountDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [reservations, setReservations] = useState<any[]>([]);
+  const [, setReservations] = useState<any[]>([]);
   const [dailyReservationCounts, setDailyReservationCounts] = useState<
     DailyCount[]
   >([]);
+  // Add this state for facility counts
+  const [facilityCounts, setFacilityCounts] = useState<FacilityCount[]>([]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -84,48 +92,65 @@ const AccountDashboard: React.FC = () => {
       setError(null);
 
       try {
-        // Fetch statistics from the reservation-stats endpoint
-        const statsResponse = await api.get<ReservationStats>(
-          "/Reservation/reservation-stats"
-        );
-        setStats(statsResponse.data);
+        // Fetch all data in parallel
+        const [
+          statsResponse,
+          trendsResponse,
+          reservationsResponse,
+          facilityCountsResponse,
+        ] = await Promise.allSettled([
+          api.get<ReservationStats>("/Reservation/reservation-stats"),
+          api.get("/Reservation/daily-reservation-counts"),
+          api.get("/report/reservations"),
+          api.get("/Reservation/facility-reservation-counts"),
+        ]);
 
-        // Fetch daily reservation counts for the trend chart
-        try {
-          const trendsResponse = await api.get(
-            "/Reservation/daily-reservation-counts"
+        // Handle statistics data
+        if (statsResponse.status === "fulfilled") {
+          setStats(statsResponse.value.data);
+        } else {
+          console.error(
+            "Failed to fetch reservation stats:",
+            statsResponse.reason
           );
-          setDailyReservationCounts(trendsResponse.data.dailyCounts);
-        } catch (error) {
-          console.log("Error fetching daily reservation counts:", error);
-          // Generate mock data for daily counts
-          setDailyReservationCounts(generateMockDailyCounts(30));
+          setError("Failed to load statistics data");
         }
 
-        // Continue to fetch reservations for other charts
-        try {
-          const reservationsResponse = await api.get("/report/reservations");
-          setReservations(reservationsResponse.data);
-        } catch (error) {
-          console.log("Using mock data for dashboard visualization", error);
-          // Use mock data for charts if API fails
-          const mockReservations = generateMockReservations();
-          setReservations(mockReservations);
+        // Handle daily reservation counts
+        if (trendsResponse.status === "fulfilled") {
+          setDailyReservationCounts(trendsResponse.value.data.dailyCounts);
+        } else {
+          console.error(
+            "Failed to fetch daily reservation counts:",
+            trendsResponse.reason
+          );
+          setDailyReservationCounts([]);
+        }
+
+        // Handle reservations data for other charts
+        if (reservationsResponse.status === "fulfilled") {
+          setReservations(reservationsResponse.value.data);
+        } else {
+          console.error(
+            "Failed to fetch reservations:",
+            reservationsResponse.reason
+          );
+          setReservations([]);
+        }
+
+        // Handle facility counts data
+        if (facilityCountsResponse.status === "fulfilled") {
+          setFacilityCounts(facilityCountsResponse.value.data.facilityCounts);
+        } else {
+          console.error(
+            "Failed to fetch facility counts:",
+            facilityCountsResponse.reason
+          );
+          setFacilityCounts([]);
         }
       } catch (err) {
-        console.error("Error fetching accountant dashboard stats:", err);
-        setError("Failed to load dashboard statistics");
-
-        // Use mock data if API fails
-        setStats({
-          totalPendingReservations: 42,
-          totalCompletedReservations: 20,
-          totalCancelledOrExpiredReservations: 8,
-          totalRevenue: 123000,
-        });
-
-        // Set mock data for daily counts
-        setDailyReservationCounts(generateMockDailyCounts(30));
+        console.error("Error fetching accountant dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -134,58 +159,20 @@ const AccountDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  // Generate mock daily reservation counts
-  const generateMockDailyCounts = (days: number): DailyCount[] => {
-    const result: DailyCount[] = [];
-    const today = new Date();
-
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(today.getDate() - i);
-
-      result.push({
-        date: date.toISOString().split("T")[0] + "T00:00:00Z",
-        count: Math.floor(Math.random() * 20), // Random count between 0 and 19
-      });
-    }
-
-    return result;
-  };
-
-  // Generate mock reservation data for other charts
-  const generateMockReservations = () => {
-    const statuses = ["Approved", "Confirmed", "Cancelled", "Expired"];
-    const userTypes = ["private", "public", "corporate"];
-    const mockData = [];
-
-    // Create 30 days of data with varying number of reservations
-    const today = new Date();
-    for (let i = 0; i < 50; i++) {
-      const creationDate = new Date();
-      creationDate.setDate(today.getDate() - Math.floor(Math.random() * 30));
-
-      mockData.push({
-        reservationId: i + 1,
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        userType: userTypes[Math.floor(Math.random() * userTypes.length)],
-        createdAt: creationDate.toISOString(),
-        total: Math.floor(Math.random() * 50000) + 5000,
-        reservedRooms:
-          Math.random() > 0.5 ? [{ roomName: "Standard Room" }] : [],
-        reservedPackages:
-          Math.random() > 0.5
-            ? [
-                {
-                  packageName:
-                    Math.random() > 0.5 ? "Hall Package" : "Outdoor Event",
-                },
-              ]
-            : [],
-      });
-    }
-
-    return mockData;
-  };
+  const noDataAvailable = (
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "200px",
+      }}
+    >
+      <Typography variant="body1" color="text.secondary">
+        No data available. Please check your connection and try again.
+      </Typography>
+    </Box>
+  );
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -221,7 +208,7 @@ const AccountDashboard: React.FC = () => {
         </Alert>
       ) : (
         <>
-          {/* Updated statistics cards to match EmployeeDashboard styling */}
+          {/* Statistics cards */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
@@ -281,28 +268,28 @@ const AccountDashboard: React.FC = () => {
                 aria-label="Financial analytics tabs"
               >
                 <Tab label="Reservations Trend" />
-                <Tab label="Customer Analysis" />
                 <Tab label="Facility Usage" />
               </Tabs>
             </Box>
 
             <Box sx={{ p: 3 }}>
               <TabPanel value={tabValue} index={0}>
-                {/* Correctly using ReservationTrendChart with dailyCounts */}
-                <ReservationTrendChart
-                  dailyCounts={dailyReservationCounts}
-                  days={30}
-                />
+                {dailyReservationCounts.length > 0 ? (
+                  <ReservationTrendChart
+                    dailyCounts={dailyReservationCounts}
+                    days={30}
+                  />
+                ) : (
+                  noDataAvailable
+                )}
               </TabPanel>
 
               <TabPanel value={tabValue} index={1}>
-                {/* Customer Type Distribution */}
-                <CustomerTypeChart reservations={reservations} />
-              </TabPanel>
-
-              <TabPanel value={tabValue} index={2}>
-                {/* Facility Usage Chart */}
-                <FacilityUsageChart reservations={reservations} />
+                {facilityCounts.length > 0 ? (
+                  <FacilityUsageChart facilityCounts={facilityCounts} />
+                ) : (
+                  noDataAvailable
+                )}
               </TabPanel>
             </Box>
           </Paper>
