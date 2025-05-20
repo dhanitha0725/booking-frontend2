@@ -18,7 +18,7 @@ export interface RoomResponseDto {
 export interface PackagesDto {
   packageId: number;
   packageName: string;
-  duration?: string // convert time span to string. (.net uses time span)
+  duration?: string  | number;
   pricing: pricingDto[];
   requiresDates?: boolean;
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -8,7 +8,6 @@ import {
 } from "@mui/material";
 import SelectionTable from "../../../client/booking/components/SelectionTable";
 import TotalSummary from "../../../client/booking/components/TotalSummary";
-import employeeReservationService from "../../../../services/employeeReservationService";
 import {
   FacilityData,
   BookingItemDto,
@@ -32,6 +31,9 @@ interface ItemSelectionStepProps {
   loading: boolean;
   error: string | null;
   facilityId: number | null;
+  isAvailable?: boolean;
+  availabilityMessage?: string;
+  checkingAvailability?: boolean;
 }
 
 const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
@@ -46,56 +48,10 @@ const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
   loading,
   error,
   facilityId,
+  isAvailable = true,
+  availabilityMessage = "",
+  checkingAvailability = false,
 }) => {
-  const [availability, setAvailability] = useState({
-    isAvailable: true,
-    message: "",
-    checking: false,
-  });
-
-  const handleSelectionChange = async (
-    type: "package" | "room",
-    id: number,
-    quantity: number
-  ) => {
-    onSelectionChange(type, id, quantity);
-
-    const updatedItems = selectedItems.filter((item) => item.quantity > 0);
-    if (
-      updatedItems.length > 0 &&
-      facilityId &&
-      (!requiresDates || (dateRange.startDate && dateRange.endDate))
-    ) {
-      setAvailability({ ...availability, checking: true });
-      try {
-        const result = await employeeReservationService.checkAvailability(
-          facilityId,
-          dateRange.startDate?.toISOString() || "",
-          dateRange.endDate?.toISOString() || "",
-          updatedItems.map((item) => ({
-            itemId: item.itemId,
-            type: item.type,
-            quantity: item.quantity,
-          }))
-        );
-        setAvailability({
-          isAvailable: result.isAvailable,
-          message: result.message,
-          checking: false,
-        });
-      } catch (error) {
-        console.error("Error checking availability:", error);
-        setAvailability({
-          isAvailable: false,
-          message: "Error checking availability. Please try again.",
-          checking: false,
-        });
-      }
-    } else {
-      setAvailability({ isAvailable: true, message: "", checking: false });
-    }
-  };
-
   return (
     <Box sx={{ mt: 2 }}>
       {error && (
@@ -103,6 +59,14 @@ const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
           {error}
         </Alert>
       )}
+
+      {!isAvailable && selectedItems.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {availabilityMessage ||
+            "Selected items are not available for the chosen dates"}
+        </Alert>
+      )}
+
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
           <CircularProgress />
@@ -112,24 +76,23 @@ const ItemSelectionStep: React.FC<ItemSelectionStepProps> = ({
           <SelectionTable
             packages={facilityData.packages || []}
             rooms={facilityData.rooms || []}
-            onSelectionChange={handleSelectionChange}
+            onSelectionChange={onSelectionChange}
             requiresDates={requiresDates}
             selectedItems={selectedItems}
-            isAvailable={availability.isAvailable}
-            availabilityMessage={
-              availability.checking
-                ? "Checking availability..."
-                : availability.message
-            }
+            isAvailable={isAvailable}
+            availabilityMessage={availabilityMessage}
             dateRange={dateRange}
           />
-          {availability.checking && (
+
+          {checkingAvailability && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
               <CircularProgress size={20} sx={{ mr: 1 }} />
               <Typography>Checking availability...</Typography>
             </Box>
           )}
+
           <Divider sx={{ my: 3 }} />
+
           <TotalSummary
             total={total}
             setTotal={setTotal}

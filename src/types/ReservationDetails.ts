@@ -20,6 +20,7 @@ export type UserType = "public" | "private" | "corporate";
 // Basic Reservation interface for table display
 export interface Reservation {
   reservationId: number;
+  facilityId: number;
   startDate: string | Date;
   endDate: string | Date;
   createdDate: string | Date;
@@ -69,6 +70,7 @@ export interface DocumentDetails {
 
 // Complete reservation details for the full view
 export interface FullReservationDetails {
+  facilityId: number;
   reservationId: number;
   startDate: string;
   endDate: string;

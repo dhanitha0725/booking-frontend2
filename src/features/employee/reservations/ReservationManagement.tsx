@@ -15,6 +15,7 @@ import ReservationTable from "./ReservationTable";
 import { Reservation } from "../../../types/ReservationDetails";
 import AddReservationDialog from "./AddReservationDialog";
 import CancelReservationDialog from "./CancelReservationDialog";
+import UpdateReservationDialog from "./UpdateReservationDialog";
 
 const ReservationManagement: React.FC = () => {
   // State for storing reservation data retrieved from the API
@@ -22,9 +23,12 @@ const ReservationManagement: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false); // New state for update dialog
   const [reservationToCancel, setReservationToCancel] = useState<number | null>(
     null
   );
+  const [reservationToUpdate, setReservationToUpdate] =
+    useState<Reservation | null>(null); // New state for reservation to update
   const [cancelLoading, setCancelLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -69,16 +73,20 @@ const ReservationManagement: React.FC = () => {
     fetchReservations();
   }, []);
 
-  // Handle reservation modification
+  // Handle reservation modification - Updated to open the update dialog
   const handleModifyReservation = async (reservationId: number) => {
     try {
-      // In a real app, this might open a dialog or navigate to a detail page
-      // For now, we'll just show a notification
-      setSnackbar({
-        open: true,
-        message: `Modification for reservation #${reservationId} initiated`,
-        severity: "info",
-      });
+      // Find the reservation in our current data
+      const reservationToUpdate = reservations.find(
+        (res) => res.reservationId === reservationId
+      );
+
+      if (reservationToUpdate) {
+        setReservationToUpdate(reservationToUpdate);
+        setUpdateDialogOpen(true);
+      } else {
+        throw new Error("Reservation not found");
+      }
     } catch (error) {
       console.error("Error initiating modification:", error);
       setSnackbar({
@@ -87,6 +95,22 @@ const ReservationManagement: React.FC = () => {
         severity: "error",
       });
     }
+  };
+
+  // Close update dialog
+  const handleCloseUpdateDialog = () => {
+    setUpdateDialogOpen(false);
+    setReservationToUpdate(null);
+  };
+
+  // Handle successful update
+  const handleUpdateSuccess = () => {
+    setSnackbar({
+      open: true,
+      message: `Reservation #${reservationToUpdate?.reservationId} has been updated successfully`,
+      severity: "success",
+    });
+    fetchReservations(); // Refresh the list
   };
 
   // Show confirmation dialog before cancellation
@@ -232,6 +256,14 @@ const ReservationManagement: React.FC = () => {
         reservationId={reservationToCancel}
         onClose={handleCloseCancelDialog}
         onConfirm={confirmCancelReservation}
+      />
+
+      {/* Update Reservation Dialog - New */}
+      <UpdateReservationDialog
+        open={updateDialogOpen}
+        onClose={handleCloseUpdateDialog}
+        onSuccess={handleUpdateSuccess}
+        reservation={reservationToUpdate}
       />
 
       {/* Feedback notification */}
