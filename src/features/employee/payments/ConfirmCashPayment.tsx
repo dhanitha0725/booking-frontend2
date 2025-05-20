@@ -64,11 +64,29 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
         }
       }
 
-      // Submit to backend
-      const response = await api.post("/Payments/confirm-cash-payment", {
+      // Construct the payload
+      const payload = {
         paymentId,
         amountPaid: parsedAmount,
-      });
+      };
+
+      // Log the payload for debugging
+      console.log(
+        "Cash payment confirmation payload:",
+        JSON.stringify(payload, null, 2)
+      );
+
+      // Submit to backend
+      const response = await api.post(
+        "/Payments/confirm-cash-payment",
+        payload
+      );
+
+      // Log the response
+      console.log(
+        "Cash payment confirmation response:",
+        JSON.stringify(response.data, null, 2)
+      );
 
       if (response.data.isSuccess) {
         setSuccessMessage("Cash payment confirmed successfully");
@@ -81,6 +99,9 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
         if (onError) onError(errorMessage);
       }
     } catch (err) {
+      // Log the full error
+      console.error("Error in cash payment confirmation:", err);
+
       let errorMessage =
         "An unexpected error occurred while confirming the payment";
 
@@ -90,11 +111,16 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
           err.response?.data?.message ||
           err.response?.data?.error ||
           errorMessage;
+
+        // Log the response error details
+        console.error("Cash payment error response:", {
+          status: err.response?.status,
+          data: err.response?.data,
+        });
       }
 
       setError(errorMessage);
       if (onError) onError(errorMessage);
-      console.error("Error confirming cash payment:", err);
     } finally {
       setLoading(false);
     }

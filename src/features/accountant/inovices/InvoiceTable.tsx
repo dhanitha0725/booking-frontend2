@@ -4,35 +4,39 @@ import {
   useMaterialReactTable,
   type MRT_ColumnDef,
 } from "material-react-table";
-import { Box, IconButton, Tooltip, Chip } from "@mui/material";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import DeleteIcon from "@mui/icons-material/Delete";
-import PrintIcon from "@mui/icons-material/Print";
+import {
+  Box,
+  IconButton,
+  Tooltip,
+  Chip,
+  CircularProgress,
+} from "@mui/material";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
 
+// interface to match the API response
 interface Invoice {
-  invoiceId: number;
-  invoiceNumber: string;
-  reservationId: number;
-  customerName: string;
-  customerType: string;
-  issueDate: string;
-  dueDate: string;
-  totalAmount: number;
-  paidAmount: number;
-  balance: number;
-  status: "Paid" | "Partially Paid" | "Unpaid" | "Overdue";
+  invoiceID: number;
+  amountPaid: number;
+  amountDue: number;
+  issuedDate: string;
+  reservationID: number;
+  paymentID: string;
+  paymentMethod: string;
+  paymentStatus: string;
 }
 
+// Update the props interface
 interface InvoiceTableProps {
   invoices: Invoice[];
   onView: (invoiceId: number) => void;
   onDelete: (invoiceId: number) => void;
+  isDownloading?: boolean;
 }
 
 const InvoiceTable: React.FC<InvoiceTableProps> = ({
   invoices,
   onView,
-  onDelete,
+  isDownloading = false,
 }) => {
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -44,16 +48,19 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  // Get status chip color
+  // Format invoice number (like UserInfoPage.tsx's orderId format)
+  const formatInvoiceNumber = (invoiceId: number): string => {
+    return `INV-${invoiceId}-${new Date().getFullYear()}`;
+  };
+
+  // Get status chip color based on payment status
   const getStatusChipProps = (status: string) => {
-    switch (status) {
-      case "Paid":
+    switch (status.toLowerCase()) {
+      case "completed":
         return { color: "success" as const, variant: "outlined" as const };
-      case "Partially Paid":
+      case "pending":
         return { color: "warning" as const, variant: "outlined" as const };
-      case "Unpaid":
-        return { color: "info" as const, variant: "outlined" as const };
-      case "Overdue":
+      case "failed":
         return { color: "error" as const, variant: "outlined" as const };
       default:
         return { color: "default" as const, variant: "outlined" as const };
@@ -64,52 +71,47 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   const columns = useMemo<MRT_ColumnDef<Invoice>[]>(
     () => [
       {
-        accessorKey: "invoiceNumber",
+        accessorKey: "invoiceID",
         header: "Invoice #",
         size: 140,
+        Cell: ({ cell }) => formatInvoiceNumber(cell.getValue<number>()),
       },
       {
-        accessorKey: "customerName",
-        header: "Customer Name",
-        size: 180,
-      },
-      {
-        accessorKey: "customerType",
-        header: "Customer Type",
+        accessorKey: "reservationID",
+        header: "Reservation #",
         size: 140,
       },
       {
-        accessorKey: "issueDate",
+        accessorKey: "paymentMethod",
+        header: "Payment Method",
+        size: 150,
+      },
+      {
+        accessorKey: "issuedDate",
         header: "Issue Date",
         size: 120,
         Cell: ({ cell }) => formatDate(cell.getValue<string>()),
       },
       {
-        accessorKey: "dueDate",
-        header: "Due Date",
-        size: 120,
-        Cell: ({ cell }) => formatDate(cell.getValue<string>()),
-      },
-      {
-        accessorKey: "totalAmount",
-        header: "Total Amount",
-        size: 140,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
-      },
-      {
-        accessorKey: "paidAmount",
+        accessorKey: "amountPaid",
         header: "Paid Amount",
         size: 140,
         Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
       },
       {
-        accessorKey: "balance",
-        header: "Balance",
+        accessorKey: "amountDue",
+        header: "Due Amount",
         size: 140,
         Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
       },
       {
-        accessorKey: "status",
+        accessorFn: (row) => row.amountPaid + row.amountDue,
+        header: "Total Amount",
+        size: 140,
+        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+      },
+      {
+        accessorKey: "paymentStatus",
         header: "Status",
         size: 150,
         Cell: ({ cell }) => {
@@ -120,46 +122,32 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
           );
         },
       },
+      // Update the actions column
       {
         id: "actions",
         header: "Actions",
-        size: 150,
+        size: 100,
         Cell: ({ row }) => (
           <Box sx={{ display: "flex", gap: 1 }}>
-            <Tooltip title="View Invoice">
+            <Tooltip title="Download Invoice">
               <IconButton
                 size="small"
                 color="primary"
-                onClick={() => onView(row.original.invoiceId)}
+                onClick={() => onView(row.original.invoiceID)}
+                disabled={isDownloading}
               >
-                <VisibilityIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Print Invoice">
-              <IconButton
-                size="small"
-                color="secondary"
-                onClick={() =>
-                  console.log("Print invoice", row.original.invoiceId)
-                }
-              >
-                <PrintIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete Invoice">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => onDelete(row.original.invoiceId)}
-              >
-                <DeleteIcon />
+                {isDownloading ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  <FileDownloadIcon />
+                )}
               </IconButton>
             </Tooltip>
           </Box>
         ),
       },
     ],
-    [onView, onDelete]
+    [onView, isDownloading]
   );
 
   const table = useMaterialReactTable({
@@ -173,7 +161,7 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
     initialState: {
       sorting: [
         {
-          id: "issueDate",
+          id: "issuedDate",
           desc: true,
         },
       ],

@@ -27,7 +27,6 @@ import CustomerManagement from "../features/admin/customers/CustomerManagement";
 import EmployeeDashboard from "../features/employee/dashboard/EmployeeDashboard";
 import ReservationManagement from "../features/employee/reservations/ReservationManagement";
 import AccountDashboard from "../features/accountant/dashboard/AccountDashboard";
-import PaymentManagement from "../features/accountant/payments/PaymentManagement";
 import ReportManagement from "../features/accountant/reports/ReportManagement";
 import PriceManagement from "../features/accountant/pricing/PriceManagement";
 import InvoiceManagement from "../features/accountant/inovices/InvoiceManagement";
@@ -94,7 +93,6 @@ const Router: React.FC = () => {
         <Route path="/accountant" element={<AccountLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AccountDashboard />} />
-          <Route path="payments" element={<PaymentManagement />} />
           <Route path="invoice" element={<InvoiceManagement />} />
           <Route path="pricing" element={<PriceManagement />} />
           <Route path="reports" element={<ReportManagement />} />

@@ -1,6 +1,5 @@
 import {
   Dashboard as DashboardIcon,
-  Payment as PaymentIcon,
   Receipt as ReceiptIcon,
   Assessment as AssessmentIcon,
   PriceChange,
@@ -12,12 +11,6 @@ export const menuItems = [
     icon: <DashboardIcon />,
     path: "/accountant/dashboard",
     selected: window.location.pathname === "/accountant/dashboard",
-  },
-  {
-    text: "Payments",
-    icon: <PaymentIcon />,
-    path: "/accountant/payments",
-    selected: window.location.pathname === "/accountant/payments",
   },
   {
     text: "Invoice",

@@ -11,19 +11,24 @@ import {
   Tabs,
   Divider,
 } from "@mui/material";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import MoneyIcon from "@mui/icons-material/Money";
-import CancelIcon from "@mui/icons-material/Cancel";
+import {
+  PendingActions,
+  CheckCircle,
+  Cancel,
+  AttachMoney,
+} from "@mui/icons-material";
 import StatCard from "../../../components/StatCard";
 import api from "../../../services/api";
 import CustomerTypeChart from "./charts/CustomerTypeChart";
 import FacilityUsageChart from "./charts/FacilityUsageChart";
 import ReservationTrendChart from "./charts/ReservationTrendChart";
 
-interface DashboardStats {
-  totalReservations: number;
+// Define the statistics response type to match API response
+interface ReservationStats {
+  totalPendingReservations: number;
+  totalCompletedReservations: number;
+  totalCancelledOrExpiredReservations: number;
   totalRevenue: number;
-  cancelledExpiredReservations: number;
 }
 
 interface TabPanelProps {
@@ -49,9 +54,13 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const AccountDashboard: React.FC = () => {
-  const theme = useTheme();
   const [tabValue, setTabValue] = useState(0);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<ReservationStats>({
+    totalPendingReservations: 0,
+    totalCompletedReservations: 0,
+    totalCancelledOrExpiredReservations: 0,
+    totalRevenue: 0,
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [reservations, setReservations] = useState<any[]>([]);
@@ -60,8 +69,51 @@ const AccountDashboard: React.FC = () => {
     setTabValue(newValue);
   };
 
-  // Generate mock reservation data for testing the charts
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Fetch statistics from the reservation-stats endpoint
+        const statsResponse = await api.get<ReservationStats>(
+          "/Reservation/reservation-stats"
+        );
+        setStats(statsResponse.data);
+
+        // Continue to fetch reservations for charts
+        try {
+          const reservationsResponse = await api.get("/report/reservations");
+          setReservations(reservationsResponse.data);
+        } catch (error) {
+          console.log("Using mock data for dashboard visualization", error);
+          // Use mock data for charts if API fails
+          const mockReservations = generateMockReservations();
+          setReservations(mockReservations);
+        }
+      } catch (err) {
+        console.error("Error fetching accountant dashboard stats:", err);
+        setError("Failed to load dashboard statistics");
+
+        // Use mock data if API fails
+        setStats({
+          totalPendingReservations: 42,
+          totalCompletedReservations: 20,
+          totalCancelledOrExpiredReservations: 8,
+          totalRevenue: 123000,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Generate mock reservation data for charts testing
   const generateMockReservations = () => {
+    // Your existing mock data generation logic
+    // ... (keep your existing function)
     const statuses = ["Approved", "Confirmed", "Cancelled", "Expired"];
     const userTypes = ["private", "public", "corporate"];
     const mockData = [];
@@ -93,79 +145,6 @@ const AccountDashboard: React.FC = () => {
     }
 
     return mockData;
-  };
-
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          throw new Error("Authentication token not found");
-        }
-
-        // First try to fetch real data
-        try {
-          // Updated API endpoint to match backend routes
-          const response = await api.get("/report/dashboard-stats", {
-            // Changed from "/accounting/dashboard-stats"
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            params: {
-              days: 30,
-            },
-          });
-
-          setStats(response.data);
-
-          const reservationsResponse = await api.get("/report/reservations", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          setReservations(reservationsResponse.data);
-          return;
-        } catch (error) {
-          console.log("Using mock data for dashboard visualization", error);
-          // Fall through to mock data if API fails
-        }
-
-        // If API call fails, use mock data for demonstration
-        const mockReservations = generateMockReservations();
-        setReservations(mockReservations);
-
-        // Calculate mock stats from the mock reservations
-        const totalReservations = mockReservations.length;
-        const totalRevenue = mockReservations
-          .filter((r) => r.status !== "Cancelled" && r.status !== "Expired")
-          .reduce((sum, r) => sum + r.total, 0);
-        const cancelledExpiredCount = mockReservations.filter(
-          (r) => r.status === "Cancelled" || r.status === "Expired"
-        ).length;
-
-        setStats({
-          totalReservations,
-          totalRevenue,
-          cancelledExpiredReservations: cancelledExpiredCount,
-        });
-      } catch (err) {
-        console.error("Error fetching accountant dashboard stats:", err);
-        setError("Failed to load dashboard statistics");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-  }, []);
-
-  // Function to format currency
-  const formatCurrency = (amount: number): string => {
-    return `LKR ${amount.toLocaleString()}`;
   };
 
   return (
@@ -202,46 +181,50 @@ const AccountDashboard: React.FC = () => {
         </Alert>
       ) : (
         <>
+          {/* Updated statistics cards to match EmployeeDashboard styling */}
           <Grid container spacing={3} sx={{ mb: 4 }}>
-            {/* Total Reservations Card */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <StatCard
-                title="Total Reservations"
-                value={stats?.totalReservations || 0}
-                description="Total number of reservations in the last 30 days"
-                icon={<AssignmentIcon />}
-                backgroundColor={theme.palette.primary.light}
-                textColor={theme.palette.primary.contrastText}
-                iconColor={theme.palette.primary.dark}
-                elevation={3}
+                title="Pending"
+                value={stats.totalPendingReservations}
+                description="Reservations awaiting action"
+                icon={<PendingActions />}
+                iconColor="warning.main"
+                backgroundColor="#fafafa"
+                textColor="text.primary"
               />
             </Grid>
-
-            {/* Total Revenue Card */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <StatCard
-                title="Total Revenue"
-                value={formatCurrency(stats?.totalRevenue || 0)}
-                description="Total revenue generated in the last 30 days"
-                icon={<MoneyIcon />}
-                backgroundColor={theme.palette.success.light}
-                textColor={theme.palette.success.contrastText}
-                iconColor={theme.palette.success.dark}
-                elevation={3}
+                title="Completed"
+                value={stats.totalCompletedReservations}
+                description="Successfully completed reservations"
+                icon={<CheckCircle />}
+                iconColor="success.main"
+                backgroundColor="#fafafa"
+                textColor="text.primary"
               />
             </Grid>
-
-            {/* Cancelled/Expired Reservations Card */}
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={3}>
               <StatCard
-                title="Cancelled & Expired"
-                value={stats?.cancelledExpiredReservations || 0}
-                description="Number of cancelled or expired reservations"
-                icon={<CancelIcon />}
-                backgroundColor={theme.palette.warning.light}
-                textColor={theme.palette.warning.contrastText}
-                iconColor={theme.palette.warning.dark}
-                elevation={3}
+                title="Cancelled"
+                value={stats.totalCancelledOrExpiredReservations}
+                description="Cancelled or expired"
+                icon={<Cancel />}
+                iconColor="error.main"
+                backgroundColor="#fafafa"
+                textColor="text.primary"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Revenue"
+                value={`Rs. ${stats.totalRevenue.toFixed(2)}`}
+                description="Total from completed bookings"
+                icon={<AttachMoney />}
+                iconColor="primary.main"
+                backgroundColor="#fafafa"
+                textColor="text.primary"
               />
             </Grid>
           </Grid>

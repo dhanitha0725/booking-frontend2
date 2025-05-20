@@ -2,97 +2,52 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Button,
   Divider,
   Snackbar,
   Alert,
   CircularProgress,
-  Tabs,
-  Tab,
-  TextField,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stack,
-  Chip,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import AddIcon from "@mui/icons-material/Add";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import api from "../../../services/api";
+import axios from "axios";
 import InvoiceTable from "./InvoiceTable";
-import CreateInvoiceDialog from "./CreateInvoiceDialog";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
-import dayjs, { Dayjs } from "dayjs";
+import PDFGenerator from "../../../utils/PDFGenerator";
 
-// Interface for invoice data
+// Invoice interface to match the API response for table data
 interface Invoice {
+  invoiceID: number;
+  amountPaid: number;
+  amountDue: number;
+  issuedDate: string;
+  reservationID: number;
+  paymentID: string;
+  paymentMethod: string;
+  paymentStatus: string;
+}
+
+// Detailed invoice interface to match the API response for the detailed view
+interface DetailedInvoice {
   invoiceId: number;
-  invoiceNumber: string;
+  paymentId: string;
   reservationId: number;
-  customerName: string;
-  customerType: string;
-  issueDate: string;
-  dueDate: string;
+  facilityName: string;
   totalAmount: number;
-  paidAmount: number;
-  balance: number;
-  status: "Paid" | "Partially Paid" | "Unpaid" | "Overdue";
+  amountPaid: number;
+  amountDue: number;
+  invoiceDate: string;
+  customerName: string;
+  customerEmail: string;
+  reservationStatus: string;
+  reservationStartDate: string;
+  reservationEndDate: string;
 }
-
-// TabPanel component for invoice tabs
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-const TabPanel = (props: TabPanelProps) => {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`invoice-tabpanel-${index}`}
-      aria-labelledby={`invoice-tab-${index}`}
-      {...other}
-      style={{ marginTop: 20 }}
-    >
-      {value === index && <Box>{children}</Box>}
-    </div>
-  );
-};
 
 const InvoiceManagement: React.FC = () => {
-  // State for tab management
-  const [tabValue, setTabValue] = useState(0);
-
-  // State for invoices
+  // Store all invoices data retrieved from the backend
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
-
-  // State for loading
   const [loading, setLoading] = useState(true);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
-  // State for search and filters
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{
-    startDate: Dayjs | null;
-    endDate: Dayjs | null;
-  }>({
-    startDate: dayjs().subtract(30, "day"),
-    endDate: dayjs(),
-  });
-
-  // State for dialog
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
-
-  // State for snackbar
+  // Notification state
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -103,117 +58,7 @@ const InvoiceManagement: React.FC = () => {
     severity: "success",
   });
 
-  // Fetch invoices on component mount
-  useEffect(() => {
-    fetchInvoices();
-  }, []);
-
-  // Effect to filter invoices when filters change
-  useEffect(() => {
-    applyFilters();
-  }, [searchTerm, statusFilter, dateRange, invoices]);
-
-  // Function to fetch invoices from API
-  const fetchInvoices = async () => {
-    setLoading(true);
-    try {
-      // This would be replaced with your actual API call
-      // const response = await api.get("/Invoice/invoices");
-      // setInvoices(response.data);
-
-      // Mock data for demonstration
-      setTimeout(() => {
-        const mockInvoices: Invoice[] = generateMockInvoices();
-        setInvoices(mockInvoices);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error("Error fetching invoices:", error);
-      showSnackbar("Failed to load invoices", "error");
-      setLoading(false);
-    }
-  };
-
-  // Generate mock invoice data
-  const generateMockInvoices = (): Invoice[] => {
-    const statuses: ("Paid" | "Partially Paid" | "Unpaid" | "Overdue")[] = [
-      "Paid",
-      "Partially Paid",
-      "Unpaid",
-      "Overdue",
-    ];
-
-    const customerTypes = ["Public", "Private", "Corporate"];
-
-    return Array.from({ length: 20 }, (_, i) => {
-      const totalAmount = Math.round(Math.random() * 50000) + 5000;
-      const status = statuses[Math.floor(Math.random() * statuses.length)];
-      const paidAmount =
-        status === "Paid"
-          ? totalAmount
-          : status === "Partially Paid"
-            ? Math.round(totalAmount * Math.random())
-            : 0;
-
-      return {
-        invoiceId: i + 1,
-        invoiceNumber: `INV-${2023}-${1000 + i}`,
-        reservationId: 2000 + i,
-        customerName: `Customer ${i + 1}`,
-        customerType:
-          customerTypes[Math.floor(Math.random() * customerTypes.length)],
-        issueDate: dayjs()
-          .subtract(Math.floor(Math.random() * 60), "day")
-          .format("YYYY-MM-DD"),
-        dueDate: dayjs()
-          .add(Math.floor(Math.random() * 30), "day")
-          .format("YYYY-MM-DD"),
-        totalAmount,
-        paidAmount,
-        balance: totalAmount - paidAmount,
-        status,
-      };
-    });
-  };
-
-  // Function to apply filters to invoices
-  const applyFilters = () => {
-    let filtered = [...invoices];
-
-    // Apply search term filter
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (invoice) =>
-          invoice.invoiceNumber
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          invoice.customerName
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          invoice.reservationId.toString().includes(searchTerm)
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((invoice) => invoice.status === statusFilter);
-    }
-
-    // Apply date range filter
-    if (dateRange.startDate && dateRange.endDate) {
-      filtered = filtered.filter((invoice) => {
-        const issueDate = dayjs(invoice.issueDate);
-        return (
-          issueDate.isAfter(dateRange.startDate) &&
-          issueDate.isBefore(dateRange.endDate.add(1, "day"))
-        );
-      });
-    }
-
-    setFilteredInvoices(filtered);
-  };
-
-  // Helper function to display snackbar notifications
+  // Function to show snackbar messages
   const showSnackbar = (
     message: string,
     severity: "success" | "error" | "warning" | "info"
@@ -225,372 +70,200 @@ const InvoiceManagement: React.FC = () => {
     });
   };
 
-  // Handle tab change
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  // Generate mock invoices for testing or fallback
+  const generateMockInvoices = (): Invoice[] => {
+    return [
+      {
+        invoiceID: 1,
+        amountPaid: 2000,
+        amountDue: 0,
+        issuedDate: "2025-05-20T16:41:35.037369Z",
+        reservationID: 118,
+        paymentID: "0196ee81-8b56-7357-a251-85264d54cd64",
+        paymentMethod: "Cash",
+        paymentStatus: "Completed",
+      },
+      {
+        invoiceID: 2,
+        amountPaid: 4000,
+        amountDue: 0,
+        issuedDate: "2025-05-20T16:41:45.364802Z",
+        reservationID: 117,
+        paymentID: "0196ee81-0b94-78df-ab0d-c70d24edffc2",
+        paymentMethod: "Bank",
+        paymentStatus: "Completed",
+      },
+      {
+        invoiceID: 3,
+        amountPaid: 0,
+        amountDue: 2000,
+        issuedDate: "2025-05-20T16:53:17.506383Z",
+        reservationID: 120,
+        paymentID: "0196ee9c-df4f-7325-97cf-327adc5d4eb3",
+        paymentMethod: "Online",
+        paymentStatus: "Pending",
+      },
+    ];
   };
 
-  // Handle snackbar close
-  const handleSnackbarClose = () => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
-  };
-
-  // Handle creating a new invoice
-  const handleCreateInvoice = () => {
-    setOpenCreateDialog(true);
-  };
-
-  // Handle invoice creation success
-  const handleInvoiceCreated = () => {
-    setOpenCreateDialog(false);
-    showSnackbar("Invoice created successfully", "success");
-    fetchInvoices();
-  };
-
-  // Handle invoice view/edit
-  const handleViewInvoice = (invoiceId: number) => {
-    console.log("View invoice:", invoiceId);
-    // Implementation would navigate to invoice detail page or open modal
-  };
-
-  // Handle invoice deletion
-  const handleDeleteInvoice = async (invoiceId: number) => {
+  // Fetch invoices from the API
+  const fetchInvoices = async () => {
+    setLoading(true);
     try {
-      // This would be your actual API call
-      // await api.delete(`/Invoice/invoices/${invoiceId}`);
-
-      // For mock demonstration
-      setInvoices((prev) => prev.filter((inv) => inv.invoiceId !== invoiceId));
-      showSnackbar("Invoice deleted successfully", "success");
+      // Use the real API endpoint
+      const response = await api.get("/Invoice/invoice-table-data");
+      setInvoices(response.data);
     } catch (error) {
-      console.error("Error deleting invoice:", error);
-      showSnackbar("Failed to delete invoice", "error");
+      console.error("Error fetching invoices:", error);
+      showSnackbar("Failed to load invoices", "error");
+
+      // Fallback to mock data if API call fails
+      const mockInvoices = generateMockInvoices();
+      setInvoices(mockInvoices);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Get different invoice lists based on status
-  const paidInvoices = filteredInvoices.filter((inv) => inv.status === "Paid");
-  const unpaidInvoices = filteredInvoices.filter(
-    (inv) => inv.status === "Unpaid" || inv.status === "Partially Paid"
-  );
-  const overdueInvoices = filteredInvoices.filter(
-    (inv) => inv.status === "Overdue"
-  );
+  // Initial fetch of invoices
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  // Extract the actual invoice ID number from our formatted ID (e.g., INV-1-2025 -> 1)
+  const extractInvoiceId = (formattedId: number): number => {
+    return formattedId;
+  };
+
+  // Handle downloading an invoice
+  const handleDownloadInvoice = async (invoiceId: number) => {
+    setDownloadLoading(true);
+    try {
+      // Extract the actual invoice ID
+      const actualInvoiceId = extractInvoiceId(invoiceId);
+
+      // Find the invoice from the table data (for display formatting purposes only)
+      const tableInvoice = invoices.find((inv) => inv.invoiceID === invoiceId);
+
+      if (!tableInvoice) {
+        showSnackbar("Invoice not found", "error");
+        return;
+      }
+
+      // Fetch detailed invoice data from the API
+      const response = await api.get<DetailedInvoice>(
+        `/Invoice/invoice/${actualInvoiceId}`
+      );
+      const detailedInvoice = response.data;
+
+      console.log("Detailed invoice data:", detailedInvoice);
+
+      const combinedInvoiceData = {
+        invoiceID: tableInvoice.invoiceID,
+        amountPaid: detailedInvoice.amountPaid,
+        amountDue: detailedInvoice.amountDue,
+        issuedDate: detailedInvoice.invoiceDate,
+        reservationID: detailedInvoice.reservationId,
+        paymentID: detailedInvoice.paymentId,
+        paymentMethod: tableInvoice.paymentMethod,
+        paymentStatus: tableInvoice.paymentStatus,
+        facilityName: detailedInvoice.facilityName,
+        customerName: detailedInvoice.customerName,
+        customerEmail: detailedInvoice.customerEmail,
+        reservationStatus: detailedInvoice.reservationStatus,
+        reservationStartDate: detailedInvoice.reservationStartDate,
+        reservationEndDate: detailedInvoice.reservationEndDate,
+        totalAmount: detailedInvoice.totalAmount,
+      };
+
+      // Generate and download the PDF using the combined data
+      const success = PDFGenerator.generateInvoicePDF(combinedInvoiceData);
+
+      if (success) {
+        showSnackbar("Invoice downloaded successfully", "success");
+      } else {
+        showSnackbar("Failed to download invoice", "error");
+      }
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
+
+      // Show more specific error message if possible
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          showSnackbar("Invoice details not found on the server", "error");
+        } else {
+          showSnackbar(
+            `Error: ${error.response?.data?.message || "Failed to fetch invoice details"}`,
+            "error"
+          );
+        }
+      } else {
+        showSnackbar(
+          "An error occurred while downloading the invoice",
+          "error"
+        );
+      }
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
+
+  // Close snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box sx={{ width: "100%" }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 2,
-          }}
-        >
-          <Typography variant="h5">Invoice Management</Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateInvoice}
-          >
-            Create Invoice
-          </Button>
-        </Box>
-
-        <Typography variant="body1" color="text.secondary">
-          Create, manage, and track invoices for facility bookings
-        </Typography>
-
-        <Divider sx={{ my: 2 }} />
-
-        {/* Search and Filter Row */}
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 2,
-            mb: 3,
-            alignItems: "center",
-          }}
-        >
-          <TextField
-            placeholder="Search invoices..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            size="small"
-            sx={{ flexGrow: 1, minWidth: "200px" }}
-          />
-
-          <FormControl size="small" sx={{ minWidth: "150px" }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              label="Status"
-            >
-              <MenuItem value="all">All Statuses</MenuItem>
-              <MenuItem value="Paid">Paid</MenuItem>
-              <MenuItem value="Partially Paid">Partially Paid</MenuItem>
-              <MenuItem value="Unpaid">Unpaid</MenuItem>
-              <MenuItem value="Overdue">Overdue</MenuItem>
-            </Select>
-          </FormControl>
-
-          <DatePicker
-            label="From Date"
-            value={dateRange.startDate}
-            onChange={(newValue) =>
-              setDateRange({ ...dateRange, startDate: newValue })
-            }
-            slotProps={{ textField: { size: "small" } }}
-          />
-
-          <DatePicker
-            label="To Date"
-            value={dateRange.endDate}
-            onChange={(newValue) =>
-              setDateRange({ ...dateRange, endDate: newValue })
-            }
-            slotProps={{ textField: { size: "small" } }}
-          />
-
-          <Button
-            variant="outlined"
-            startIcon={<FileDownloadIcon />}
-            onClick={() => console.log("Export invoices")}
-          >
-            Export
-          </Button>
-        </Box>
-
-        {/* Filter Chips */}
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-          {statusFilter !== "all" && (
-            <Chip
-              label={`Status: ${statusFilter}`}
-              onDelete={() => setStatusFilter("all")}
-              color="primary"
-              variant="outlined"
-              size="small"
-            />
-          )}
-          {dateRange.startDate && (
-            <Chip
-              label={`From: ${dateRange.startDate.format("DD/MM/YYYY")}`}
-              onDelete={() => setDateRange({ ...dateRange, startDate: null })}
-              color="primary"
-              variant="outlined"
-              size="small"
-            />
-          )}
-          {dateRange.endDate && (
-            <Chip
-              label={`To: ${dateRange.endDate.format("DD/MM/YYYY")}`}
-              onDelete={() => setDateRange({ ...dateRange, endDate: null })}
-              color="primary"
-              variant="outlined"
-              size="small"
-            />
-          )}
-          {(statusFilter !== "all" ||
-            dateRange.startDate ||
-            dateRange.endDate) && (
-            <Chip
-              label="Clear All"
-              onClick={() => {
-                setStatusFilter("all");
-                setDateRange({
-                  startDate: dayjs().subtract(30, "day"),
-                  endDate: dayjs(),
-                });
-              }}
-              size="small"
-              color="secondary"
-            />
-          )}
-        </Box>
-
-        {/* Status Count Cards */}
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{ mb: 3, flexWrap: "wrap" }}
-          justifyContent="space-between"
-        >
-          <Box
-            sx={{
-              bgcolor: "#e8f5e9",
-              p: 2,
-              borderRadius: 1,
-              minWidth: "170px",
-              flexGrow: 1,
-            }}
-          >
-            <Typography variant="h6" color="success.main">
-              {paidInvoices.length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Paid Invoices
-            </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              bgcolor: "#fff8e1",
-              p: 2,
-              borderRadius: 1,
-              minWidth: "170px",
-              flexGrow: 1,
-            }}
-          >
-            <Typography variant="h6" color="warning.main">
-              {unpaidInvoices.length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Unpaid Invoices
-            </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              bgcolor: "#ffebee",
-              p: 2,
-              borderRadius: 1,
-              minWidth: "170px",
-              flexGrow: 1,
-            }}
-          >
-            <Typography variant="h6" color="error.main">
-              {overdueInvoices.length}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Overdue Invoices
-            </Typography>
-          </Box>
-
-          <Box
-            sx={{
-              bgcolor: "#e3f2fd",
-              p: 2,
-              borderRadius: 1,
-              minWidth: "170px",
-              flexGrow: 1,
-            }}
-          >
-            <Typography variant="h6" color="primary.main">
-              {filteredInvoices
-                .reduce((sum, inv) => sum + inv.balance, 0)
-                .toLocaleString()}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Total Outstanding (Rs.)
-            </Typography>
-          </Box>
-        </Stack>
-
-        {/* Tabs for different invoice views */}
-        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            aria-label="invoice tabs"
-          >
-            <Tab label="All Invoices" id="invoice-tab-0" />
-            <Tab label="Unpaid" id="invoice-tab-1" />
-            <Tab label="Paid" id="invoice-tab-2" />
-            <Tab label="Overdue" id="invoice-tab-3" />
-          </Tabs>
-        </Box>
-
-        {/* Tab Panels */}
-        <TabPanel value={tabValue} index={0}>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <InvoiceTable
-              invoices={filteredInvoices}
-              onView={handleViewInvoice}
-              onDelete={handleDeleteInvoice}
-            />
-          )}
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={1}>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <InvoiceTable
-              invoices={unpaidInvoices}
-              onView={handleViewInvoice}
-              onDelete={handleDeleteInvoice}
-            />
-          )}
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={2}>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <InvoiceTable
-              invoices={paidInvoices}
-              onView={handleViewInvoice}
-              onDelete={handleDeleteInvoice}
-            />
-          )}
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={3}>
-          {loading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <InvoiceTable
-              invoices={overdueInvoices}
-              onView={handleViewInvoice}
-              onDelete={handleDeleteInvoice}
-            />
-          )}
-        </TabPanel>
-
-        {/* Create Invoice Dialog */}
-        <CreateInvoiceDialog
-          open={openCreateDialog}
-          onClose={() => setOpenCreateDialog(false)}
-          onSuccess={handleInvoiceCreated}
-        />
-
-        {/* Snackbar for notifications */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        >
-          <Alert
-            onClose={handleSnackbarClose}
-            severity={snackbar.severity}
-            sx={{ width: "100%" }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
+    <Box sx={{ width: "100%" }}>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h5">Invoice Management</Typography>
       </Box>
-    </LocalizationProvider>
+
+      <Divider sx={{ my: 2 }} />
+
+      {/* Invoice table */}
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : invoices.length === 0 ? (
+        <Box
+          sx={{
+            p: 4,
+            textAlign: "center",
+            bgcolor: "#f5f5f5",
+            borderRadius: 1,
+          }}
+        >
+          <Typography variant="h6" color="text.secondary">
+            No invoices found
+          </Typography>
+        </Box>
+      ) : (
+        <InvoiceTable
+          invoices={invoices}
+          onView={handleDownloadInvoice}
+          onDelete={() => {}} // Empty function as we're removing the delete action
+          isDownloading={downloadLoading}
+        />
+      )}
+
+      {/* Notification snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 };
 
