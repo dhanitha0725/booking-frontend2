@@ -1,64 +1,37 @@
 import React from "react";
 import { Box, Typography, Paper, useTheme } from "@mui/material";
 import { BarChart } from "@mui/x-charts/BarChart";
-import { Reservation } from "../../../../types/ReservationDetails";
+
+// Interface for the facility count data from the backend
+interface FacilityCount {
+  facilityId: number;
+  facilityName: string;
+  reservationCount: number;
+}
 
 interface FacilityUsageChartProps {
-  reservations: Reservation[];
+  facilityCounts: FacilityCount[];
 }
 
 const FacilityUsageChart: React.FC<FacilityUsageChartProps> = ({
-  reservations,
+  facilityCounts,
 }) => {
   const theme = useTheme();
 
-  // Aggregate data by facility type
-  // Note: This is a simplified version. You may need to adjust based on your actual data structure
-  const facilityUsage = reservations.reduce<Record<string, number>>(
-    (acc, reservation) => {
-      // This is a placeholder. Replace with actual logic based on your data structure
-      const facilityTypes: string[] = [];
+  // Process and sort facility data
+  const { facilityNames, reservationCounts } = facilityCounts
+    .sort((a, b) => b.reservationCount - a.reservationCount)
+    .reduce(
+      (acc, item) => {
+        acc.facilityNames.push(item.facilityName);
+        acc.reservationCounts.push(Math.max(0, item.reservationCount)); // Ensure non-negative counts
+        return acc;
+      },
+      { facilityNames: [] as string[], reservationCounts: [] as number[] }
+    );
 
-      // Check for rooms
-      if (reservation.reservedRooms && reservation.reservedRooms.length > 0) {
-        facilityTypes.push("Room");
-      }
-
-      // Check for packages (which might contain different facility types)
-      if (
-        reservation.reservedPackages &&
-        reservation.reservedPackages.length > 0
-      ) {
-        reservation.reservedPackages.forEach((pkg) => {
-          if (pkg.packageName.toLowerCase().includes("hall")) {
-            facilityTypes.push("Hall");
-          } else if (pkg.packageName.toLowerCase().includes("outdoor")) {
-            facilityTypes.push("Outdoor");
-          } else {
-            facilityTypes.push("Other");
-          }
-        });
-      }
-
-      // If no specific types were identified, count as "Other"
-      if (facilityTypes.length === 0) {
-        facilityTypes.push("Other");
-      }
-
-      // Count each facility type
-      facilityTypes.forEach((type) => {
-        acc[type] = (acc[type] || 0) + 1;
-      });
-
-      return acc;
-    },
-    {}
-  );
-
-  const facilityTypes = Object.keys(facilityUsage);
-  const usageCounts = facilityTypes.map((type) => facilityUsage[type]);
-
-  if (facilityTypes.length === 0) {
+  // Handle empty data case
+  if (facilityCounts.length === 0) {
     return (
       <Paper elevation={1} sx={{ p: 2, height: "100%" }}>
         <Typography variant="h6" gutterBottom>
@@ -83,19 +56,34 @@ const FacilityUsageChart: React.FC<FacilityUsageChartProps> = ({
   return (
     <Paper elevation={1} sx={{ p: 2, height: "100%" }}>
       <Typography variant="h6" gutterBottom>
-        Facility Usage Distribution
+        Facility Usage
       </Typography>
       <Box sx={{ height: 300, width: "100%" }}>
         <BarChart
-          xAxis={[{ scaleType: "band", data: facilityTypes }]}
+          // Use horizontal layout instead
+          layout="horizontal"
+          // For horizontal layout, xAxis takes the linear scale
+          xAxis={[
+            {
+              scaleType: "linear",
+              label: "Reservations",
+            },
+          ]}
+          // And yAxis takes the band scale with data
+          yAxis={[
+            {
+              scaleType: "band",
+              data: facilityNames,
+            },
+          ]}
           series={[
             {
-              data: usageCounts,
+              data: reservationCounts,
               color: theme.palette.primary.main,
-              label: "Number of Bookings",
             },
           ]}
           height={300}
+          margin={{ left: 150, right: 20, top: 10, bottom: 30 }}
         />
       </Box>
     </Paper>

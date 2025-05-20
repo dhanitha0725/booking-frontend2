@@ -70,42 +70,6 @@ const InvoiceManagement: React.FC = () => {
     });
   };
 
-  // Generate mock invoices for testing or fallback
-  const generateMockInvoices = (): Invoice[] => {
-    return [
-      {
-        invoiceID: 1,
-        amountPaid: 2000,
-        amountDue: 0,
-        issuedDate: "2025-05-20T16:41:35.037369Z",
-        reservationID: 118,
-        paymentID: "0196ee81-8b56-7357-a251-85264d54cd64",
-        paymentMethod: "Cash",
-        paymentStatus: "Completed",
-      },
-      {
-        invoiceID: 2,
-        amountPaid: 4000,
-        amountDue: 0,
-        issuedDate: "2025-05-20T16:41:45.364802Z",
-        reservationID: 117,
-        paymentID: "0196ee81-0b94-78df-ab0d-c70d24edffc2",
-        paymentMethod: "Bank",
-        paymentStatus: "Completed",
-      },
-      {
-        invoiceID: 3,
-        amountPaid: 0,
-        amountDue: 2000,
-        issuedDate: "2025-05-20T16:53:17.506383Z",
-        reservationID: 120,
-        paymentID: "0196ee9c-df4f-7325-97cf-327adc5d4eb3",
-        paymentMethod: "Online",
-        paymentStatus: "Pending",
-      },
-    ];
-  };
-
   // Fetch invoices from the API
   const fetchInvoices = async () => {
     setLoading(true);
@@ -117,9 +81,8 @@ const InvoiceManagement: React.FC = () => {
       console.error("Error fetching invoices:", error);
       showSnackbar("Failed to load invoices", "error");
 
-      // Fallback to mock data if API call fails
-      const mockInvoices = generateMockInvoices();
-      setInvoices(mockInvoices);
+      // Set empty array instead of mock data
+      setInvoices([]);
     } finally {
       setLoading(false);
     }
