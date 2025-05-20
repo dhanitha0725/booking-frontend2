@@ -9,6 +9,7 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Box,
 } from "@mui/material";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -20,7 +21,7 @@ import employeeReservationService from "../../../services/employeeReservationSer
 
 // Import step components
 import FacilitySelectionStep from "./steps/FacilitySelectionStep";
-import DateSelectionStep from "./steps/DateSelectionStep";
+import BookingDateTimePicker from "../../client/booking/components/BookingDateTimePicker"; // Use this instead of DateSelectionStep
 import ItemSelectionStep from "./steps/ItemSelectionStep";
 import UserInfoStep from "./steps/UserInfoStep";
 import ReviewStep from "./steps/ReviewStep";
@@ -33,6 +34,7 @@ import {
   PaymentInfo,
 } from "../../../types/employeeReservation";
 import { PackagesDto } from "../../../types/selectedFacility";
+import { AvailabilityResponseDto } from "../../client/booking/components/BookingDateTimePicker"; // Import the type
 
 // Dialog props
 interface AddReservationDialogProps {
@@ -73,7 +75,12 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Add state for payment info
+  // Add state for availability check
+  const [, setAvailabilityStatus] = useState<AvailabilityResponseDto>({
+    isAvailable: false,
+    message: "",
+  });
+  // State for payment info
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
     paymentReceived: false,
     paymentMethod: "Cash",
@@ -121,15 +128,21 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
           />
         );
       case 1:
+        // Use BookingDateTimePicker instead of DateSelectionStep
         return (
-          <DateSelectionStep
-            dateRange={dateRange}
-            onDateChange={handleDateChange}
-            customerType={customerType}
-            onCustomerTypeChange={handleCustomerTypeChange}
-            requiresDates={requiresDates}
-            error={error}
-          />
+          <Box sx={{ mt: 2 }}>
+            <BookingDateTimePicker
+              dateRange={dateRange}
+              onDateChange={handleDateChange}
+              customerType={customerType}
+              onCustomerTypeChange={handleCustomerTypeChange}
+              required={requiresDates}
+              facilityId={selectedFacilityId || undefined}
+              selectedItems={selectedItems}
+              onAvailabilityChange={handleAvailabilityChange}
+              packages={facilityData?.packages || []}
+            />
+          </Box>
         );
       case 2:
         return (
@@ -300,30 +313,57 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
     }, [selectedFacilityId]);
   }
 
+  // Handle availability status change
+  function handleAvailabilityChange(status: AvailabilityResponseDto) {
+    setAvailabilityStatus(status);
+    if (!status.isAvailable && status.message) {
+      setError(status.message);
+    } else {
+      setError(null);
+    }
+  }
+
   // Handle next step with validation
   function handleNext() {
     if (activeStep === 0 && !selectedFacilityId) {
       setError("Please select a facility to continue.");
       return;
     }
+
     if (activeStep === 1) {
       if (requiresDates && (!dateRange.startDate || !dateRange.endDate)) {
         setError("Please select both start and end dates to continue.");
         return;
       }
-      if (
-        dateRange.startDate &&
-        dateRange.endDate &&
-        !dateRange.endDate.isAfter(dateRange.startDate)
-      ) {
-        setError("End date must be after the start date.");
-        return;
+
+      // Use more sophisticated validation from BookingDateTimePicker
+      const hasRoomsSelected = selectedItems.some(
+        (item) => item.type === "room"
+      );
+
+      if (dateRange.startDate && dateRange.endDate) {
+        // Different validation for rooms vs packages
+        if (
+          hasRoomsSelected &&
+          !dateRange.endDate.isAfter(dateRange.startDate, "day")
+        ) {
+          setError(
+            "For room bookings, check-out date must be at least one day after check-in date."
+          );
+          return;
+        } else if (dateRange.endDate.isBefore(dateRange.startDate)) {
+          // For packages, end date still cannot be before start date
+          setError("End date cannot be before start date.");
+          return;
+        }
       }
     }
+
     if (activeStep === 2 && selectedItems.length === 0) {
       setError("Please select at least one item to continue.");
       return;
     }
+
     setActiveStep((prev) => prev + 1);
     setError(null);
   }

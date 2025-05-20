@@ -111,10 +111,14 @@ const mapResponseToFacility = (response: ApiResponse): SelectedFacility => {
         packageId: pkg.packageId,
         packageName: pkg.packageName,
         duration: pkg.duration
-          ? convertTimeSpanToString(pkg.duration)
+          ? typeof pkg.duration === "string"
+            ? convertTimeSpanToString(pkg.duration)
+            : `${Math.floor(Number(pkg.duration) / 24)} day${Math.floor(Number(pkg.duration) / 24) !== 1 ? "s" : ""}`
           : undefined,
         requiresDates: pkg.duration
-          ? convertHoursToNumbers(pkg.duration) >= 24
+          ? typeof pkg.duration === "string"
+            ? convertHoursToNumbers(pkg.duration) >= 24
+            : Number(pkg.duration) >= 24
           : false,
         pricing:
           pkg.pricing?.map((price: pricingDto) => ({

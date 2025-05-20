@@ -7,7 +7,6 @@ import {
   Select,
   MenuItem,
   Alert,
-  Typography,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -81,9 +80,10 @@ const BookingDateTimePicker = ({
     return selectedItems.some((item) => item.type === "room");
   }, [selectedItems]);
 
+  // Only apply strict date validation for rooms, not for packages
   const requireStrictDateValidation = useMemo(() => {
-    return hasRoomSelected || hasDailyPackageSelected;
-  }, [hasRoomSelected, hasDailyPackageSelected]);
+    return hasRoomSelected;
+  }, [hasRoomSelected]);
 
   const minAllowedDate = useMemo(() => {
     const today = dayjs().startOf("day");
@@ -217,10 +217,13 @@ const BookingDateTimePicker = ({
     }
 
     if (dateRange.endDate) {
-      if (requireStrictDateValidation && date.isAfter(dateRange.endDate)) {
+      // Only apply this validation for rooms, not packages
+      if (hasRoomSelected && date.isAfter(dateRange.endDate)) {
         setError("Start date cannot be after end date.");
         return;
       }
+
+      // For rooms, ensure end date is at least one day after start date
       if (hasRoomSelected && date.isSame(dateRange.endDate, "day")) {
         const normalizedDate = date.hour(8).minute(0).second(0);
         onDateChange({
@@ -250,6 +253,7 @@ const BookingDateTimePicker = ({
     }
 
     if (dateRange.startDate) {
+      // Apply room-specific validation only for room bookings
       if (hasRoomSelected && date.isSame(dateRange.startDate, "day")) {
         setError(
           "For room bookings, check-out date must be at least one day after check-in date."
@@ -305,16 +309,20 @@ const BookingDateTimePicker = ({
     if (!dateRange.endDate) {
       return "Please select an end date";
     }
+
+    // For room bookings, require at least one day between dates
     if (
-      requireStrictDateValidation &&
+      hasRoomSelected &&
       !dateRange.endDate.isAfter(dateRange.startDate, "day")
     ) {
-      if (hasRoomSelected) {
-        return "For room bookings, check-out date must be at least one day after check-in date.";
-      } else {
-        return "For daily packages, end date must be after start date.";
-      }
+      return "For room bookings, check-out date must be at least one day after check-in date.";
     }
+
+    // For daily packages, allow same-day reservations
+    if (!hasRoomSelected && dateRange.endDate.isBefore(dateRange.startDate)) {
+      return "End date cannot be before start date.";
+    }
+
     return null;
   };
 
@@ -329,7 +337,7 @@ const BookingDateTimePicker = ({
       return "For room bookings, check-in and check-out time is set to 8:00 AM. Room bookings require at least one night stay.";
     }
     if (hasDailyPackageSelected) {
-      return "For daily packages, you need to select different dates for multi-day bookings.";
+      return "For daily packages, you can select the same day for start and end dates.";
     }
     if (selectedItems.some((item) => item.type === "package")) {
       return "For hourly packages, you can select the same day for start and end dates.";
@@ -337,24 +345,7 @@ const BookingDateTimePicker = ({
     return null;
   };
 
-  const calculateDuration = () => {
-    if (!dateRange.startDate || !dateRange.endDate) return null;
-    if (hasRoomSelected) {
-      const nights = dateRange.endDate.diff(dateRange.startDate, "day");
-      return `${nights} night${nights !== 1 ? "s" : ""}`;
-    }
-    if (
-      hasDailyPackageSelected &&
-      dateRange.startDate.isSame(dateRange.endDate, "day")
-    ) {
-      return "1 day";
-    }
-    const days = dateRange.endDate.diff(dateRange.startDate, "day");
-    return `${days + 1} day${days > 0 ? "s" : ""}`;
-  };
-
   const descriptionMessage = getDescriptionMessage();
-  const durationText = calculateDuration();
   const validationError = validateDateSelection();
 
   return (
@@ -438,17 +429,6 @@ const BookingDateTimePicker = ({
               </Select>
             </FormControl>
           </Grid>
-          {dateRange.startDate && dateRange.endDate && (
-            <Grid item xs={12}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Selected period: {dateRange.startDate.format("MMM DD, YYYY")}
-                {hasRoomSelected ? ` at 8:00 AM` : ""} -{" "}
-                {dateRange.endDate.format("MMM DD, YYYY")}
-                {hasRoomSelected ? ` at 8:00 AM` : ""}
-                {durationText && ` (${durationText})`}
-              </Typography>
-            </Grid>
-          )}
         </Grid>
       </Box>
     </LocalizationProvider>
