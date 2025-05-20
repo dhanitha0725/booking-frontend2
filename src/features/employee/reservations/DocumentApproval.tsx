@@ -141,7 +141,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
 
         payload.orderId = orderId;
         payload.amount = total;
-        payload.currency = "LKR";
+        payload.currency = "Rs.";
         payload.firstName = userDetails.firstName || "N/A";
         payload.lastName = userDetails.lastName || "N/A";
         payload.email = userDetails.email;
@@ -253,7 +253,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
             value={amountPaid}
             onChange={(e) => setAmountPaid(e.target.value)}
             InputProps={{
-              startAdornment: <Typography variant="body1">LKR </Typography>,
+              startAdornment: <Typography variant="body1">Rs. </Typography>,
             }}
             inputProps={{
               step: "0.01",

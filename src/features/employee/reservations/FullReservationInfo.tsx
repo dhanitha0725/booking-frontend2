@@ -101,7 +101,7 @@ const ReservationDetailsSection: React.FC<{
           />
           <DetailField
             label="Total Amount"
-            value={`LKR ${reservation.total.toFixed(2)}`}
+            value={`Rs. ${reservation.total.toFixed(2)}`}
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -132,7 +132,7 @@ const BookedItemsSection: React.FC<{
   reservedRooms: FullReservationDetails["reservedRooms"];
   total: number;
 }> = ({ reservedPackages, reservedRooms, total }) => {
-  const formatCurrency = (amount: number) => `LKR ${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => `Rs. ${amount.toFixed(2)}`;
   const bookedItems: BookedItem[] = [
     ...(reservedPackages || []).map((pkg, index) => ({
       id: index + 1,
@@ -280,7 +280,7 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
 
   // Updated to handle null values
   const formatCurrency = (amount: number | null) =>
-    amount !== null ? `LKR ${amount.toFixed(2)}` : "Not Paid";
+    amount !== null ? `Rs. ${amount.toFixed(2)}` : "Not Paid";
 
   return (
     <Paper elevation={0} sx={{ p: 2, bgcolor: "#f5f5f5" }}>

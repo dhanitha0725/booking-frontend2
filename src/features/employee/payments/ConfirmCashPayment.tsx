@@ -40,12 +40,10 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
   const [amountPaid, setAmountPaid] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleConfirm = async () => {
     setLoading(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       // Validate amount using ZOD
@@ -89,7 +87,6 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
       );
 
       if (response.data.isSuccess) {
-        setSuccessMessage("Cash payment confirmed successfully");
         setAmountPaid("");
         if (onSuccess) onSuccess();
       } else {
@@ -135,12 +132,12 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
 
       {expectedAmount && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Expected Amount: LKR {expectedAmount.toFixed(2)}
+          Expected Amount: Rs. {expectedAmount.toFixed(2)}
         </Alert>
       )}
 
       <TextField
-        label="Amount Received (LKR)"
+        label="Amount Received (Rs.)"
         type="number"
         value={amountPaid}
         onChange={(e) => setAmountPaid(e.target.value)}
@@ -154,12 +151,6 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
-        </Alert>
-      )}
-
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {successMessage}
         </Alert>
       )}
 

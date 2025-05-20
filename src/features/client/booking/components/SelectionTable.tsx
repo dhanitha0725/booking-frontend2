@@ -52,12 +52,6 @@ const SelectionTable = ({
     (item) => item.type === "package" && item.quantity > 0
   );
 
-  // Check which package is selected (if any)
-  const selectedPackageId = hasSelectedPackage
-    ? selectedItems.find((item) => item.type === "package" && item.quantity > 0)
-        ?.itemId
-    : null;
-
   // Check if any room is selected
   const hasSelectedRoom = selectedItems.some(
     (item) => item.type === "room" && item.quantity > 0
@@ -66,7 +60,10 @@ const SelectionTable = ({
   // Check if a package is selected
   const isPackageSelected = (packageId: number) => {
     return selectedItems.some(
-      (item) => item.type === "package" && item.itemId === packageId
+      (item) =>
+        item.type === "package" &&
+        item.itemId === packageId &&
+        item.quantity > 0
     );
   };
 
@@ -162,11 +159,8 @@ const SelectionTable = ({
                   );
                   const isUnavailable = isPkgSelected && !isAvailable;
 
-                  // Determine if this package should be disabled
-                  // Disable if another package is selected (selectedPackageId exists and doesn't match this package)
-                  const isDisabled =
-                    hasSelectedRoom ||
-                    (hasSelectedPackage && selectedPackageId !== pkg.packageId);
+                  // Only disable packages if rooms are selected
+                  const isDisabled = hasSelectedRoom;
 
                   return (
                     <TableRow
@@ -200,17 +194,6 @@ const SelectionTable = ({
                             {itemMessage}
                           </Typography>
                         )}
-                        {hasSelectedPackage &&
-                          selectedPackageId !== pkg.packageId &&
-                          !isPkgSelected && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              display="block"
-                            >
-                              Unselect the current package to select this one
-                            </Typography>
-                          )}
                       </TableCell>
                       <TableCell>{pkg.duration}</TableCell>
                       {["public", "corporate", "private"].map((sector) => (
@@ -231,15 +214,9 @@ const SelectionTable = ({
               Please deselect all rooms to select packages
             </Alert>
           )}
-          {hasSelectedPackage && (
-            <Alert severity="info" sx={{ mt: 1 }}>
-              Only one package can be selected at a time
-            </Alert>
-          )}
         </>
       )}
 
-      {/* Rest of the component remains the same */}
       {hasPackages && hasRooms && <Divider sx={{ my: 3 }} />}
 
       {hasRooms && (

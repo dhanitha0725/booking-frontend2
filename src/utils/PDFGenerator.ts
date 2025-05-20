@@ -157,23 +157,17 @@ class PDFGenerator {
       doc.setFontSize(10);
       doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 38);
 
-      // Prepare table data
+      // Prepare table data 
       const tableColumn = [
         "Facility Name",
         "Total Reservations",
-        "Completed Reservations",
-        "Completion Rate"
+        "Completed Reservations"
       ];
       const tableRows = data.map((item) => {
-        const completionRate = item.totalReservations > 0 
-          ? ((item.totalCompletedReservations / item.totalReservations) * 100).toFixed(1) + '%'
-          : '0.0%';
-          
         return [
           item.facilityName,
           item.totalReservations.toString(),
-          item.totalCompletedReservations.toString(),
-          completionRate
+          item.totalCompletedReservations.toString()
         ];
       });
 
@@ -184,16 +178,12 @@ class PDFGenerator {
       const totalCompletedReservations = data.reduce(
         (sum, item) => sum + item.totalCompletedReservations, 0
       );
-      const overallCompletionRate = totalReservations > 0
-        ? ((totalCompletedReservations / totalReservations) * 100).toFixed(1) + '%'
-        : '0.0%';
 
-      // Add summary row
+      // Add summary row 
       tableRows.push([
         "TOTAL",
         totalReservations.toString(),
-        totalCompletedReservations.toString(),
-        overallCompletionRate
+        totalCompletedReservations.toString()
       ]);
 
       // Generate the table
@@ -219,7 +209,7 @@ class PDFGenerator {
       doc.text(`Total Facilities: ${data.length}`, 14, finalY + 25);
       doc.text(`Total Reservations: ${totalReservations}`, 14, finalY + 32);
       doc.text(`Completed Reservations: ${totalCompletedReservations}`, 14, finalY + 39);
-      doc.text(`Overall Completion Rate: ${overallCompletionRate}`, 14, finalY + 46);
+      // Removed completion rate line from summary
 
       // Add footer
       const pageCount = (doc as any).internal.getNumberOfPages();
