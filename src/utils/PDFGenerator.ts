@@ -54,7 +54,7 @@ class PDFGenerator {
       const tableColumn = [
         "Facility Name",
         "Total Reservations",
-        "Total Revenue (LKR)",
+        "Total Revenue (Rs.)",
       ];
       const tableRows = data.map((item) => [
         item.facilityName,
@@ -102,7 +102,7 @@ class PDFGenerator {
       doc.text(`Total Facilities: ${data.length}`, 14, finalY + 25);
       doc.text(`Total Reservations: ${totalReservations}`, 14, finalY + 32);
       doc.text(
-        `Total Revenue: LKR ${totalRevenue.toLocaleString()}`,
+        `Total Revenue: Rs. ${totalRevenue.toLocaleString()}`,
         14,
         finalY + 39
       );

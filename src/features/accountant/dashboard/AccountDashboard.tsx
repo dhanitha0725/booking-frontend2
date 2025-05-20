@@ -31,6 +31,12 @@ interface ReservationStats {
   totalRevenue: number;
 }
 
+// Define interface for the daily count data from the backend
+interface DailyCount {
+  date: string;
+  count: number;
+}
+
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -64,6 +70,9 @@ const AccountDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [reservations, setReservations] = useState<any[]>([]);
+  const [dailyReservationCounts, setDailyReservationCounts] = useState<
+    DailyCount[]
+  >([]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -81,7 +90,19 @@ const AccountDashboard: React.FC = () => {
         );
         setStats(statsResponse.data);
 
-        // Continue to fetch reservations for charts
+        // Fetch daily reservation counts for the trend chart
+        try {
+          const trendsResponse = await api.get(
+            "/Reservation/daily-reservation-counts"
+          );
+          setDailyReservationCounts(trendsResponse.data.dailyCounts);
+        } catch (error) {
+          console.log("Error fetching daily reservation counts:", error);
+          // Generate mock data for daily counts
+          setDailyReservationCounts(generateMockDailyCounts(30));
+        }
+
+        // Continue to fetch reservations for other charts
         try {
           const reservationsResponse = await api.get("/report/reservations");
           setReservations(reservationsResponse.data);
@@ -102,6 +123,9 @@ const AccountDashboard: React.FC = () => {
           totalCancelledOrExpiredReservations: 8,
           totalRevenue: 123000,
         });
+
+        // Set mock data for daily counts
+        setDailyReservationCounts(generateMockDailyCounts(30));
       } finally {
         setLoading(false);
       }
@@ -110,10 +134,26 @@ const AccountDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  // Generate mock reservation data for charts testing
+  // Generate mock daily reservation counts
+  const generateMockDailyCounts = (days: number): DailyCount[] => {
+    const result: DailyCount[] = [];
+    const today = new Date();
+
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(today.getDate() - i);
+
+      result.push({
+        date: date.toISOString().split("T")[0] + "T00:00:00Z",
+        count: Math.floor(Math.random() * 20), // Random count between 0 and 19
+      });
+    }
+
+    return result;
+  };
+
+  // Generate mock reservation data for other charts
   const generateMockReservations = () => {
-    // Your existing mock data generation logic
-    // ... (keep your existing function)
     const statuses = ["Approved", "Confirmed", "Cancelled", "Expired"];
     const userTypes = ["private", "public", "corporate"];
     const mockData = [];
@@ -248,8 +288,11 @@ const AccountDashboard: React.FC = () => {
 
             <Box sx={{ p: 3 }}>
               <TabPanel value={tabValue} index={0}>
-                {/* Reservation Trend Chart */}
-                <ReservationTrendChart reservations={reservations} days={30} />
+                {/* Correctly using ReservationTrendChart with dailyCounts */}
+                <ReservationTrendChart
+                  dailyCounts={dailyReservationCounts}
+                  days={30}
+                />
               </TabPanel>
 
               <TabPanel value={tabValue} index={1}>

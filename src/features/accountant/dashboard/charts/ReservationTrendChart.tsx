@@ -1,51 +1,34 @@
 import React from "react";
 import { Box, Typography, Paper, useTheme } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
-import { Reservation } from "../../../../types/ReservationDetails";
-import { format, subDays, parseISO, isValid } from "date-fns";
+import { format, parseISO } from "date-fns";
+
+// Interface for the daily count data from the backend
+interface DailyCount {
+  date: string;
+  count: number;
+}
 
 interface ReservationTrendChartProps {
-  reservations: Reservation[];
+  dailyCounts: DailyCount[];
   days?: number;
 }
 
 const ReservationTrendChart: React.FC<ReservationTrendChartProps> = ({
-  reservations,
+  dailyCounts,
   days = 14,
 }) => {
   const theme = useTheme();
 
-  // Generate last N days
-  const today = new Date();
-  const dateLabels: string[] = [];
-  const dateMap: Record<string, number> = {};
+  // Filter to only show the last N days if more are provided
+  const filteredCounts =
+    days && dailyCounts.length > days ? dailyCounts.slice(-days) : dailyCounts;
 
-  // Initialize with zero values for all dates
-  for (let i = days - 1; i >= 0; i--) {
-    const date = subDays(today, i);
-    const dateStr = format(date, "MMM dd");
-    dateLabels.push(dateStr);
-    dateMap[dateStr] = 0;
-  }
-
-  // Count reservations by creation date
-  reservations.forEach((reservation) => {
-    if (reservation.createdAt) {
-      const createdDate = parseISO(reservation.createdAt);
-      if (isValid(createdDate)) {
-        const daysAgo = Math.floor(
-          (today.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
-        );
-        if (daysAgo >= 0 && daysAgo < days) {
-          const dateStr = format(createdDate, "MMM dd");
-          dateMap[dateStr] = (dateMap[dateStr] || 0) + 1;
-        }
-      }
-    }
-  });
-
-  // Convert to array for the chart
-  const countData = dateLabels.map((date) => dateMap[date] || 0);
+  // Format dates for display and extract count data
+  const dateLabels = filteredCounts.map((item) =>
+    format(parseISO(item.date), "MMM dd")
+  );
+  const countData = filteredCounts.map((item) => item.count);
 
   return (
     <Paper elevation={1} sx={{ p: 2, height: "100%" }}>

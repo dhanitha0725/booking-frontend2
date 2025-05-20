@@ -255,9 +255,6 @@ const UserInfoPage = () => {
           {(tempReservation.customerType === "public" ||
             tempReservation.customerType === "corporate") && (
             <>
-              <Typography variant="h6" gutterBottom>
-                Supporting Documents
-              </Typography>
               <DocumentUpload
                 documents={documents}
                 onDocumentsChange={setDocuments}
