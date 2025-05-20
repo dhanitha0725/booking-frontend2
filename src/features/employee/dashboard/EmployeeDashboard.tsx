@@ -20,13 +20,22 @@ import { Reservation } from "../../../types/ReservationDetails";
 import ReservationTable from "../reservations/ReservationTable";
 import StatCard from "../../../components/StatCard";
 
+// Define the statistics response type
+interface ReservationStats {
+  totalPendingReservations: number;
+  totalCompletedReservations: number;
+  totalCancelledOrExpiredReservations: number;
+  totalRevenue: number;
+}
+
 const EmployeeDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
+  const [statsLoading, setStatsLoading] = useState<boolean>(true);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [statistics, setStatistics] = useState({
-    pending: 0,
-    confirmed: 0,
-    cancelled: 0,
+  const [statistics, setStatistics] = useState<ReservationStats>({
+    totalPendingReservations: 0,
+    totalCompletedReservations: 0,
+    totalCancelledOrExpiredReservations: 0,
     totalRevenue: 0,
   });
   const [snackbar, setSnackbar] = useState<{
@@ -39,34 +48,14 @@ const EmployeeDashboard: React.FC = () => {
     severity: "info",
   });
 
+  // Fetch reservations for the table display
   useEffect(() => {
     const fetchReservations = async () => {
       try {
         setLoading(true);
         const response = await api.get("/Reservation/reservation-data");
         const data: Reservation[] = response.data;
-
         setReservations(data);
-
-        const pendingCount = data.filter(
-          (r) => r.status === "PendingApproval" || r.status === "PendingPayment"
-        ).length;
-        const confirmedCount = data.filter(
-          (r) => r.status === "Approved" || r.status === "Confirmed"
-        ).length;
-        const cancelledCount = data.filter(
-          (r) => r.status === "Cancelled" || r.status === "Expired"
-        ).length;
-        const totalRevenue = data
-          .filter((r) => r.status !== "Cancelled" && r.status !== "Expired")
-          .reduce((sum, reservation) => sum + reservation.total, 0);
-
-        setStatistics({
-          pending: pendingCount,
-          confirmed: confirmedCount,
-          cancelled: cancelledCount,
-          totalRevenue,
-        });
       } catch (error) {
         console.error("Error fetching reservation data:", error);
         const errorMessage = axios.isAxiosError(error)
@@ -85,6 +74,33 @@ const EmployeeDashboard: React.FC = () => {
     fetchReservations();
   }, []);
 
+  // Fetch statistics from the dedicated API endpoint
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        setStatsLoading(true);
+        const response = await api.get<ReservationStats>(
+          "/Reservation/reservation-stats"
+        );
+        setStatistics(response.data);
+      } catch (error) {
+        console.error("Error fetching statistics:", error);
+        const errorMessage = axios.isAxiosError(error)
+          ? error.response?.data?.error || "Failed to load statistics"
+          : "Failed to load statistics";
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: "error",
+        });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchStatistics();
+  }, []);
+
   const handleSnackbarClose = () => {
     setSnackbar({ ...snackbar, open: false });
   };
@@ -98,7 +114,7 @@ const EmployeeDashboard: React.FC = () => {
         Employee Dashboard
       </Typography>
 
-      {loading ? (
+      {loading && statsLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
           <CircularProgress />
         </Box>
@@ -108,7 +124,7 @@ const EmployeeDashboard: React.FC = () => {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Pending"
-                value={statistics.pending}
+                value={statistics.totalPendingReservations}
                 description="Reservations awaiting action"
                 icon={<PendingActions />}
                 iconColor="warning.main"
@@ -118,9 +134,9 @@ const EmployeeDashboard: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
-                title="Confirmed"
-                value={statistics.confirmed}
-                description="Active confirmed reservations"
+                title="Completed"
+                value={statistics.totalCompletedReservations}
+                description="Successfully completed reservations"
                 icon={<CheckCircle />}
                 iconColor="success.main"
                 backgroundColor="#fafafa"
@@ -130,7 +146,7 @@ const EmployeeDashboard: React.FC = () => {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Cancelled"
-                value={statistics.cancelled}
+                value={statistics.totalCancelledOrExpiredReservations}
                 description="Cancelled or expired"
                 icon={<Cancel />}
                 iconColor="error.main"
@@ -158,7 +174,11 @@ const EmployeeDashboard: React.FC = () => {
           </Typography>
 
           <Box sx={{ mt: 2 }}>
-            {reservations.length > 0 ? (
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+                <CircularProgress size={30} />
+              </Box>
+            ) : reservations.length > 0 ? (
               <ReservationTable
                 reservations={recentReservations}
                 showActions={false}

@@ -31,7 +31,7 @@ import {
   validateReservationForm,
   areBookingItemsEqual,
 } from "../../../validations/updateReservationValidation";
-import ReservationSummary from "./components/ReservationSummary";
+import ReservationSummary from "./ReservationSummary";
 
 // Define price interface to avoid using any
 interface PriceMapping {

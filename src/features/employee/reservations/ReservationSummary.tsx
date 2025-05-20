@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Chip, Divider, Grid, Paper, Typography } from "@mui/material";
 import dayjs from "dayjs";
-import { Reservation } from "../../../../types/updateReservation";
+import { Reservation } from "../../../types/updateReservation";
 
 // Define props interface for the component
 interface ReservationSummaryProps {
