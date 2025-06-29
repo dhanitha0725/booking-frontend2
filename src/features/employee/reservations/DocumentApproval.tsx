@@ -14,6 +14,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { approveDocument } from "../../../services/documentService";
 
+// Define the props for the DocumentApproval component
 interface DocumentApprovalProps {
   documentId: number;
   documentType: string;
@@ -38,6 +39,7 @@ interface DocumentApprovalProps {
   reservationStatus?: string;
 }
 
+// Define the payload structure for document approval
 interface ApprovalPayload {
   documentId: number;
   documentType: string;
@@ -72,6 +74,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
   paymentStatus = "",
   reservationStatus = "",
 }) => {
+  // State variables for managing approval process
   const [loading, setLoading] = useState(false);
   const [openAmountDialog, setOpenAmountDialog] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>("");
@@ -108,6 +111,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
     await processApproval(isApproved);
   };
 
+  // Process the document approval or rejection
   const processApproval = async (isApproved: boolean, amount?: number) => {
     setLoading(true);
 
@@ -126,16 +130,15 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
         amount !== undefined
       ) {
         // For bank receipts, only include documentId, documentType, isApproved, and amountPaid
-        // Don't include any other fields that might confuse the API
         payload.amountPaid = amount;
 
-        // Additional debugging to see what's being sent
+        // Additional debugging
         console.log(
           "Bank receipt approval payload:",
           JSON.stringify(payload, null, 2)
         );
       }
-      // Add payment details for ApprovalDocument approvals using the flattened structure
+      // Add payment details for ApprovalDocument approvals
       else if (documentType === "ApprovalDocument" && isApproved) {
         const orderId = `RES-${reservationId}-${Date.now()}`;
 
@@ -162,8 +165,10 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
         payload.reservationId = reservationId;
       }
 
+
       const response = await approveDocument(payload);
 
+      // check if the response is successful
       if (response.isSuccess) {
         setIsProcessed(true);
         if (onSuccess) {
@@ -192,6 +197,7 @@ const DocumentApproval: React.FC<DocumentApprovalProps> = ({
     }
   };
 
+  // Handle amount confirmation for bank receipts
   const handleAmountConfirm = () => {
     const amount =
       typeof amountPaid === "string" ? parseFloat(amountPaid) : amountPaid;

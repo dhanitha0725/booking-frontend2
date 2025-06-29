@@ -44,6 +44,7 @@ const ConfirmationPage = () => {
     return null;
   }
 
+  // Render the confirmation page with reservation details
   const renderPaymentMethodMessage = () => {
     switch (confirmationState.paymentMethod) {
       case "Bank":

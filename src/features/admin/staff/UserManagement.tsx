@@ -19,6 +19,7 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // Get the token from localStorage
         const response = await axios.get(
           "http://localhost:5162/api/Auth/get-user-details"
         );
@@ -43,9 +44,12 @@ const UserManagement: React.FC = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  // Handle successful user addition
   const handleAddUserSuccess = async (formData: AddUserFormData) => {
     try {
+      // Get the token from localStorage
       const token = localStorage.getItem("authToken");
+      // send data to the backend API
       const response = await axios.post(
         "http://localhost:5162/api/Auth/add-user",
         formData,

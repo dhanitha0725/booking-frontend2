@@ -52,6 +52,7 @@ const steps = [
   "Review & Confirm",
 ];
 
+// AddReservationDialog component
 const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
   open,
   onClose,
@@ -190,6 +191,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
     }
   };
 
+  // Render the dialog
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Add New Reservation</DialogTitle>
@@ -235,7 +237,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
     </Dialog>
   );
 
-  // Logic functions
+  // handlers and effects
   function useEffectAndHandlers() {
     // Reset state when dialog closes
     useEffect(() => {
@@ -262,6 +264,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         setError(null);
 
         try {
+          // Fetch facility names from the service
           const facilitiesData =
             await employeeReservationService.getFacilityNames();
           setFacilities(facilitiesData);
@@ -285,12 +288,14 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         setError(null);
 
         try {
+          // Fetch facility details based on selected facility ID
           const facilityDetails =
             await employeeReservationService.getFacilityDetails(
               selectedFacilityId
             );
           setFacilityData(facilityDetails);
 
+          // check rooms and packages for date requirements
           const hasRooms =
             facilityDetails.rooms && facilityDetails.rooms.length > 0;
           const hasDateDependentPackages =
@@ -336,7 +341,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         return;
       }
 
-      // Use more sophisticated validation from BookingDateTimePicker
+      // Validate date range
       const hasRoomsSelected = selectedItems.some(
         (item) => item.type === "room"
       );
@@ -358,6 +363,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         }
       }
     }
+
 
     if (activeStep === 2 && selectedItems.length === 0) {
       setError("Please select at least one item to continue.");
@@ -402,6 +408,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
     id: number,
     quantity: number
   ) {
+    // Update selected items based on type and id
     const newItems = [...selectedItems];
     const existingItemIndex = newItems.findIndex(
       (item) => item.type === type && item.itemId === id
@@ -438,6 +445,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         return;
       }
 
+      // Prepare reservation data
       const reservationData = {
         facilityId: selectedFacilityId,
         startDate: dateRange.startDate?.toISOString(),
@@ -454,6 +462,7 @@ const AddReservationDialog: React.FC<AddReservationDialogProps> = ({
         userDetails: userFormMethods.getValues(),
       };
 
+      // Create reservation using the service
       const response =
         await employeeReservationService.createEmployeeReservation(
           reservationData

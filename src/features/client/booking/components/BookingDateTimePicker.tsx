@@ -20,21 +20,26 @@ import {
 } from "../../../../types/selectedFacility";
 import api from "../../../../services/api";
 
+// Extend dayjs with plugins for date comparison
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 
+// Define the types for the booking items and packages
 export interface AvailabilityResponseDto {
   isAvailable: boolean;
   message: string;
 }
 
+// Define the customer types
 export type CustomerType = "corporate" | "public" | "private";
 
+// Define the date range type
 interface DateRangeType {
   startDate: dayjs.Dayjs | null;
   endDate: dayjs.Dayjs | null;
 }
 
+// Define the booking date time picker properties
 interface BookingDateTimePickerProps {
   dateRange: DateRangeType;
   onDateChange: (dateRange: DateRangeType) => void;
@@ -60,6 +65,7 @@ const BookingDateTimePicker = ({
 }: BookingDateTimePickerProps) => {
   const [error, setError] = useState<string | null>(null);
 
+  // Check if any daily package is selected
   const hasDailyPackageSelected = useMemo(() => {
     return selectedItems.some((item) => {
       if (item.type !== "package") return false;
@@ -76,6 +82,7 @@ const BookingDateTimePicker = ({
     });
   }, [selectedItems, packages]);
 
+  // Check if any room is selected
   const hasRoomSelected = useMemo(() => {
     return selectedItems.some((item) => item.type === "room");
   }, [selectedItems]);
@@ -85,6 +92,7 @@ const BookingDateTimePicker = ({
     return hasRoomSelected;
   }, [hasRoomSelected]);
 
+  // Calculate the minimum allowed date based on whether a room is selected
   const minAllowedDate = useMemo(() => {
     const today = dayjs().startOf("day");
     if (hasRoomSelected) {
@@ -97,6 +105,7 @@ const BookingDateTimePicker = ({
     return today;
   }, [hasRoomSelected]);
 
+  // Function to check availability of selected items
   const checkAvailability = useCallback(
     async (
       startDate: dayjs.Dayjs | null,
@@ -110,6 +119,7 @@ const BookingDateTimePicker = ({
       }
 
       try {
+        // check availability via API
         const response = await api.post("/Reservation/checkAvailability", {
           facilityId,
           startDate: startDate.toISOString(),
@@ -129,6 +139,7 @@ const BookingDateTimePicker = ({
     [onAvailabilityChange]
   );
 
+  // Debounced function to check availability after date changes
   const debouncedCheckAvailability = useCallback(
     (() => {
       let timeout: NodeJS.Timeout;
@@ -147,6 +158,7 @@ const BookingDateTimePicker = ({
     [checkAvailability]
   );
 
+  // Effect to check availability whenever the date range or selected items change
   useEffect(() => {
     debouncedCheckAvailability(
       dateRange.startDate,
@@ -163,6 +175,7 @@ const BookingDateTimePicker = ({
     debouncedCheckAvailability,
   ]);
 
+  // Effect to normalize start and end dates to 8:00 AM for rooms
   useEffect(() => {
     if (!hasRoomSelected) return;
 
@@ -210,6 +223,8 @@ const BookingDateTimePicker = ({
     }
   }, [hasRoomSelected, dateRange.startDate, dateRange.endDate, onDateChange]);
 
+  // Handlers for start and end date changes
+  // These handlers normalize the dates to 8:00 AM for rooms and handle validation
   const handleStartDateChange = (date: dayjs.Dayjs | null) => {
     if (!date) {
       onDateChange({ startDate: null, endDate: dateRange.endDate });
@@ -246,6 +261,8 @@ const BookingDateTimePicker = ({
     });
   };
 
+  // Handler for end date changes
+  // This handler ensures the end date is at least one day after the start date for rooms
   const handleEndDateChange = (date: dayjs.Dayjs | null) => {
     if (!date) {
       onDateChange({ startDate: dateRange.startDate, endDate: null });
@@ -283,6 +300,8 @@ const BookingDateTimePicker = ({
     });
   };
 
+  // Function to determine if a date should be disabled
+  // This function disables past dates and today's date after 8:00 AM for room bookings
   const shouldDisableDate = (date: dayjs.Dayjs) => {
     if (date.isBefore(dayjs(), "day")) {
       return true;
@@ -295,6 +314,8 @@ const BookingDateTimePicker = ({
     return false;
   };
 
+  // Function to get the minimum end date based on the start date
+  // For room bookings, it ensures the end date is at least one day after the start
   const getMinEndDate = () => {
     if (hasRoomSelected && dateRange.startDate) {
       return dateRange.startDate.add(1, "day");
@@ -302,6 +323,9 @@ const BookingDateTimePicker = ({
     return dateRange.startDate || minAllowedDate;
   };
 
+  // Function to validate the date selection
+  // This function checks if the start and end dates are selected and validates them based on the booking type
+  // For room bookings, it ensures the end date is at least one day after the start date
   const validateDateSelection = () => {
     if (!dateRange.startDate) {
       return "Please select a start date";
@@ -326,6 +350,7 @@ const BookingDateTimePicker = ({
     return null;
   };
 
+  // Function to get the description message based on the booking type
   const getDescriptionMessage = () => {
     if (hasRoomSelected) {
       const now = dayjs();

@@ -86,6 +86,7 @@ const ConfirmCashPayment: React.FC<ConfirmCashPaymentProps> = ({
         JSON.stringify(response.data, null, 2)
       );
 
+      // Check if the response indicates success
       if (response.data.isSuccess) {
         setAmountPaid("");
         if (onSuccess) onSuccess();

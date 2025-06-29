@@ -6,12 +6,14 @@ import { authService } from "../services/api"; // Import the authService for API
 import { decodeToken } from "../utils/token"; // Import the decodeToken function to decode JWT tokens
 import { useNavigate } from "react-router-dom";
 
+// Define the User interface to represent the authenticated user
 interface User {
   userId: string;
   email: string;
   role: string;
 }
 
+// Define the AuthContextType interface to represent the authentication context
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
@@ -20,10 +22,12 @@ interface AuthContextType {
   hasRole: (roles: string[]) => boolean;
 }
 
+// Create the AuthContext using React's createContext
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined
 );
 
+// Create the AuthProvider component to manage authentication state
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -34,9 +38,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Function to handle user login
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Call the authService to log in the user with email and password
       const response = await authService.login(email, password);
       const decoded = decodeToken(response.token);
 
+      // Check if the token is valid and contains the necessary claims
       const user = {
         userId: String(
           decoded[

@@ -36,6 +36,7 @@ const TotalSummary = ({
     }
 
     try {
+      // Prepare the payload for the API request
       const payload = {
         calculateTotalDto: {
           facilityId,
@@ -48,6 +49,7 @@ const TotalSummary = ({
 
       console.log("Calculating total with payload:", payload);
 
+      // Make the API request to calculate the total
       const response = await api.post("/Reservation/calculateTotal", payload);
 
       setTotal(response.data.value.total);
@@ -66,6 +68,7 @@ const TotalSummary = ({
     setTotal,
   ]);
 
+  // Use useEffect to recalculate the total whenever the dependencies change
   useEffect(() => {
     calculateTotal();
   }, [calculateTotal]);

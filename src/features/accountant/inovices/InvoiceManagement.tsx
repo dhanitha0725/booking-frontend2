@@ -121,6 +121,7 @@ const InvoiceManagement: React.FC = () => {
 
       console.log("Detailed invoice data:", detailedInvoice);
 
+      // data structure for the PDF generation
       const combinedInvoiceData = {
         invoiceID: tableInvoice.invoiceID,
         amountPaid: detailedInvoice.amountPaid,

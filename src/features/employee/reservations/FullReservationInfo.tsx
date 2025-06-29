@@ -34,6 +34,7 @@ import useReservationDetails from "../../../hooks/useReservationDetails";
 import DocumentViewer from "./DocumentViewer";
 import ConfirmCashPayment from "../payments/ConfirmCashPayment";
 
+// Define a reusable component for displaying detail fields
 const DetailField: React.FC<{
   label: string;
   value: string | number | React.ReactNode;
@@ -46,6 +47,7 @@ const DetailField: React.FC<{
   </Box>
 );
 
+// ReservationDetailsSection component to display reservation details
 const ReservationDetailsSection: React.FC<{
   reservation: FullReservationDetails;
 }> = ({ reservation }) => {
@@ -84,6 +86,7 @@ const ReservationDetailsSection: React.FC<{
       <Chip label="Unknown" color="default" size="small" />
     );
 
+  // Render the reservation details section
   return (
     <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
       <Typography variant="h6" gutterBottom sx={{ color: "primary.main" }}>
@@ -127,12 +130,15 @@ const ReservationDetailsSection: React.FC<{
   );
 };
 
+// BookedItemsSection component to display booked items
 const BookedItemsSection: React.FC<{
   reservedPackages: FullReservationDetails["reservedPackages"];
   reservedRooms: FullReservationDetails["reservedRooms"];
   total: number;
 }> = ({ reservedPackages, reservedRooms, total }) => {
+  // formatCurrency function to format amounts
   const formatCurrency = (amount: number) => `Rs. ${amount.toFixed(2)}`;
+  // Define the booked items based on reserved packages and rooms
   const bookedItems: BookedItem[] = [
     ...(reservedPackages || []).map((pkg, index) => ({
       id: index + 1,
@@ -156,6 +162,7 @@ const BookedItemsSection: React.FC<{
     })),
   ];
 
+  // Render the booked items section
   return (
     <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
       <Table size="small">
@@ -206,6 +213,7 @@ const BookedItemsSection: React.FC<{
   );
 };
 
+// UserDetailsSection component to display user details
 const UserDetailsSection: React.FC<{
   user?: ReservationUser;
   userType: UserType;
@@ -240,6 +248,7 @@ const UserDetailsSection: React.FC<{
       <Chip label="Unknown" color="default" size="small" />
     );
 
+  // Render the user details section
   return (
     <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
       <Typography variant="h6" gutterBottom>
@@ -272,6 +281,7 @@ const UserDetailsSection: React.FC<{
   );
 };
 
+// PaymentDetailsSection component to display payment details
 const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
   payments = [],
 }) => {
@@ -282,6 +292,7 @@ const PaymentDetailsSection: React.FC<{ payments?: PaymentDetails[] }> = ({
   const formatCurrency = (amount: number | null) =>
     amount !== null ? `Rs. ${amount.toFixed(2)}` : "Not Paid";
 
+  // Render the payment details section
   return (
     <Paper elevation={0} sx={{ p: 2, bgcolor: "#f5f5f5" }}>
       <Typography variant="h6" gutterBottom>
@@ -371,6 +382,7 @@ const CashPaymentSection: React.FC<{
       p.status?.toLowerCase() !== "completed"
   );
 
+  // If no pending payment found, show a warning
   if (!pendingPayment || !pendingPayment.paymentId) {
     return (
       <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
@@ -382,6 +394,7 @@ const CashPaymentSection: React.FC<{
     );
   }
 
+  // Render the ConfirmCashPayment component
   return (
     <ConfirmCashPayment
       paymentId={pendingPayment.paymentId}
@@ -440,6 +453,7 @@ const DocumentsSection: React.FC<{
         : [],
   };
 
+  // Render the DocumentViewer component with the extracted details
   return (
     <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: "#f5f5f5" }}>
       <DocumentViewer
@@ -459,6 +473,7 @@ const DocumentsSection: React.FC<{
   );
 };
 
+// FullReservationInfo component to display full reservation details
 const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
   open,
   onClose,
@@ -509,6 +524,7 @@ const FullReservationInfo: React.FC<FullReservationInfoProps> = ({
 
   if (!open) return null;
 
+  // render the full reservation info dialog
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>

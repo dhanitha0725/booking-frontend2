@@ -29,6 +29,7 @@ import {
 } from "../../../validations/imageValidation";
 import { FacilityType } from "../../../types/facilityTypes";
 
+// Props for the facility form component
 interface FacilityFormProps {
   facilityTypes: FacilityType[];
   facilities: { id: number; name: string }[];
@@ -41,8 +42,10 @@ interface FacilityFormProps {
   onAddFacilityType: () => void;
 }
 
+// statuses available for facilities
 const statuses = ["Active", "Inactive", "Maintenance"];
 
+// facility form component
 const FacilityForm: React.FC<FacilityFormProps> = ({
   facilityTypes,
   facilities,
@@ -55,10 +58,10 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
 }) => {
   const {
     control,
-    formState: { errors },
+    formState: { errors }, // Form validation errors
   } = useFormContext<AddFacilityFormData>();
 
-  // Validate images using our Zod validation
+  // Validate images using Zod validation
   const validateImages = (files: File[]): boolean => {
     const result = validateImageFiles(files);
     if (!result.success) {
@@ -88,7 +91,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
     [imageFiles, setImageFiles]
   );
 
-  // Handle image drop
+  // Handle image drop (drag and drop)
   const handleImageDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -97,9 +100,11 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
       const droppedFiles = event.dataTransfer.files;
       if (!droppedFiles) return;
 
+      // Convert FileList to Array
       const newFiles = Array.from(droppedFiles);
       const updatedFiles = [...imageFiles, ...newFiles].slice(0, MAX_IMAGES);
 
+      // Validate images
       if (validateImages(updatedFiles)) {
         setImageFiles(updatedFiles);
       }
@@ -121,6 +126,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({
     e.stopPropagation();
   };
 
+  // Render the facility form
   return (
     <>
       {error && (

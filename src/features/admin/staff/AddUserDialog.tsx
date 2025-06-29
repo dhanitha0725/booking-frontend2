@@ -25,13 +25,16 @@ interface AddUserDialogProps {
   onSubmitSuccess: (data: AddUserFormData) => void;
 }
 
+// Define the roles available for selection
 const roles = ["Admin", "Employee", "Accountant", "Hostel"];
 
+// AddUserDialog component for adding a new user
 const AddUserDialog: React.FC<AddUserDialogProps> = ({
   open,
   onClose,
   onSubmitSuccess,
 }) => {
+  // Form setup using react-hook-form with zod for validation
   const {
     control,
     handleSubmit,
@@ -63,11 +66,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     }
   }, [open, reset]);
 
+  // Handle form submission
   const onSubmit: SubmitHandler<AddUserFormData> = (data) => {
     console.log("Form Data:", data);
     onSubmitSuccess(data);
   };
 
+  // Handle dialog close
   const handleClose = () => {
     onClose();
   };

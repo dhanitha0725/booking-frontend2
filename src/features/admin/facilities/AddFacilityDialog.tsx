@@ -33,8 +33,9 @@ interface BackendError {
   };
 }
 
+// Props for the AddFacilityDialog component
 interface AddFacilityDialogProps {
-  open: boolean;
+  open: boolean; // Whether the dialog is open
   onClose: () => void;
   onSubmitSuccess: (data: AddFacilityFormData, newFacilityId?: number) => void;
   onSubmitError: (errorMessage: string) => void;
@@ -48,12 +49,14 @@ type SubmissionState =
   | "success"
   | "error";
 
+// Main component for adding a facility
 const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
   open,
   onClose,
   onSubmitSuccess,
   onSubmitError,
 }) => {
+  // State to manage facilities, facility types, submission state, and errors
   const [facilities, setFacilities] = useState<{ id: number; name: string }[]>(
     []
   );
@@ -68,6 +71,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [newFacilityId, setNewFacilityId] = useState<number | null>(null);
 
+  //Configure React Hook Form with Zod validation
   const methods = useForm<AddFacilityFormData>({
     resolver: zodResolver(addFacilitySchema),
     defaultValues: {
@@ -109,6 +113,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     const fetchFacilityTypes = async () => {
       setLoadingFacilityTypes(true);
       try {
+        // Fetch facility types from the backend
         const response = await api.get<FacilityType[]>(
           "/Facility/facility-types"
         );
@@ -126,7 +131,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     }
   }, [open]);
 
-  // Fetch facilities for parent facility selection
+  // Fetch existing facilities for parent facility selection
   useEffect(() => {
     const fetchFacilities = async () => {
       try {
@@ -159,7 +164,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
         formData.append("Files", file);
       });
 
-      // Debug what we're sending
+      // Debug logging
       console.log("Uploading images for facility:", facilityId);
       console.log("Number of files being uploaded:", imageFiles.length);
 
@@ -194,6 +199,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
         console.error("Error response data:", err.response.data);
       }
 
+      // Extract error message from response or use default
       const errorMessage =
         err.response?.data?.message ||
         err.response?.data?.error?.message ||
@@ -205,6 +211,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     }
   };
 
+  // call this function when the form is valid
   const onSubmit: SubmitHandler<AddFacilityFormData> = async (data) => {
     // Validate images first
     const result = validateImageFiles(imageFiles);
@@ -217,7 +224,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     setError(null);
 
     try {
-      // Prepare payload for API
+      // Prepare payload for API with form data
       const payload = {
         facilityName: data.facilityName,
         facilityTypeId: data.facilityTypeId,
@@ -225,6 +232,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
         description: data.description || "",
         status: data.status,
         attributes: data.attributes.filter((attr) => attr.trim() !== ""),
+        // convert parentFacilityId to number or null
         parentFacilityId: data.parentFacilityId
           ? Number(data.parentFacilityId)
           : null,
@@ -238,7 +246,8 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
 
       console.log("Facility creation response:", response.data);
 
-      // Extract facility ID from the response - check different possible formats
+      // Extract facility ID from the response - check different response formats
+      // get facility ID from response data to upload images
       let facilityId = null;
       if (response.data) {
         // Check for both possible property names
@@ -265,7 +274,6 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
         }
 
         // Call the success callback only when everything is done
-        // Note: We don't use submissionState here because it might not be updated yet
         if (submissionState !== "error") {
           onSubmitSuccess(data, facilityId);
         }
@@ -326,6 +334,7 @@ const AddFacilityDialog: React.FC<AddFacilityDialogProps> = ({
     // Refresh facility types
     const fetchFacilityTypes = async () => {
       try {
+        // Fetch facility types from the backend
         const response = await api.get<FacilityType[]>(
           "/Facility/facility-types"
         );

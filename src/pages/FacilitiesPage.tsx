@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 
 const FacilitiesPage = () => {
   const navigate = useNavigate();
+  // State variables
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

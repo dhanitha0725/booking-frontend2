@@ -19,6 +19,7 @@ interface DeleteConfirmationDialogProps {
   facilityId: number | null;
 }
 
+// DeleteConfirmationDialog component for confirming facility deletion
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   open,
   loading,

@@ -10,8 +10,10 @@ const PaymentInitiationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const location = useLocation();
 
+  // Function to submit the payment form to PayHere
   useEffect(() => {
     const initiatePayment = async () => {
+      // Extract orderId from the URL query parameters
       const queryParams = new URLSearchParams(location.search);
       const orderId = queryParams.get("orderId");
 
@@ -22,6 +24,7 @@ const PaymentInitiationPage: React.FC = () => {
       }
 
       try {
+        // Fetch payment initiation data from the backend
         const response = await axios.get<PaymentInitiationResponse>(
           `http://localhost:5162/api/payments/initiate?orderId=${encodeURIComponent(orderId)}`
         );

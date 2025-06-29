@@ -97,6 +97,7 @@ const FacilityManagement: React.FC = () => {
     data: AddFacilityFormData, //validated data from the form
     newFacilityId?: number
   ) => {
+    // If newFacilityId is provided
     if (newFacilityId) {
       const newFacility: AdminFacilityDetails = {
         facilityId: newFacilityId,
@@ -117,6 +118,8 @@ const FacilityManagement: React.FC = () => {
     });
   };
 
+  // Handle error when adding a facility
+  // This function will be called if the form submission fails
   const handleAddFacilityError = (errorMessage: string) => {
     setSnackbar({
       open: true,
@@ -136,6 +139,7 @@ const FacilityManagement: React.FC = () => {
     if (!facilityToDelete) return;
     setDeleteLoading(true);
     try {
+      // Make API call to delete the facility
       await api.delete(`/Facility/${facilityToDelete}`);
       setFacilities(
         facilities.filter((f) => f.facilityId !== facilityToDelete)
@@ -174,6 +178,7 @@ const FacilityManagement: React.FC = () => {
     }
   };
 
+  // Handle canceling the delete action
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false);
     setFacilityToDelete(null);

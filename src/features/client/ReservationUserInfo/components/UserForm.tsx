@@ -1,12 +1,14 @@
 import { TextField, Grid } from "@mui/material";
 import { TempReservation, UserInfo } from "../../../../types/reservationData";
 
+// properties for the UserForm component
 interface UserFormProps {
   customerType: TempReservation["customerType"];
   formData: UserInfo;
   onFormChange: (updatedFormData: UserInfo) => void;
 }
 
+// UserForm component for collecting user information
 const UserForm = ({
   customerType,
   formData = { firstName: "", lastName: "", email: "" },

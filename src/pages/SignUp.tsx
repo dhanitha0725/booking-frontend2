@@ -9,7 +9,7 @@ import { SignUpFormData, signUpSchema } from "../validations/signUpValidation";
 function SignUp() {
   const navigate = useNavigate();
 
-  // React Hook Form setup
+  // React Hook Form setup with applied validations
   const {
     register,
     handleSubmit,

@@ -50,6 +50,7 @@ interface AddRoomDialogProps {
   onError: (message: string) => void;
 }
 
+// AddRoomDialog component for adding rooms to a facility
 const AddRoomDialog: React.FC<AddRoomDialogProps> = ({
   open,
   onClose,
@@ -57,11 +58,14 @@ const AddRoomDialog: React.FC<AddRoomDialogProps> = ({
   onSuccess,
   onError,
 }) => {
+  // State variables
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loadingRoomTypes, setLoadingRoomTypes] = useState(false);
 
+  // Form setup using react-hook-form
+  // Using zod for validation
   const {
     control,
     handleSubmit,
@@ -101,6 +105,7 @@ const AddRoomDialog: React.FC<AddRoomDialogProps> = ({
       setError(null);
 
       try {
+        // Fetch room types from the API
         const response = await api.get<RoomTypeResponse>(
           "/facilities/rooms/get-room-types"
         );
@@ -116,6 +121,7 @@ const AddRoomDialog: React.FC<AddRoomDialogProps> = ({
     fetchRoomTypes();
   }, [open]);
 
+  // Handle form submission
   const onSubmit: SubmitHandler<AddRoomFormData> = async (data) => {
     setLoading(true);
     setError(null);
@@ -132,6 +138,7 @@ const AddRoomDialog: React.FC<AddRoomDialogProps> = ({
       // Log the payload for debugging
       console.log("Adding rooms with payload:", payload);
 
+      // Make API call to add rooms
       await api.post(`/facilities/rooms/add-rooms${facilityId}`, payload);
 
       // Show success message and close dialog
@@ -145,6 +152,7 @@ const AddRoomDialog: React.FC<AddRoomDialogProps> = ({
       const err = error as AxiosError<BackendError>;
       let errorMessage = "Failed to add rooms. Please try again.";
 
+      // Check if error response contains a message
       if (err.response?.data) {
         if (typeof err.response.data.error === "string") {
           errorMessage = err.response.data.error;

@@ -43,12 +43,14 @@ interface FacilityCount {
   reservationCount: number;
 }
 
+// TabPanelProps interface for the TabPanel component
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
 }
 
+// TabPanel component to handle tab content display
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
@@ -65,7 +67,9 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+// AccountantDashboard component to display financial overview and analytics
 const AccountDashboard: React.FC = () => {
+  // State variables to manage dashboard data
   const [tabValue, setTabValue] = useState(0);
   const [stats, setStats] = useState<ReservationStats>({
     totalPendingReservations: 0,
@@ -82,10 +86,12 @@ const AccountDashboard: React.FC = () => {
   // Add this state for facility counts
   const [facilityCounts, setFacilityCounts] = useState<FacilityCount[]>([]);
 
+  // Function to handle tab changes
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
+  // Fetch data when component mounts
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);

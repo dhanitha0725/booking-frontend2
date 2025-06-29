@@ -12,10 +12,12 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const { isAuthenticated, hasRole } = useAuth();
   const location = useLocation();
 
+  // If the user is not authenticated, redirect to the login page
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // If the user does not have the required roles, redirect to the home page or a different route
   if (!hasRole(allowedRoles)) {
     return <Navigate to="/" replace />;
   }

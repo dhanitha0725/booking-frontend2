@@ -148,6 +148,7 @@ const PriceManagement: React.FC = () => {
   const fetchRoomPricing = async () => {
     setLoadingRoomPricing(true);
     try {
+      // Use the real API endpoint for room pricing
       const response = await api.get("/facilities/rooms/get-room-pricing");
 
       // Check if response has the expected structure with "roomPricing" property
@@ -159,10 +160,9 @@ const PriceManagement: React.FC = () => {
               item.pricings && Object.keys(item.pricings).length > 0
           ) // Filter out items with empty pricing
           .map((item: RoomPricingResponse) => ({
-            pricingId: item.roomTypeId, // Using roomTypeId as pricingId since it's not in the response
+            pricingId: item.roomTypeId,
             roomTypeId: item.roomTypeId,
             roomTypeName: item.roomTypeName,
-            // Removed facilityId as it's not needed
             facilityName: item.facilityName,
             totalRooms: item.totalRooms,
             // Access the pricing data from the nested pricing object

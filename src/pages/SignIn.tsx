@@ -29,6 +29,7 @@ function SignIn() {
     }
   }, [location.state]);
 
+  // configure the react form and zod validation
   const {
     register,
     handleSubmit,
@@ -47,6 +48,7 @@ function SignIn() {
       const decodedToken = decodeToken(response.token);
       console.log("Decoded Token:", decodedToken);
 
+      // navigate to the home page
       const from = location.state?.from || "/";
       navigate(from, { replace: true });
     } catch (error) {

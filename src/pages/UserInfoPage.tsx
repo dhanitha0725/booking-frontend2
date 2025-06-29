@@ -27,9 +27,15 @@ import axios from "axios";
 import reservationService from "../services/reservationService";
 import { initiatePayment, submitPaymentForm } from "../services/PaymentService";
 
+// Constants for stepper
 const steps = ["Booking Details", "User Information", "Confirmation"];
 
+/**
+ * UserInfoPage component for collecting user information and reservation details.
+ * It handles form submission, document uploads, and payment processing.
+ */
 const UserInfoPage = () => {
+  // State variables for managing form data, documents, payment method, and loading/error states
   const [activeStep] = useState(1);
   const [tempReservation, setTempReservation] =
     useState<TempReservation | null>(null);
@@ -68,6 +74,7 @@ const UserInfoPage = () => {
     }
   }, [tempReservation?.customerType]);
 
+  // handle submit event for the form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -194,6 +201,7 @@ const UserInfoPage = () => {
           status = "PendingApproval";
         }
 
+        // Navigate to confirmation page with reservation details
         navigate("/confirmation", {
           state: {
             reservationId: result.reservationId,
@@ -220,6 +228,7 @@ const UserInfoPage = () => {
     }
   };
 
+  // If no temporary reservation data is available, show loading indicator
   if (!tempReservation) return <CircularProgress />;
 
   return (

@@ -46,6 +46,7 @@ interface AddPackageDialogProps {
   facilities: { id: number; name: string }[];
 }
 
+// AddPackageDialog component
 const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
   open,
   onClose,
@@ -55,6 +56,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Configure the react form and zod validation
   const {
     control,
     handleSubmit,
@@ -80,6 +82,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
     }
   }, [open, reset]);
 
+  // Function to handle form submission
   const onSubmit: SubmitHandler<PackageFormData> = async (data) => {
     setLoading(true);
     setError(null);
@@ -88,6 +91,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
       // Convert the dayjs duration to the expected string format
       const durationString = formatTimeToString(data.duration);
 
+      // Prepare the payload for the API request
       const payload = {
         packageName: data.packageName,
         duration: durationString,
@@ -109,6 +113,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
       const err = error as AxiosError<BackendError>;
       let errorMessage = "Failed to add package. Please try again.";
 
+
       if (err.response?.data) {
         if (typeof err.response.data.error === "string") {
           errorMessage = err.response.data.error;
@@ -125,7 +130,7 @@ const AddPackageDialog: React.FC<AddPackageDialogProps> = ({
     }
   };
 
-  // Rest of the component remains unchanged
+// Render the dialog component
   return (
     <Dialog
       open={open}

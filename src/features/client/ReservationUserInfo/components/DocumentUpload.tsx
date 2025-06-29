@@ -13,24 +13,44 @@ import {
   Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { TempReservation } from "../../../../types/reservationData";
+import { z } from "zod";
+
+// Schema for validating PDF file uploads
+// This schema checks if the uploaded file is a PDF
+export const pdfFileSchema = z
+  .instanceof(File)
+  .refine((file) => file.type === "application/pdf", {
+    message: "Only PDF files are allowed",
+  });
+
+export const documentUploadSchema = z.object({
+  documents: z.array(pdfFileSchema).min(1, "Please upload at least one PDF file"),
+});
+
+// Type for the form data based on the schema
+export type DocumentUploadFormData = z.infer<typeof documentUploadSchema>;
 
 interface DocumentUploadProps {
   documents: TempReservation["documents"];
   onDocumentsChange: (updatedDocuments: File[]) => void;
 }
 
+// DocumentUpload component for uploading required documents
+// This component allows users to upload PDF files and displays the uploaded files
 const DocumentUpload = ({
   documents = [],
   onDocumentsChange,
 }: DocumentUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
 
+  // Function to handle file changes from drag-and-drop or file input
   const handleFileChange = (files: FileList) => {
     if (files.length > 0) {
       onDocumentsChange([files[0]]);
     }
   };
 
+  // Function to remove a file from the uploaded documents
   const removeFile = (index: number) => {
     const newFiles = [...documents];
     newFiles.splice(index, 1);

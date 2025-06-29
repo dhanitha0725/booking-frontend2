@@ -10,6 +10,7 @@ const PaymentPage = () => {
 
   useEffect(() => {
     const checkPaymentAndReservation = async () => {
+      // Extract order ID from the URL query parameters
       const orderId = new URLSearchParams(location.search).get("order_id");
       if (!orderId) {
         setStatus("No order ID found.");
@@ -27,6 +28,7 @@ const PaymentPage = () => {
           `/api/reservations/by-order/${orderId}`
         );
 
+        // Check if both payment and reservation are successful
         if (
           paymentStatus.data.status === "success" &&
           reservationStatus.data.status === "confirmed"

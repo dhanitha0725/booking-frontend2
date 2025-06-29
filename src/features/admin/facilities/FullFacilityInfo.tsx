@@ -116,6 +116,7 @@ const FullFacilityInfo: React.FC<FullFacilityInfoProps> = ({
     return <Chip label={status} color={color} size="small" />;
   };
 
+  // Format date to a readable string
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",

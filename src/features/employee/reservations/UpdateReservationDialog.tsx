@@ -38,7 +38,6 @@ interface PriceMapping {
   sector: string;
   price: number;
 }
-
 interface UpdateReservationDialogProps {
   open: boolean;
   onClose: () => void;
@@ -46,12 +45,14 @@ interface UpdateReservationDialogProps {
   reservation: Reservation | null;
 }
 
+// Define the component
 const UpdateReservationDialog: React.FC<UpdateReservationDialogProps> = ({
   open,
   onClose,
   onSuccess,
   reservation,
 }) => {
+  // State for loading, error, and snackbar messages
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{
@@ -92,6 +93,7 @@ const UpdateReservationDialog: React.FC<UpdateReservationDialogProps> = ({
     console.log("Fetching facility data for ID:", reservation.facilityId);
 
     try {
+      // Fetch facility details from API
       const response = await api.get(`/Reservation/${reservation.facilityId}`);
       console.log("API response:", response.data);
 
@@ -119,6 +121,7 @@ const UpdateReservationDialog: React.FC<UpdateReservationDialogProps> = ({
           }))
         : [];
 
+        // Handle empty rooms array safely
       const mappedRooms = Array.isArray(data.rooms)
         ? data.rooms.map((room: Room) => ({
             roomTypeId: room.roomTypeId,
@@ -165,6 +168,7 @@ const UpdateReservationDialog: React.FC<UpdateReservationDialogProps> = ({
       setCustomerType(reservation.userType as CustomerType);
       setTotal(reservation.total);
 
+      // Pre-populate selected items
       const packageItems: BookingItemDto[] = (
         reservation.reservedPackages || []
       ).map((pkg) => ({
@@ -202,6 +206,7 @@ const UpdateReservationDialog: React.FC<UpdateReservationDialogProps> = ({
     id: number,
     quantity: number
   ) => {
+    // Validate quantity
     setSelectedItems((prev) => {
       const existingItem = prev.find(
         (item) => item.type === type && item.itemId === id
@@ -238,7 +243,6 @@ const UpdateReservationDialog: React.FC<UpdateReservationDialogProps> = ({
       return;
     }
 
-    // At this point, we know both startDate and endDate are not null
     const startDate = dateRange.startDate!;
     const endDate = dateRange.endDate!;
 

@@ -28,7 +28,9 @@ interface ReservationStats {
   totalRevenue: number;
 }
 
+
 const EmployeeDashboard: React.FC = () => {
+  // State variables to manage dashboard data
   const [loading, setLoading] = useState<boolean>(true);
   const [statsLoading, setStatsLoading] = useState<boolean>(true);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -50,9 +52,11 @@ const EmployeeDashboard: React.FC = () => {
 
   // Fetch reservations for the table display
   useEffect(() => {
+
     const fetchReservations = async () => {
       try {
         setLoading(true);
+        // Fetch reservation data from the API
         const response = await api.get("/Reservation/reservation-data");
         const data: Reservation[] = response.data;
         setReservations(data);
@@ -79,6 +83,7 @@ const EmployeeDashboard: React.FC = () => {
     const fetchStatistics = async () => {
       try {
         setStatsLoading(true);
+        // Fetch statistics data from the API
         const response = await api.get<ReservationStats>(
           "/Reservation/reservation-stats"
         );

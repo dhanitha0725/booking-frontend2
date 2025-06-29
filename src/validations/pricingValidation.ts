@@ -7,7 +7,7 @@ export const packageSchema = z.object({
   packageName: z
     .string()
     .min(3, "Package name must be at least 3 characters")
-    .max(100),
+    .max(100, "Package name cannot exceed 100 characters"),
   duration: z.instanceof(dayjs as unknown as typeof Dayjs).optional(),
   publicPrice: z.number().min(0, "Price cannot be negative"),
   corporatePrice: z.number().min(0, "Price cannot be negative"),

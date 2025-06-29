@@ -71,6 +71,8 @@ const convertTimeSpanToString = (timeSpan: string) => {
   return [hourString, minuteString].filter(Boolean).join(" ");
 };
 
+// Function to convert time span string to total hours as a number
+// Handles both "d.hh:mm:ss" and "hh:mm:ss" formats
 const convertHoursToNumbers = (timeSpan: string) => {
   if (!timeSpan) return 0;
 
@@ -86,6 +88,7 @@ const convertHoursToNumbers = (timeSpan: string) => {
   return parseInt(hours, 10);
 };
 
+// Function to map API response to SelectedFacility type
 const mapResponseToFacility = (response: ApiResponse): SelectedFacility => {
   if (!response?.value) {
     return {
@@ -141,7 +144,9 @@ const mapResponseToFacility = (response: ApiResponse): SelectedFacility => {
 
 // BookingPage Component
 const BookingPage = () => {
+  // Extract facility ID from URL parameters
   const { id } = useParams<{ id: string }>();
+  // State variables
   const [facility, setFacility] = useState<SelectedFacility | null>(null);
   const [loading, setLoading] = useState(true);
   const [customerType, setCustomerType] = useState<
@@ -169,12 +174,14 @@ const BookingPage = () => {
     []
   );
 
+  // Check if the selected items require dates
   const requiresDates = selectedItems.some(
     (item) =>
       item.type === "room" ||
       facility?.packages.find((p) => p.packageId === item.itemId)?.requiresDates
   );
 
+  // Validate the selected date range
   const validateDates = useCallback(() => {
     if (!requiresDates) return true;
     return (
@@ -184,14 +191,17 @@ const BookingPage = () => {
     );
   }, [dateRange, requiresDates]);
 
+  // Check if there are any selected items
   const hasSelectedItems = useCallback(() => {
     return selectedItems.length > 0;
   }, [selectedItems]);
 
+  // Disable the reserve button based on conditions
   const isReserveDisabled = useCallback(() => {
     return !hasSelectedItems() || (requiresDates && !validateDates());
   }, [hasSelectedItems, validateDates, requiresDates]);
 
+  // Handle reservation data storage
   const handleReservation = useCallback(() => {
     if (!facility) return;
     const reservationData = {
@@ -205,6 +215,8 @@ const BookingPage = () => {
     localStorage.setItem("currentReservation", JSON.stringify(reservationData));
   }, [facility, selectedItems, total, customerType, dateRange]);
 
+  // Handle the "Reserve Now" button click
+  // Checks if the user is authenticated and if the selected items are available
   const handleReserveNow = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
@@ -229,6 +241,7 @@ const BookingPage = () => {
     ]
   );
 
+  // Handle selection changes for packages and rooms  
   const handleSelectionChange = useCallback(
     (type: "package" | "room", id: number, quantity: number) => {
       setSelectedItems((prev) => {
@@ -244,6 +257,7 @@ const BookingPage = () => {
     []
   );
 
+  // Fetch facility data when the component mounts or when the ID changes
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -267,10 +281,12 @@ const BookingPage = () => {
     fetchData();
   }, [id]);
 
+  // Handle date range changes
   const handleDateChange = useCallback((newDateRange: DateRangeType) => {
     setDateRange(newDateRange);
   }, []);
 
+  // Handle customer type changes
   const handleCustomerTypeChange = useCallback(
     (type: "corporate" | "public" | "private") => {
       setCustomerType(type);
@@ -278,6 +294,7 @@ const BookingPage = () => {
     []
   );
 
+  // Close the sign-in modal if the user is authenticated
   useEffect(() => {
     if (isAuthenticated && signInModalOpen) {
       setSignInModalOpen(false);

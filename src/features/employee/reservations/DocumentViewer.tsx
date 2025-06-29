@@ -20,6 +20,7 @@ import ReceiptIcon from "@mui/icons-material/Receipt";
 import DocumentApproval from "./DocumentApproval";
 import { DocumentDetails } from "../../../types/ReservationDetails";
 
+// Define the props for the DocumentViewer component
 interface DocumentViewerProps {
   documents: DocumentDetails[];
   groupByType?: boolean;
@@ -47,6 +48,7 @@ interface DocumentViewerProps {
   onSuccess?: (message: string) => void;
 }
 
+// DocumentViewer component to display and manage documents
 const DocumentViewer: React.FC<DocumentViewerProps> = ({
   documents = [],
   groupByType = true,

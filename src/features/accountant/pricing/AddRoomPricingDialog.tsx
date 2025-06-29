@@ -43,17 +43,20 @@ interface AddRoomPricingDialogProps {
   facilities: { id: number; name: string }[];
 }
 
+// AddRoomPricingDialog component
 const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
   open,
   onClose,
   onSuccess,
   facilities,
 }) => {
+  // State variables for loading, error, room types, and loading state for room types
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
   const [loadingRoomTypes, setLoadingRoomTypes] = useState(false);
 
+  // Form setup using react-hook-form with zod validation
   const {
     control,
     handleSubmit,
@@ -86,6 +89,7 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
 
       setLoadingRoomTypes(true);
       try {
+        // Fetch room types from the API
         const response = await api.get("/facilities/rooms/get-room-types");
         if (response.data && response.data.roomTypes) {
           setRoomTypes(response.data.roomTypes);
@@ -105,6 +109,7 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
     fetchRoomTypes();
   }, [open]);
 
+  // Submit handler for the form
   const onSubmit: SubmitHandler<RoomPricingFormData> = async (data) => {
     setLoading(true);
     setError(null);
@@ -121,7 +126,7 @@ const AddRoomPricingDialog: React.FC<AddRoomPricingDialogProps> = ({
         },
       };
 
-      // Use the correct API endpoint for setting room pricing
+      // API endpoint for setting room pricing
       await api.post("/facilities/rooms/set-room-pricing", payload);
       onSuccess();
       reset();
