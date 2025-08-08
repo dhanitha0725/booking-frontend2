@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 
 const FacilitiesPage = () => {
   const navigate = useNavigate();
+
   // State variables
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,7 +31,8 @@ const FacilitiesPage = () => {
   const [sortBy, setSortBy] = useState("recommended");
   const [page, setPage] = useState(1);
 
-  const facilitiesPerPage = 12;
+  // Changed from 12 to 6 facilities per page
+  const facilitiesPerPage = 6;
 
   // fetch facility data that needed to facility card
   useEffect(() => {
@@ -116,17 +118,24 @@ const FacilitiesPage = () => {
     }
   );
 
-  // paginate facilities
+  // paginate facilities - now with 6 facilities per page
   const paginatedFacilities = sortedFacilities.slice(
     (page - 1) * facilitiesPerPage,
     page * facilitiesPerPage
   );
 
-  // calculate total pages
+  // calculate total pages - this will now create more pages with 6 facilities per page
   const totalPages = Math.ceil(filteredFacilities.length / facilitiesPerPage);
 
   return (
-    <Box sx={{ py: 4 }}>
+    <Box
+      sx={{
+        // Add padding to top to account for the fixed header
+        pt: { xs: "56px", sm: "64px", md: "64px" }, // Different sizes for different breakpoints
+        pb: 4,
+        mt: { xs: 3, sm: 4 }, // Additional margin to create space between header and content
+      }}
+    >
       <Container maxWidth="lg">
         <Typography
           variant="h3"
@@ -210,7 +219,9 @@ const FacilitiesPage = () => {
             </Typography>
           ) : (
             <Typography variant="body1" color="text.secondary">
-              Showing {filteredFacilities.length} facilities
+              Showing {paginatedFacilities.length} of{" "}
+              {filteredFacilities.length} facilities
+              {totalPages > 1 && ` (Page ${page} of ${totalPages})`}
             </Typography>
           )}
         </Box>
@@ -263,7 +274,7 @@ const FacilitiesPage = () => {
           </Box>
         )}
 
-        {/* Pagination */}
+        {/* Pagination - now more prominent with fewer items per page */}
         {!loading && !error && totalPages > 1 && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
             <Pagination
@@ -274,6 +285,7 @@ const FacilitiesPage = () => {
               size="large"
               showFirstButton
               showLastButton
+              sx={{ "& .MuiPaginationItem-root": { fontWeight: 500 } }}
             />
           </Box>
         )}

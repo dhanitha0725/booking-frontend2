@@ -1,189 +1,260 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Container,
   Typography,
-  Card,
-  CardMedia,
-  CardContent,
+  Button,
   IconButton,
-  Grid,
+  MobileStepper,
+  Fade,
 } from "@mui/material";
-import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
+import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
+import { Link as RouterLink } from "react-router-dom";
 
-const facilityTypes = [
+// Import local images
+import conferenceRoom1 from "../../../../assets/images/conference-room-with-large-screen-that-says-conference.jpg";
+import auditorium from "../../../../assets/images/empty-auditorium-awaiting-big-performance-ahead-generated-by-ai.jpg";
+import modernHouse from "../../../../assets/images/Modern House at Dusk.png";
+
+const carouselItems = [
   {
-    id: 1,
-    typeName: "Auditorium",
-    image:
-      "https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=800&q=80",
+    image: auditorium,
+    title: "Modern Auditorium Facilities",
+    description:
+      "Host your conferences, seminars, and large events in our spacious and well-equipped auditoriums with state-of-the-art sound systems and comfortable seating.",
+    buttonText: "Explore Auditoriums",
+    path: "/facilities?type=auditorium",
   },
   {
-    id: 2,
-    typeName: "Bungalow",
-    image:
-      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80",
+    image: modernHouse,
+    title: "Luxury Bungalows",
+    description:
+      "Experience comfort and privacy in our well-maintained bungalows, perfect for retreats, family stays, or executive accommodations with all modern amenities.",
+    buttonText: "View Bungalows",
+    path: "/facilities?type=bungalow",
   },
   {
-    id: 3,
-    typeName: "Lecture Halls",
-    image:
-      "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 4,
-    typeName: "Hostels",
-    image:
-      "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 5,
-    typeName: "Conference Rooms",
-    image:
-      "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=800&q=80",
+    image: conferenceRoom1,
+    title: "Professional Conference Rooms",
+    description:
+      "Conduct meetings, training sessions, and workshops in our fully-equipped conference rooms with modern presentation technology and flexible seating arrangements.",
+    buttonText: "Book Conference Rooms",
+    path: "/facilities?type=conference",
   },
 ];
 
-const FacilityTypesCarousel = () => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
+const FeaturedFacilities = () => {
+  const [activeStep, setActiveStep] = useState(0);
+  const maxSteps = carouselItems.length;
+  const [autoPlay, setAutoPlay] = useState(true);
 
-  const scrollLeft = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -500, behavior: "smooth" });
-      setScrollPosition(Math.max(0, scrollPosition - 500));
-    }
+  // Auto play functionality
+  useEffect(() => {
+    if (!autoPlay) return;
+
+    const timer = setInterval(() => {
+      setActiveStep((prevActiveStep) => (prevActiveStep + 1) % maxSteps);
+    }, 5000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [autoPlay, maxSteps]);
+
+  const handleNext = () => {
+    setAutoPlay(false); // Pause autoplay when user interacts
+    setActiveStep((prevActiveStep) => (prevActiveStep + 1) % maxSteps);
   };
 
-  const scrollRight = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 500, behavior: "smooth" });
-      setScrollPosition(scrollPosition + 500);
-    }
+  const handleBack = () => {
+    setAutoPlay(false); // Pause autoplay when user interacts
+    setActiveStep(
+      (prevActiveStep) => (prevActiveStep - 1 + maxSteps) % maxSteps
+    );
   };
 
   return (
-    <Box sx={{ py: 10, bgcolor: "#f5f5f5" }}>
-      <Container maxWidth="xl">
-        <Typography
-          component="h2"
-          variant="h3"
-          align="center"
-          color="text.primary"
-          gutterBottom
-          sx={{ mb: 4, fontWeight: 700 }}
+    <Box
+      sx={{
+        position: "relative",
+        height: "100vh",
+        width: "100%",
+        overflow: "hidden",
+        m: 0,
+        p: 0,
+        // Remove top margin completely
+        mt: 0,
+      }}
+    >
+      {carouselItems.map((item, index) => (
+        <Fade
+          key={index}
+          in={index === activeStep}
+          timeout={800}
+          style={{
+            display: index === activeStep ? "block" : "none",
+            height: "100%",
+          }}
         >
-          Facilities for Every Occasion
-        </Typography>
-
-        <Box sx={{ position: "relative", my: 2 }}>
-          <IconButton
-            onClick={scrollLeft}
+          <Box
             sx={{
               position: "absolute",
-              left: -30,
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 2,
-              bgcolor: "rgba(255,255,255,0.9)",
-              "&:hover": { bgcolor: "rgba(255,255,255,1)" },
-              width: 50,
-              height: 50,
-              boxShadow: 2,
+              inset: 0,
+              height: "100%",
+              width: "100%",
             }}
           >
-            <ArrowBackIos />
-          </IconButton>
-
-          <Box
-            ref={scrollRef}
-            sx={{
-              display: "flex",
-              overflowX: "auto",
-              px: 4,
-              py: 6,
-              scrollbarWidth: "none",
-              "&::-webkit-scrollbar": {
-                display: "none",
-              },
-              msOverflowStyle: "none",
-              scrollBehavior: "smooth",
-            }}
-          >
-            <Grid
-              container
-              spacing={4}
-              sx={{ flexWrap: "nowrap", minWidth: "min-content" }}
+            <Box
+              component="img"
+              src={item.image}
+              alt={item.title}
+              sx={{
+                position: "absolute",
+                inset: 0,
+                height: "100%",
+                width: "100%",
+                objectFit: "cover",
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center", // Center all content horizontally
+                textAlign: "center", // Center all text
+                bgcolor: "rgba(0,0,0,0.5)",
+                p: 4,
+              }}
             >
-              {facilityTypes.map((type) => (
-                <Grid item key={type.id} sx={{ minWidth: 400, maxWidth: 450 }}>
-                  <Card
+              <Container maxWidth="lg">
+                <Box
+                  sx={{
+                    maxWidth: { xs: "100%", md: "70%" },
+                    mx: "auto", // Center the content box
+                    pt: { xs: "64px", sm: "72px" }, // Add padding-top to account for header height
+                  }}
+                >
+                  <Typography
+                    variant="h2"
+                    color="white"
+                    gutterBottom
                     sx={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      boxShadow: 4,
-                      borderRadius: 3,
-                      transition: "transform 0.3s, box-shadow 0.3s",
-                      "&:hover": {
-                        transform: "translateY(-8px)",
-                        boxShadow: 8,
+                      fontWeight: "bold",
+                      mb: 2,
+                      fontSize: {
+                        xs: "2rem",
+                        sm: "3rem",
+                        md: "4rem",
                       },
-                      overflow: "hidden",
                     }}
                   >
-                    <CardMedia
-                      component="img"
-                      height="300"
-                      image={type.image}
-                      alt={type.typeName}
+                    {item.title}
+                  </Typography>
+                  <Typography
+                    variant="h5"
+                    color="white"
+                    sx={{
+                      mb: 4,
+                      opacity: 0.9,
+                      fontSize: { xs: "1.1rem", md: "1.5rem" },
+                      maxWidth: "800px",
+                      mx: "auto", // Center the description
+                    }}
+                  >
+                    {item.description}
+                  </Typography>
+                  <Box
+                    sx={{
+                      mt: 4,
+                      display: "flex",
+                      justifyContent: "center", // Center the button
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      size="large"
+                      component={RouterLink}
+                      to="/facilities"
                       sx={{
-                        objectFit: "cover",
-                        transition: "transform 0.5s",
+                        px: 6,
+                        py: 1.5,
+                        fontWeight: 500,
+                        fontSize: "1rem",
+                        textTransform: "none",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.2)",
+                        backgroundColor: "#ffffff", // White background
+                        color: "#000000", // Black text for contrast
                         "&:hover": {
-                          transform: "scale(1.05)",
+                          backgroundColor: "#f5f5f5", // Slightly darker white on hover
+                          boxShadow: "0 6px 12px rgba(0, 0, 0, 0.3)",
                         },
                       }}
-                    />
-                    <CardContent
-                      sx={{ flexGrow: 1, textAlign: "center", py: 3 }}
                     >
-                      <Typography
-                        gutterBottom
-                        variant="h4"
-                        component="h3"
-                        fontWeight="bold"
-                      >
-                        {type.typeName}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+                      View Facilities
+                    </Button>
+                  </Box>
+                </Box>
+              </Container>
+            </Box>
           </Box>
+        </Fade>
+      ))}
 
-          <IconButton
-            onClick={scrollRight}
-            sx={{
-              position: "absolute",
-              right: -30,
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 2,
-              bgcolor: "rgba(255,255,255,0.9)",
-              "&:hover": { bgcolor: "rgba(255,255,255,1)" },
-              width: 50,
-              height: 50,
-              boxShadow: 2,
-            }}
-          >
-            <ArrowForwardIos />
-          </IconButton>
-        </Box>
-      </Container>
+      <IconButton
+        onClick={handleBack}
+        sx={{
+          position: "absolute",
+          left: { xs: 8, md: 24 },
+          top: "50%",
+          transform: "translateY(-50%)",
+          bgcolor: "rgba(255, 255, 255, 0.3)",
+          "&:hover": { bgcolor: "rgba(255, 255, 255, 0.5)" },
+          zIndex: 2,
+          color: "white",
+          width: { xs: 40, md: 56 },
+          height: { xs: 40, md: 56 },
+        }}
+      >
+        <KeyboardArrowLeft sx={{ fontSize: { xs: 24, md: 32 } }} />
+      </IconButton>
+      <IconButton
+        onClick={handleNext}
+        sx={{
+          position: "absolute",
+          right: { xs: 8, md: 24 },
+          top: "50%",
+          transform: "translateY(-50%)",
+          bgcolor: "rgba(255, 255, 255, 0.3)",
+          "&:hover": { bgcolor: "rgba(255, 255, 255, 0.5)" },
+          zIndex: 2,
+          color: "white",
+          width: { xs: 40, md: 56 },
+          height: { xs: 40, md: 56 },
+        }}
+      >
+        <KeyboardArrowRight sx={{ fontSize: { xs: 24, md: 32 } }} />
+      </IconButton>
+
+      <MobileStepper
+        steps={maxSteps}
+        position="static"
+        activeStep={activeStep}
+        sx={{
+          bgcolor: "transparent",
+          position: "absolute",
+          bottom: 16,
+          width: "100%",
+          justifyContent: "center",
+        }}
+        nextButton={<Box />}
+        backButton={<Box />}
+      />
     </Box>
   );
 };
 
-export default FacilityTypesCarousel;
+export default FeaturedFacilities;

@@ -41,7 +41,7 @@ const Router: React.FC = () => {
         <Route path="/home" element={<Home />} />
         <Route path="/facilities" element={<FacilitiesPage />} />
         <Route path="/facilities/:facilityId" element={<FacilitiesPage />} />
-        <Route path="/booking/:id" element={<BookingPage />} />
+        <Route path="/booking/:id" element={<BookingPage />} /> 
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route

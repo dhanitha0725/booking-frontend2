@@ -5,6 +5,7 @@ import {
   Box,
   Typography,
   SvgIconProps,
+  Divider,
 } from "@mui/material";
 
 interface StatCardProps {
@@ -26,7 +27,7 @@ interface StatCardProps {
   /**
    * Material UI icon component to display
    */
-  icon: React.ReactElement<SvgIconProps>;
+  icon?: React.ReactElement<SvgIconProps>;
 
   /**
    * Background color of the card
@@ -50,6 +51,11 @@ interface StatCardProps {
    * Shadow elevation for the card
    */
   elevation?: number;
+
+  /**
+   * Color for the value text
+   */
+  valueColor?: string;
 }
 
 /**
@@ -57,16 +63,18 @@ interface StatCardProps {
  *
  * Use this component to display key metrics and statistics in a visually
  * appealing card format with consistent styling across the application.
+ * Styled to resemble Material Tailwind cards.
  */
 const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
   description,
   icon,
-  backgroundColor = "#e3e3e3", // White background
-  textColor = "text.primary", // Black text
+  backgroundColor = "transparent", // Transparent background
+  textColor = "text.primary",
   iconColor = "primary.main",
-  elevation = 1,
+  elevation = 0,
+  valueColor = "#1e293b", // blue-gray color
 }) => {
   return (
     <Card
@@ -76,37 +84,81 @@ const StatCard: React.FC<StatCardProps> = ({
         bgcolor: backgroundColor,
         color: textColor,
         borderRadius: 2,
-        border: "1px rgb(0, 0, 0)",
-        boxShadow: "4px",
+        border: "none",
+        // Apply subtle shadow even when elevation is 0
+        boxShadow:
+          elevation === 0
+            ? "0px 2px 6px rgba(0, 0, 0, 0.06), 0px 1px 3px rgba(0, 0, 0, 0.04)"
+            : undefined,
+        transition: "box-shadow 0.3s ease-in-out",
+        "&:hover": {
+          boxShadow:
+            "0px 4px 12px rgba(0, 0, 0, 0.08), 0px 2px 4px rgba(0, 0, 0, 0.06)",
+        },
       }}
     >
-      <CardContent>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Typography variant="h6" gutterBottom fontWeight="medium">
-            {title}
-          </Typography>
-          {React.cloneElement(icon, {
-            fontSize: "large",
-            sx: { color: iconColor }, // Apply the color to the icon
-          })}
-        </Box>
+      <CardContent sx={{ p: 2 }}>
+        {icon && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              mb: 1,
+            }}
+          >
+            {React.cloneElement(icon, {
+              fontSize: "large",
+              sx: { color: iconColor },
+            })}
+          </Box>
+        )}
 
         <Typography
-          variant={typeof value === "number" && value > 999 ? "h4" : "h3"}
+          variant="h4"
           component="div"
-          fontWeight="bold"
-          noWrap={typeof value === "string" && value.length > 15}
+          sx={{
+            fontWeight: 700,
+            fontSize: "2.25rem", // text-4xl equivalent
+            mb: 1,
+            color: valueColor,
+            lineHeight: 1.2,
+            letterSpacing: "-0.01em",
+          }}
         >
           {value}
         </Typography>
 
-        <Typography variant="body2" sx={{ mt: 1 }}>
+        <Divider
+          sx={{
+            maxWidth: "5rem",
+            my: 2,
+            borderColor: "rgba(0,0,0,0.12)",
+          }}
+        />
+
+        <Typography
+          variant="h5"
+          sx={{
+            mt: 1,
+            mb: 1,
+            fontWeight: 700,
+            fontSize: "1.25rem",
+            color: "#1e293b", // blue-gray color
+          }}
+        >
+          {title}
+        </Typography>
+
+        <Typography
+          variant="body1"
+          sx={{
+            fontSize: "1rem",
+            fontWeight: 400,
+            lineHeight: 1.75,
+            color: "rgba(107, 114, 128, 1)", // text-gray-500 equivalent
+            maxWidth: "20rem", // max-w-xs equivalent
+          }}
+        >
           {description}
         </Typography>
       </CardContent>

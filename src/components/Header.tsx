@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -13,13 +13,36 @@ import {
   Container,
 } from "@mui/material";
 import { Menu as MenuIcon } from "@mui/icons-material";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 
 const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isTransparent, setIsTransparent] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, logout } = useAuth();
+
+  // Check if we're on the home page
+  useEffect(() => {
+    setIsTransparent(location.pathname === "/");
+  }, [location.pathname]);
+
+  // Add scroll listener to change transparency
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setIsTransparent(false);
+      } else if (location.pathname === "/") {
+        setIsTransparent(true);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [location.pathname]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -63,10 +86,14 @@ const Header = () => {
 
   return (
     <AppBar
-      position="sticky"
+      position="fixed"
       color="default"
-      elevation={1}
-      sx={{ backgroundColor: "white" }}
+      elevation={isTransparent ? 0 : 1}
+      sx={{
+        backgroundColor: isTransparent ? "transparent" : "white",
+        transition: "background-color 0.3s ease",
+        zIndex: 1100,
+      }}
     >
       <Container maxWidth="lg">
         <Toolbar disableGutters>
@@ -78,8 +105,11 @@ const Header = () => {
               mr: 2,
               display: { xs: "none", md: "flex" },
               fontWeight: 700,
-              color: "primary.main",
+              color: isTransparent ? "white" : "primary.main",
               textDecoration: "none",
+              textShadow: isTransparent
+                ? "0px 1px 2px rgba(0,0,0,0.3)"
+                : "none",
             }}
           >
             NICD Bookings
@@ -91,7 +121,10 @@ const Header = () => {
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
+              sx={{
+                mr: 2,
+                color: isTransparent ? "white" : "inherit",
+              }}
             >
               <MenuIcon />
             </IconButton>
@@ -103,9 +136,12 @@ const Header = () => {
                 flexGrow: 1,
                 display: { xs: "flex", md: "none" },
                 fontWeight: 700,
-                color: "primary.main",
+                color: isTransparent ? "white" : "primary.main",
                 textDecoration: "none",
                 alignItems: "center",
+                textShadow: isTransparent
+                  ? "0px 1px 2px rgba(0,0,0,0.3)"
+                  : "none",
               }}
             >
               NICD Bookings
@@ -124,31 +160,47 @@ const Header = () => {
                 key={item.name}
                 component={RouterLink}
                 to={item.path}
-                sx={{ color: "text.primary", mx: 1 }}
+                sx={{
+                  color: isTransparent ? "white" : "text.primary",
+                  mx: 1,
+                  textShadow: isTransparent
+                    ? "0px 1px 2px rgba(0,0,0,0.3)"
+                    : "none",
+                }}
               >
                 {item.name}
               </Button>
             ))}
           </Box>
-          {/* Conditional rendering for the authentication */}
+
           <Box sx={{ display: "flex" }}>
             {isAuthenticated ? (
               <Button
-                variant="outlined"
-                color="primary"
-                sx={{ mr: 1, display: { xs: "none", sm: "block" } }}
+                variant={isTransparent ? "outlined" : "outlined"}
+                color={isTransparent ? "inherit" : "primary"}
+                sx={{
+                  mr: 1,
+                  display: { xs: "none", sm: "block" },
+                  borderColor: isTransparent ? "white" : undefined,
+                  color: isTransparent ? "white" : undefined,
+                }}
                 onClick={handleLogout}
               >
                 Logout
               </Button>
             ) : (
               <Button
-                variant="contained"
-                color="primary"
-                sx={{ mr: 1, display: { xs: "none", sm: "block" } }}
+                variant={isTransparent ? "contained" : "contained"}
+                color={isTransparent ? "inherit" : "primary"}
+                sx={{
+                  mr: 1,
+                  display: { xs: "none", sm: "block" },
+                  backgroundColor: isTransparent ? "white" : undefined,
+                  color: isTransparent ? "black" : undefined,
+                }}
                 onClick={() => navigate("/login")}
               >
-                SignIn
+                Sign In
               </Button>
             )}
           </Box>

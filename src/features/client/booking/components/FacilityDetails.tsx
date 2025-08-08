@@ -17,7 +17,7 @@ import {
   ArrowBackIos,
   ArrowForwardIos,
 } from "@mui/icons-material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Facility } from "../../../../types/facilityDetails";
 
 // receive facility object
@@ -27,19 +27,49 @@ interface FacilityDetailsProps {
 
 const FacilityDetails = ({ facility }: FacilityDetailsProps) => {
   const [activeStep, setActiveStep] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const theme = useTheme();
+
+  // Auto-play functionality with 5s interval
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!isTransitioning && facility.images.length > 1) {
+        handleNext();
+      }
+    }, 5000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [activeStep, isTransitioning]);
 
   // Carousel control handlers
   const handleNext = () => {
+    if (isTransitioning) return;
+
+    setIsTransitioning(true);
     setActiveStep((prevActiveStep) =>
       prevActiveStep === facility.images.length - 1 ? 0 : prevActiveStep + 1
     );
+
+    // Reset transitioning state after animation completes
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
   };
 
   const handleBack = () => {
+    if (isTransitioning) return;
+
+    setIsTransitioning(true);
     setActiveStep((prevActiveStep) =>
       prevActiveStep === 0 ? facility.images.length - 1 : prevActiveStep - 1
     );
+
+    // Reset transitioning state after animation completes
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
   };
 
   // Rendering logic only
@@ -63,29 +93,46 @@ const FacilityDetails = ({ facility }: FacilityDetailsProps) => {
                 overflow: "hidden",
                 borderRadius: 2,
                 boxShadow: 3,
+                backgroundColor: "black",
               }}
             >
               {/* Image Carousel */}
-              <Box
-                sx={{
-                  height: "100%",
-                  width: "100%",
-                  backgroundImage: `url(${facility.images[activeStep]})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  transition: "background-image 0.5s ease-in-out",
-                }}
-              />
+              {facility.images.map((image, index) => (
+                <Box
+                  key={`image-${index}`}
+                  component="img"
+                  src={image}
+                  alt={`${facility.name} - image ${index + 1}`}
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    height: "100%",
+                    width: "100%",
+                    objectFit: "cover",
+                    opacity: index === activeStep ? 1 : 0,
+                    transition: "opacity 0.5s ease-in-out",
+                    zIndex: index === activeStep ? 1 : 0,
+                  }}
+                  onError={(e) => {
+                    // Handle image load error
+                    e.currentTarget.src =
+                      "https://via.placeholder.com/800x400?text=Image+Not+Available";
+                    e.currentTarget.alt = "Image not available";
+                  }}
+                />
+              ))}
 
               {/* Navigation Arrows */}
               <IconButton
                 onClick={handleBack}
                 sx={{
                   position: "absolute",
-                  left: 8,
+                  left: 16,
                   top: "50%",
                   transform: "translateY(-50%)",
                   bgcolor: "rgba(255, 255, 255, 0.7)",
+                  zIndex: 2,
                   "&:hover": {
                     bgcolor: "rgba(255, 255, 255, 0.9)",
                   },
@@ -98,10 +145,11 @@ const FacilityDetails = ({ facility }: FacilityDetailsProps) => {
                 onClick={handleNext}
                 sx={{
                   position: "absolute",
-                  right: 8,
+                  right: 16,
                   top: "50%",
                   transform: "translateY(-50%)",
                   bgcolor: "rgba(255, 255, 255, 0.7)",
+                  zIndex: 2,
                   "&:hover": {
                     bgcolor: "rgba(255, 255, 255, 0.9)",
                   },
@@ -119,24 +167,30 @@ const FacilityDetails = ({ facility }: FacilityDetailsProps) => {
                   display: "flex",
                   justifyContent: "center",
                   gap: 1,
-                  zIndex: 1,
+                  zIndex: 2,
                 }}
               >
                 {facility.images.map((_, index) => (
                   <Box
                     key={index}
                     sx={{
-                      width: 8,
-                      height: 8,
+                      width: 12,
+                      height: 12,
                       borderRadius: "50%",
                       backgroundColor:
                         index === activeStep
                           ? theme.palette.primary.main
                           : "rgba(255, 255, 255, 0.7)",
+                      border: "2px solid white",
                       transition: "background-color 0.3s",
                       cursor: "pointer",
+                      boxShadow: "0px 1px 3px rgba(0,0,0,0.3)",
                     }}
-                    onClick={() => setActiveStep(index)}
+                    onClick={() => {
+                      if (!isTransitioning) {
+                        setActiveStep(index);
+                      }
+                    }}
                   />
                 ))}
               </Box>
@@ -145,7 +199,7 @@ const FacilityDetails = ({ facility }: FacilityDetailsProps) => {
             <Paper
               elevation={2}
               sx={{
-                height: "100%",
+                height: 400,
                 borderRadius: 2,
                 display: "flex",
                 alignItems: "center",
