@@ -19,6 +19,7 @@ import {
   PackagesDto,
 } from "../../../../types/selectedFacility";
 import api from "../../../../services/api";
+import PackageDateTimePicker from "./PackageDateTimePicker";
 
 // Extend dayjs with plugins for date comparison
 dayjs.extend(isSameOrBefore);
@@ -64,6 +65,25 @@ const BookingDateTimePicker = ({
   packages,
 }: BookingDateTimePickerProps) => {
   const [error, setError] = useState<string | null>(null);
+  const [selectedDateTime, setSelectedDateTime] = useState<dayjs.Dayjs | null>(null);
+
+  // Check if any hourly package (duration < 1 day) is selected
+  const hasHourlyPackageSelected = useMemo(() => {
+    return selectedItems.some((item) => {
+      if (item.type !== "package") return false;
+      const pkg = packages.find((p) => p.packageId === item.itemId);
+      if (!pkg) return false;
+
+      // Handle different duration formats
+      if (typeof pkg.duration === "number") {
+        return pkg.duration < 24;
+      } else if (typeof pkg.duration === "string") {
+        // Check if duration contains "hour" and not "day"
+        return pkg.duration.includes("hour") && !pkg.duration.includes("day");
+      }
+      return false;
+    });
+  }, [selectedItems, packages]);
 
   // Check if any daily package is selected
   const hasDailyPackageSelected = useMemo(() => {
@@ -86,11 +106,6 @@ const BookingDateTimePicker = ({
   const hasRoomSelected = useMemo(() => {
     return selectedItems.some((item) => item.type === "room");
   }, [selectedItems]);
-
-  // Only apply strict date validation for rooms, not for packages
-  const requireStrictDateValidation = useMemo(() => {
-    return hasRoomSelected;
-  }, [hasRoomSelected]);
 
   // Calculate the minimum allowed date based on whether a room is selected
   const minAllowedDate = useMemo(() => {
@@ -119,7 +134,6 @@ const BookingDateTimePicker = ({
       }
 
       try {
-        // check availability via API
         const response = await api.post("/Reservation/checkAvailability", {
           facilityId,
           startDate: startDate.toISOString(),
@@ -160,19 +174,21 @@ const BookingDateTimePicker = ({
 
   // Effect to check availability whenever the date range or selected items change
   useEffect(() => {
-    debouncedCheckAvailability(
-      dateRange.startDate,
-      dateRange.endDate,
-      selectedItems,
-      facilityId
-    );
-    return () => clearTimeout(undefined);
+    if (!hasHourlyPackageSelected) {
+      debouncedCheckAvailability(
+        dateRange.startDate,
+        dateRange.endDate,
+        selectedItems,
+        facilityId
+      );
+    }
   }, [
     dateRange.startDate?.toISOString(),
     dateRange.endDate?.toISOString(),
     selectedItems,
     facilityId,
     debouncedCheckAvailability,
+    hasHourlyPackageSelected,
   ]);
 
   // Effect to normalize start and end dates to 8:00 AM for rooms
@@ -223,8 +239,24 @@ const BookingDateTimePicker = ({
     }
   }, [hasRoomSelected, dateRange.startDate, dateRange.endDate, onDateChange]);
 
-  // Handlers for start and end date changes
-  // These handlers normalize the dates to 8:00 AM for rooms and handle validation
+  // Handle datetime changes for hourly packages
+  const handlePackageDateTimeChange = (dateTime: dayjs.Dayjs | null) => {
+    setSelectedDateTime(dateTime);
+    // Convert single datetime to date range for consistency
+    if (dateTime) {
+      onDateChange({
+        startDate: dateTime,
+        endDate: dateTime, // Backend will calculate end time based on package duration
+      });
+    } else {
+      onDateChange({
+        startDate: null,
+        endDate: null,
+      });
+    }
+  };
+
+  // Handlers for start and end date changes (for rooms and daily packages)
   const handleStartDateChange = (date: dayjs.Dayjs | null) => {
     if (!date) {
       onDateChange({ startDate: null, endDate: dateRange.endDate });
@@ -232,13 +264,11 @@ const BookingDateTimePicker = ({
     }
 
     if (dateRange.endDate) {
-      // Only apply this validation for rooms, not packages
       if (hasRoomSelected && date.isAfter(dateRange.endDate)) {
         setError("Start date cannot be after end date.");
         return;
       }
 
-      // For rooms, ensure end date is at least one day after start date
       if (hasRoomSelected && date.isSame(dateRange.endDate, "day")) {
         const normalizedDate = date.hour(8).minute(0).second(0);
         onDateChange({
@@ -261,8 +291,6 @@ const BookingDateTimePicker = ({
     });
   };
 
-  // Handler for end date changes
-  // This handler ensures the end date is at least one day after the start date for rooms
   const handleEndDateChange = (date: dayjs.Dayjs | null) => {
     if (!date) {
       onDateChange({ startDate: dateRange.startDate, endDate: null });
@@ -270,16 +298,12 @@ const BookingDateTimePicker = ({
     }
 
     if (dateRange.startDate) {
-      // Apply room-specific validation only for room bookings
       if (hasRoomSelected && date.isSame(dateRange.startDate, "day")) {
         setError(
           "For room bookings, check-out date must be at least one day after check-in date."
         );
         return;
-      } else if (
-        requireStrictDateValidation &&
-        date.isBefore(dateRange.startDate)
-      ) {
+      } else if (hasRoomSelected && date.isBefore(dateRange.startDate)) {
         setError("End date cannot be before start date.");
         return;
       }
@@ -300,8 +324,6 @@ const BookingDateTimePicker = ({
     });
   };
 
-  // Function to determine if a date should be disabled
-  // This function disables past dates and today's date after 8:00 AM for room bookings
   const shouldDisableDate = (date: dayjs.Dayjs) => {
     if (date.isBefore(dayjs(), "day")) {
       return true;
@@ -314,40 +336,11 @@ const BookingDateTimePicker = ({
     return false;
   };
 
-  // Function to get the minimum end date based on the start date
-  // For room bookings, it ensures the end date is at least one day after the start
   const getMinEndDate = () => {
     if (hasRoomSelected && dateRange.startDate) {
       return dateRange.startDate.add(1, "day");
     }
     return dateRange.startDate || minAllowedDate;
-  };
-
-  // Function to validate the date selection
-  // This function checks if the start and end dates are selected and validates them based on the booking type
-  // For room bookings, it ensures the end date is at least one day after the start date
-  const validateDateSelection = () => {
-    if (!dateRange.startDate) {
-      return "Please select a start date";
-    }
-    if (!dateRange.endDate) {
-      return "Please select an end date";
-    }
-
-    // For room bookings, require at least one day between dates
-    if (
-      hasRoomSelected &&
-      !dateRange.endDate.isAfter(dateRange.startDate, "day")
-    ) {
-      return "For room bookings, check-out date must be at least one day after check-in date.";
-    }
-
-    // For daily packages, allow same-day reservations
-    if (!hasRoomSelected && dateRange.endDate.isBefore(dateRange.startDate)) {
-      return "End date cannot be before start date.";
-    }
-
-    return null;
   };
 
   // Function to get the description message based on the booking type
@@ -362,23 +355,36 @@ const BookingDateTimePicker = ({
       return "For room bookings, check-in and check-out time is set to 8:00 AM. Room bookings require at least one night stay.";
     }
     if (hasDailyPackageSelected) {
-      return "For daily packages, you can select the same day for start and end dates.";
-    }
-    if (selectedItems.some((item) => item.type === "package")) {
-      return "For hourly packages, you can select the same day for start and end dates.";
+      return "For daily packages, select the start and end dates for your booking.";
     }
     return null;
   };
 
   const descriptionMessage = getDescriptionMessage();
-  const validationError = validateDateSelection();
 
+  // If hourly packages are selected, show the datetime picker
+  if (hasHourlyPackageSelected) {
+    return (
+      <PackageDateTimePicker
+        selectedDateTime={selectedDateTime}
+        onDateTimeChange={handlePackageDateTimeChange}
+        customerType={customerType}
+        onCustomerTypeChange={onCustomerTypeChange}
+        required={required}
+        facilityId={facilityId}
+        selectedItems={selectedItems}
+        onAvailabilityChange={onAvailabilityChange}
+      />
+    );
+  }
+
+  // For rooms and daily packages, show the original date range picker
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
         {required && (!dateRange.startDate || !dateRange.endDate) && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Date selection is required for rooms and packages
+            Date selection is required for rooms and daily packages
           </Alert>
         )}
         {descriptionMessage && (
@@ -425,14 +431,6 @@ const BookingDateTimePicker = ({
                 textField: {
                   fullWidth: true,
                   variant: "outlined",
-                  error:
-                    !!validationError &&
-                    !!dateRange.startDate &&
-                    !dateRange.endDate,
-                  helperText:
-                    dateRange.startDate && !dateRange.endDate
-                      ? "Please select an end date"
-                      : "",
                 },
               }}
             />
