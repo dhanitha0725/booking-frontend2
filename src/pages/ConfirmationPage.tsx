@@ -16,7 +16,7 @@ import {
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
-//import { ReservationResultDto } from "../types/reservationData";
+import ReceiptDownloadButton from "../components/ReceiptDownloadButton";
 
 const steps = ["Booking Details", "User Information", "Confirmation"];
 
@@ -166,6 +166,18 @@ const ConfirmationPage = () => {
               <li>Final booking confirmation will be sent after payment</li>
             </ul>
           )}
+        </Box>
+
+        {/* Receipt download (uses localStorage currentReservation when available) */}
+        <Box sx={{ mt: 2, mb: 2, display: "flex", justifyContent: "center" }}>
+          <ReceiptDownloadButton
+            paymentResult={{
+              reservationId: confirmationState.reservationId,
+              orderId: String(confirmationState.reservationId),
+              status: "pending",
+              amount: 0,
+            }}
+          />
         </Box>
 
         <Button

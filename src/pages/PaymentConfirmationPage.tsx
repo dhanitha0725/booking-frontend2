@@ -16,6 +16,7 @@ import {
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import axios from "axios";
+import ReceiptDownloadButton from "../components/ReceiptDownloadButton";
 
 // Define all possible steps in the booking process
 const steps = [
@@ -214,6 +215,11 @@ const PaymentConfirmationPage = () => {
               <Alert severity="info" sx={{ mt: 3 }}>
                 Please save your reservation ID for future reference.
               </Alert>
+
+              {/* Download receipt button */}
+              <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+                <ReceiptDownloadButton paymentResult={paymentResult} />
+              </Box>
             </Box>
           </>
         );

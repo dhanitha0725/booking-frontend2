@@ -204,13 +204,45 @@ const BookingPage = () => {
   // Handle reservation data storage
   const handleReservation = useCallback(() => {
     if (!facility) return;
+
+    const parseDurationToHours = (duration: string | number | undefined) => {
+      if (duration == null) return 0;
+      if (typeof duration === "number") return duration;
+      const dayMatch = String(duration).match(/(\d+)\s*day/);
+      const hourMatch = String(duration).match(/(\d+)\s*hour/);
+      const days = dayMatch ? parseInt(dayMatch[1], 10) : 0;
+      const hours = hourMatch ? parseInt(hourMatch[1], 10) : 0;
+      if (days || hours) return days * 24 + hours;
+      const numMatch = String(duration).match(/(\d+)/);
+      return numMatch ? parseInt(numMatch[1], 10) : 0;
+    };
+
+    // compute end date: if hourly package(s) selected, add duration hours to start
+    const start = dateRange.startDate;
+    let computedEnd = dateRange.endDate;
+    if (start) {
+      // find hourly packages and compute the maximum hours among them (if multiple)
+      const hourlyPackageHours = selectedItems
+        .filter((it) => it.type === "package")
+        .map((it) => {
+          const pkg = facility.packages.find((p) => p.packageId === it.itemId);
+          return pkg ? parseDurationToHours(pkg.duration) : 0;
+        })
+        .filter((h) => h > 0);
+
+      if (hourlyPackageHours.length > 0) {
+        const maxHours = Math.max(...hourlyPackageHours);
+        computedEnd = start.add(maxHours, "hour");
+      }
+    }
+
     const reservationData = {
       facilityId: facility.id,
       selectedItems,
       total,
       customerType,
       startDate: dateRange.startDate?.toISOString(),
-      endDate: dateRange.endDate?.toISOString(),
+      endDate: computedEnd?.toISOString(),
     };
     localStorage.setItem("currentReservation", JSON.stringify(reservationData));
   }, [facility, selectedItems, total, customerType, dateRange]);

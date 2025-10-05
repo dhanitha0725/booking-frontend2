@@ -374,6 +374,7 @@ const BookingDateTimePicker = ({
         facilityId={facilityId}
         selectedItems={selectedItems}
         onAvailabilityChange={onAvailabilityChange}
+        packages={packages}
       />
     );
   }

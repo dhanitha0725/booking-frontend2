@@ -13,7 +13,7 @@ import { StaticDateTimePicker } from "@mui/x-date-pickers/StaticDateTimePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
-import { BookingItemDto } from "../../../../types/selectedFacility";
+import { BookingItemDto, PackagesDto } from "../../../../types/selectedFacility";
 import api from "../../../../services/api";
 
 export type CustomerType = "corporate" | "public" | "private";
@@ -32,6 +32,7 @@ interface PackageDateTimePickerProps {
   facilityId?: number;
   selectedItems: BookingItemDto[];
   onAvailabilityChange: (availabilityResponse: AvailabilityResponseDto) => void;
+  packages: PackagesDto[]; // added
 }
 
 const PackageDateTimePicker = ({
@@ -43,8 +44,23 @@ const PackageDateTimePicker = ({
   facilityId,
   selectedItems,
   onAvailabilityChange,
+  packages, // added
 }: PackageDateTimePickerProps) => {
   const [error, setError] = useState<string | null>(null);
+
+  const parseDurationToHours = (duration: string | number | undefined) => {
+    if (duration == null) return 0;
+    if (typeof duration === "number") return duration;
+    // duration strings examples: "4 hours", "1 day", "1 day 4 hours"
+    const dayMatch = duration.match(/(\d+)\s*day/);
+    const hourMatch = duration.match(/(\d+)\s*hour/);
+    const days = dayMatch ? parseInt(dayMatch[1], 10) : 0;
+    const hours = hourMatch ? parseInt(hourMatch[1], 10) : 0;
+    if (days || hours) return days * 24 + hours;
+    // fallback: first number assume hours
+    const numMatch = duration.match(/(\d+)/);
+    return numMatch ? parseInt(numMatch[1], 10) : 0;
+  };
 
   // Check availability when datetime changes
   const checkAvailability = useCallback(
@@ -58,13 +74,22 @@ const PackageDateTimePicker = ({
         return;
       }
 
+      // compute endDateTime by finding package duration (for hourly packages)
+      let endDateTime = startDateTime;
+      const pkgItem = items.find((it) => it.type === "package");
+      if (pkgItem) {
+        const pkg = packages.find((p) => p.packageId === pkgItem.itemId);
+        const hrs = pkg ? parseDurationToHours(pkg.duration) : 0;
+        if (hrs > 0) {
+          endDateTime = startDateTime.add(hrs, "hour");
+        }
+      }
+
       try {
-        // For hourly packages, calculate end time based on package duration
-        // For now, we'll use the same start and end time - the backend should handle duration
         const response = await api.post("/Reservation/checkAvailability", {
           facilityId,
           startDate: startDateTime.toISOString(),
-          endDate: startDateTime.toISOString(), // Backend will calculate actual end time
+          endDate: endDateTime.toISOString(), // now calculated correctly
           items,
         });
         onAvailabilityChange(response.data);
@@ -77,7 +102,7 @@ const PackageDateTimePicker = ({
         });
       }
     },
-    [onAvailabilityChange]
+    [onAvailabilityChange, packages]
   );
 
   // Debounced availability check

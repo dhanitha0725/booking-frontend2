@@ -103,7 +103,15 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
         color = "default";
     }
 
-    return <Chip label={status} color={color} size="small" />;
+    return (
+      <Chip
+        label={status}
+        color={color}
+        size="small"
+        variant="outlined"
+        sx={{ borderRadius: "4px" }}
+      />
+    );
   };
 
   // Render user type chips with appropriate colors
@@ -132,7 +140,15 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
     // Capitalize first letter for display
     const displayText = userType.charAt(0).toUpperCase() + userType.slice(1);
 
-    return <Chip label={displayText} color={color} size="small" />;
+    return (
+      <Chip
+        label={displayText}
+        color={color}
+        size="small"
+        variant="outlined"
+        sx={{ borderRadius: "4px" }}
+      />
+    );
   };
 
   // Material React Table columns
@@ -261,7 +277,7 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
           desc: true, // Most recent reservations first
         },
       ],
-      pagination: { pageSize: 10, pageIndex: 0 }, // Default page size
+      pagination: { pageSize: 100, pageIndex: 0 }, // Default page size
     },
   });
 
