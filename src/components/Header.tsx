@@ -61,7 +61,10 @@ const Header = () => {
   ];
 
   const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
+    <Box
+      onClick={handleDrawerToggle}
+      sx={{ textAlign: "center", backgroundColor: "red" }}
+    >
       <Typography variant="h6" sx={{ my: 2 }}>
         NICD Bookings
       </Typography>
@@ -93,9 +96,21 @@ const Header = () => {
         backgroundColor: isTransparent ? "transparent" : "white",
         transition: "background-color 0.3s ease",
         zIndex: 1100,
+        
       }}
     >
-      <Container maxWidth="lg">
+      <Container
+        maxWidth="lg"
+        sx={{
+          backgroundColor: "#222222",
+          borderRadius: 20,
+          mt: 2,
+          minHeight: 60,
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          backdropFilter: "blur(10px)",
+          
+        }}
+      >
         <Toolbar disableGutters>
           <Typography
             variant="h6"
@@ -190,13 +205,17 @@ const Header = () => {
               </Button>
             ) : (
               <Button
-                variant={isTransparent ? "contained" : "contained"}
-                color={isTransparent ? "inherit" : "primary"}
+                variant="contained"
+                color="inherit"
                 sx={{
                   mr: 1,
                   display: { xs: "none", sm: "block" },
-                  backgroundColor: isTransparent ? "white" : undefined,
-                  color: isTransparent ? "black" : undefined,
+                  backgroundColor: "#e4e4e4ff",
+                  borderRadius: 12,
+                  p: "8px 20px",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textTransform: "none",
                 }}
                 onClick={() => navigate("/login")}
               >
