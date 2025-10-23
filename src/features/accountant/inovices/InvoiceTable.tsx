@@ -1,10 +1,5 @@
 import React, { useMemo } from "react";
 import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-} from "material-react-table";
-import {
   Box,
   IconButton,
   Tooltip,
@@ -12,6 +7,10 @@ import {
   CircularProgress,
 } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import DataTable, {
+  type DataTableColumn,
+  type DataTableConfig,
+} from "../../../components/DataTable";
 
 // interface to match the API response
 interface Invoice {
@@ -68,13 +67,13 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
   };
 
   // Material React Table columns
-  const columns = useMemo<MRT_ColumnDef<Invoice>[]>(
+  const columns = useMemo<DataTableColumn<Invoice>[]>(
     () => [
       {
         accessorKey: "invoiceID",
         header: "Invoice #",
         size: 140,
-        Cell: ({ cell }) => formatInvoiceNumber(cell.getValue<number>()),
+        Cell: ({ cell }) => formatInvoiceNumber(cell.getValue()),
       },
       {
         accessorKey: "reservationID",
@@ -90,39 +89,41 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
         accessorKey: "issuedDate",
         header: "Issue Date",
         size: 120,
-        Cell: ({ cell }) => formatDate(cell.getValue<string>()),
+        Cell: ({ cell }) => formatDate(cell.getValue()),
       },
       {
         accessorKey: "amountPaid",
         header: "Paid Amount",
         size: 140,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+        Cell: ({ cell }) => formatCurrency(cell.getValue()),
       },
       {
         accessorKey: "amountDue",
         header: "Due Amount",
         size: 140,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+        Cell: ({ cell }) => formatCurrency(cell.getValue()),
       },
       {
-        accessorFn: (row) => row.amountPaid + row.amountDue,
+        id: "totalAmount",
         header: "Total Amount",
         size: 140,
-        Cell: ({ cell }) => formatCurrency(cell.getValue<number>()),
+        Cell: ({ row }) => {
+          const total = row.original.amountPaid + row.original.amountDue;
+          return formatCurrency(total);
+        },
       },
       {
         accessorKey: "paymentStatus",
         header: "Status",
         size: 150,
         Cell: ({ cell }) => {
-          const status = cell.getValue<string>();
+          const status = cell.getValue();
           const { color, variant } = getStatusChipProps(status);
           return (
             <Chip label={status} color={color} variant={variant} size="small" />
           );
         },
       },
-      // Update the actions column
       {
         id: "actions",
         header: "Actions",
@@ -150,37 +151,20 @@ const InvoiceTable: React.FC<InvoiceTableProps> = ({
     [onView, isDownloading]
   );
 
-  const table = useMaterialReactTable({
-    columns,
-    data: invoices,
-    layoutMode: "grid",
-    enableRowSelection: false,
-    muiTableContainerProps: {
-      sx: { maxWidth: "100%" },
-    },
-    initialState: {
-      sorting: [
-        {
-          id: "issuedDate",
-          desc: true,
-        },
-      ],
-      pagination: {
-        pageSize: 10,
-        pageIndex: 0,
-      },
-    },
+  const config: DataTableConfig = {
     enablePagination: true,
-    enableBottomToolbar: true,
-    enableTopToolbar: true,
+    enableFilters: true,
     enableColumnFilters: true,
-    enableColumnOrdering: true,
+    enableGlobalFilter: true,
+    enableColumnResizing: true,
     enableSorting: true,
-  });
+    layoutMode: "grid",
+    pageSize: 10,
+  };
 
   return (
     <Box sx={{ mt: 2 }}>
-      <MaterialReactTable table={table} />
+      <DataTable data={invoices} columns={columns} config={config} />
     </Box>
   );
 };

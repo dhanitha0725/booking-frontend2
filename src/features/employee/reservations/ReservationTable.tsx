@@ -1,9 +1,4 @@
 import React, { useMemo, useState } from "react";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-} from "material-react-table";
 import { Box, Chip, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -14,6 +9,10 @@ import {
   ReservationStatus,
   UserType,
 } from "../../../types/ReservationDetails";
+import DataTable, {
+  type DataTableColumn,
+  type DataTableConfig,
+} from "../../../components/DataTable";
 import FullReservationInfo from "./FullReservationInfo";
 
 interface ReservationTableProps {
@@ -152,7 +151,7 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
   };
 
   // Material React Table columns
-  const columns = useMemo<MRT_ColumnDef<Reservation>[]>(
+  const columns = useMemo<DataTableColumn<Reservation>[]>(
     () => [
       {
         accessorKey: "reservationId",
@@ -163,38 +162,37 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
         accessorKey: "startDate",
         header: "Start Date",
         size: 160,
-        Cell: ({ cell }) => formatDate(cell.getValue<string | Date>()),
+        Cell: ({ cell }) => formatDate(cell.getValue()),
       },
       {
         accessorKey: "endDate",
         header: "End Date",
         size: 160,
-        Cell: ({ cell }) => formatDate(cell.getValue<string | Date>()),
+        Cell: ({ cell }) => formatDate(cell.getValue()),
       },
       {
         accessorKey: "createdDate",
         header: "Created On",
         size: 160,
-        Cell: ({ cell }) => formatDate(cell.getValue<string | Date>()),
+        Cell: ({ cell }) => formatDate(cell.getValue()),
       },
       {
         accessorKey: "total",
         header: "Total",
         size: 120,
-        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
+        Cell: ({ cell }) => `Rs. ${cell.getValue()}`,
       },
       {
         accessorKey: "status",
         header: "Status",
         size: 200,
-        Cell: ({ cell }) =>
-          renderStatusChip(cell.getValue<ReservationStatus>()),
+        Cell: ({ cell }) => renderStatusChip(cell.getValue()),
       },
       {
         accessorKey: "userType",
         header: "User Type",
         size: 130,
-        Cell: ({ cell }) => renderUserTypeChip(cell.getValue<UserType>()),
+        Cell: ({ cell }) => renderUserTypeChip(cell.getValue()),
       },
       ...(showActions
         ? [
@@ -257,34 +255,21 @@ const ReservationTable: React.FC<ReservationTableProps> = ({
     [onModify, onCancel, showActions]
   );
 
-  const table = useMaterialReactTable({
-    columns,
-    data: reservations,
-    layoutMode: "grid",
-    enablePagination: enablePagination,
-    enableFilters: enableFilters,
+  const config: DataTableConfig = {
+    enablePagination,
+    enableFilters,
     enableColumnFilters: enableFilters,
     enableGlobalFilter: enableFilters,
     enableColumnResizing: true,
     enableSorting: true,
-    muiTableContainerProps: {
-      sx: { maxWidth: "100%" },
-    },
-    initialState: {
-      sorting: [
-        {
-          id: "createdDate",
-          desc: true, // Most recent reservations first
-        },
-      ],
-      pagination: { pageSize: 100, pageIndex: 0 }, // Default page size
-    },
-  });
+    layoutMode: "grid",
+    pageSize: 100,
+  };
 
   return (
     <Box sx={{ width: "100%" }}>
       {/* ReservationTable */}
-      <MaterialReactTable table={table} />
+      <DataTable data={reservations} columns={columns} config={config} />
 
       {/* Full Reservation Info Dialog */}
       <FullReservationInfo

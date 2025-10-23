@@ -1,12 +1,11 @@
 import React, { useMemo } from "react";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-} from "material-react-table";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DataTable, {
+  type DataTableColumn,
+  type DataTableConfig,
+} from "../../../components/DataTable";
 import { Package } from "../../../types/packageTypes";
 
 interface PackageTableProps {
@@ -21,14 +20,13 @@ const PackageTable: React.FC<PackageTableProps> = ({
   onDelete,
 }) => {
   // Material React Table columns
-  const columns = useMemo<MRT_ColumnDef<Package>[]>(
+  const columns = useMemo<DataTableColumn<Package>[]>(
     () => [
       {
         accessorKey: "facilityName",
         header: "Facility",
         size: 200,
-
-        Cell: ({ cell }) => cell.getValue<string>() || "N/A",
+        Cell: ({ cell }) => cell.getValue() || "N/A",
       },
       {
         accessorKey: "packageName",
@@ -44,21 +42,20 @@ const PackageTable: React.FC<PackageTableProps> = ({
         accessorKey: "publicPrice",
         header: "Public Price",
         size: 150,
-        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
+        Cell: ({ cell }) => `Rs. ${cell.getValue()}`,
       },
       {
         accessorKey: "privatePrice",
         header: "Private Price",
         size: 150,
-        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
+        Cell: ({ cell }) => `Rs. ${cell.getValue()}`,
       },
       {
         accessorKey: "corporatePrice",
         header: "Corporate Price",
         size: 150,
-        Cell: ({ cell }) => `Rs. ${cell.getValue<number>().toFixed(2)}`,
+        Cell: ({ cell }) => `Rs. ${cell.getValue()}`,
       },
-
       {
         id: "actions",
         header: "Actions",
@@ -90,25 +87,16 @@ const PackageTable: React.FC<PackageTableProps> = ({
     [onUpdate, onDelete]
   );
 
-  const table = useMaterialReactTable({
-    columns,
-    data: packages,
+  const config: DataTableConfig = {
+    enablePagination: true,
+    enableFilters: true,
+    enableSorting: true,
     layoutMode: "grid",
-    enableRowSelection: false,
-    muiTableContainerProps: {
-      sx: { maxWidth: "100%" },
-    },
-    initialState: {
-      sorting: [
-        {
-          id: "packageName",
-          desc: false,
-        },
-      ],
-    },
-  });
+  };
 
-  return <Box>{<MaterialReactTable table={table} />}</Box>;
+  return (
+    <Box>{<DataTable data={packages} columns={columns} config={config} />}</Box>
+  );
 };
 
 export default PackageTable;

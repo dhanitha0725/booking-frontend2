@@ -1,10 +1,9 @@
 import React, { useMemo } from "react";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-} from "material-react-table";
-import { Box, Chip } from "@mui/material";
+import { Chip } from "@mui/material";
+import DataTable, {
+  type DataTableColumn,
+  type DataTableConfig,
+} from "../../../components/DataTable";
 import { User } from "../../../types/user";
 
 interface UserTableProps {
@@ -63,7 +62,7 @@ const UserTable: React.FC<UserTableProps> = ({ users }) => {
   };
 
   // Material React Table columns
-  const columns = useMemo<MRT_ColumnDef<User>[]>(
+  const columns = useMemo<DataTableColumn<User>[]>(
     () => [
       {
         accessorKey: "firstName",
@@ -89,22 +88,20 @@ const UserTable: React.FC<UserTableProps> = ({ users }) => {
         accessorKey: "role",
         header: "Role",
         size: 120,
-        Cell: ({ cell }) => renderRoleChip(cell.getValue<string>()),
+        Cell: ({ cell }) => renderRoleChip(cell.getValue()),
       },
     ],
     []
   );
 
-  const table = useMaterialReactTable({
-    columns,
-    data: users,
+  const config: DataTableConfig = {
+    enablePagination: true,
+    enableFilters: true,
+    enableSorting: true,
     layoutMode: "grid",
-    muiTableContainerProps: {
-      sx: { maxWidth: "100%" },
-    },
-  });
+  };
 
-  return <Box>{<MaterialReactTable table={table} />}</Box>;
+  return <DataTable data={users} columns={columns} config={config} />;
 };
 
 export default UserTable;

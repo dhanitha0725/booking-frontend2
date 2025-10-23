@@ -3,11 +3,10 @@ import { Box, Chip, IconButton, Tooltip } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
 import HotelIcon from "@mui/icons-material/Hotel";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-} from "material-react-table";
+import DataTable, {
+  type DataTableColumn,
+  type DataTableConfig,
+} from "../../../components/DataTable";
 import { AdminFacilityDetails } from "../../../types/adminFacilityDetails";
 
 interface FacilityTableProps {
@@ -51,7 +50,7 @@ const FacilityTable: React.FC<FacilityTableProps> = ({
     return <Chip label={status} color={color} size="small" />;
   };
 
-  const columns = useMemo<MRT_ColumnDef<AdminFacilityDetails>[]>(
+  const columns = useMemo<DataTableColumn<AdminFacilityDetails>[]>(
     () => [
       { accessorKey: "facilityId", header: "ID", size: 100 },
       { accessorKey: "facilityName", header: "Facility Name", size: 200 },
@@ -60,7 +59,7 @@ const FacilityTable: React.FC<FacilityTableProps> = ({
         accessorKey: "status",
         header: "Status",
         size: 150,
-        Cell: ({ cell }) => renderStatusChip(cell.getValue<string>()),
+        Cell: ({ cell }) => renderStatusChip(cell.getValue()),
       },
       {
         id: "actions",
@@ -102,14 +101,14 @@ const FacilityTable: React.FC<FacilityTableProps> = ({
     [onViewDetails, onDeleteInitiate, onAddRooms]
   );
 
-  const table = useMaterialReactTable({
-    columns,
-    data: facilities,
+  const config: DataTableConfig = {
+    enablePagination: true,
+    enableFilters: true,
+    enableSorting: true,
     layoutMode: "grid",
-    muiTableContainerProps: { sx: { maxWidth: "100%" } },
-  });
+  };
 
-  return <MaterialReactTable table={table} />;
+  return <DataTable data={facilities} columns={columns} config={config} />;
 };
 
 export default FacilityTable;
